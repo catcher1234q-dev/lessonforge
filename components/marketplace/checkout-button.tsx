@@ -55,6 +55,7 @@ export function CheckoutButton({
       setMessage(nextMessage);
 
       if (
+        nextMessage.toLowerCase().includes("missing resource data") ||
         nextMessage.toLowerCase().includes("signed-in buyer access required") ||
         nextMessage.toLowerCase().includes("sign in")
       ) {
