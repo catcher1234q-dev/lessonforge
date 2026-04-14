@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 
+import { demoResources } from "@/lib/demo/example-resources";
 import {
   buildBuyerOrderFromCheckoutSession,
   buildBuyerOrderFromPaymentIntent,
@@ -8,6 +9,44 @@ import {
 import { findSupabaseProductRecordById } from "@/lib/supabase/admin-sync";
 import { listPersistedProducts } from "@/lib/lessonforge/repository";
 import type { ProductRecord } from "@/types";
+
+function toProductRecord(resource: (typeof demoResources)[number]): ProductRecord {
+  return {
+    id: resource.id,
+    title: resource.title,
+    subject: resource.subject,
+    gradeBand: resource.gradeBand,
+    standardsTag: resource.standardsTag,
+    updatedAt: resource.updatedAt,
+    format: resource.format,
+    summary: resource.summary,
+    demoOnly: resource.demoOnly,
+    resourceType: resource.resourceType,
+    shortDescription: resource.shortDescription,
+    fullDescription: resource.fullDescription,
+    licenseType: resource.licenseType,
+    fileTypes: resource.fileTypes,
+    includedItems: resource.includedItems,
+    thumbnailUrl: resource.thumbnailUrl,
+    previewAssetUrls: resource.previewAssetUrls,
+    originalAssetUrl: resource.originalAssetUrl,
+    assetVersionNumber: resource.assetVersionNumber,
+    previewIncluded: resource.previewIncluded,
+    thumbnailIncluded: resource.thumbnailIncluded,
+    rightsConfirmed: resource.rightsConfirmed,
+    freshnessScore: resource.freshnessScore,
+    sellerName: resource.sellerName,
+    sellerHandle: resource.sellerHandle,
+    sellerId: resource.sellerId,
+    sellerStripeAccountEnvKey: resource.sellerStripeAccountEnvKey,
+    sellerStripeAccountId: resource.sellerStripeAccountId,
+    priceCents: resource.priceCents,
+    isPurchasable: resource.isPurchasable,
+    productStatus: resource.productStatus ?? "Published",
+    moderationFeedback: resource.moderationFeedback,
+    createdPath: "Manual upload",
+  };
+}
 
 export type BuyerPaymentLogEvent =
   | "checkout_created"
@@ -46,9 +85,12 @@ export async function resolveCheckoutProductById(productId: string) {
     listPersistedProducts(),
     findSupabaseProductRecordById(productId).catch(() => null),
   ]);
+  const demoProduct = demoResources.find((product) => product.id === productId);
 
   return (
-    syncedProduct ?? persistedProducts.find((product) => product.id === productId) ?? null
+    syncedProduct ??
+    persistedProducts.find((product) => product.id === productId) ??
+    (demoProduct ? toProductRecord(demoProduct) : null)
   );
 }
 

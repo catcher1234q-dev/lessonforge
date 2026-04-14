@@ -6,6 +6,7 @@ import {
   buildBuyerOrderFromPaymentIntent,
   productMatchesClientPayload,
 } from "@/lib/lessonforge/buyer-payment-utils";
+import { resolveCheckoutProductById } from "@/lib/lessonforge/buyer-payments";
 import type { ProductRecord } from "@/types";
 
 const baseProduct: ProductRecord = {
@@ -90,4 +91,14 @@ test("payment intent order builder creates a paid order without requiring checko
   assert.equal(order.stripePaymentIntentId, "pi_test_paid");
   assert.equal(order.productId, baseProduct.id);
   assert.equal(order.amountCents, 1900);
+});
+
+test("checkout product lookup falls back to demo marketplace products", async () => {
+  const product = await resolveCheckoutProductById("math-stripe-test-5");
+
+  assert.ok(product);
+  assert.equal(product?.title, "Stripe Test Math Warm-Up Pack");
+  assert.equal(product?.priceCents, 600);
+  assert.equal(product?.productStatus, "Published");
+  assert.equal(product?.isPurchasable, true);
 });
