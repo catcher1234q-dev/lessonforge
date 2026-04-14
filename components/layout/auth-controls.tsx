@@ -15,6 +15,18 @@ import { syncViewerCookie } from "@/lib/auth/viewer-sync";
 export function AuthControls() {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showLocalDemoControls, setShowLocalDemoControls] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const hostname = window.location.hostname.toLowerCase();
+    setShowLocalDemoControls(
+      hostname === "localhost" || hostname === "127.0.0.1",
+    );
+  }, []);
 
   useEffect(() => {
     if (!hasSupabaseEnv()) {
@@ -81,7 +93,16 @@ export function AuthControls() {
 
   if (!session) {
     if (!hasSupabaseEnv()) {
-      return <ViewerRoleControls />;
+      if (showLocalDemoControls) {
+        return <ViewerRoleControls />;
+      }
+
+      return (
+        <div className="flex items-center gap-3">
+          <AuthSheet triggerLabel="Log in" />
+          <AuthSheet triggerLabel="Create account" triggerVariant="primary" />
+        </div>
+      );
     }
 
     return (
