@@ -27,6 +27,21 @@ export function CheckoutPreviewContent({ viewer }: { viewer: Viewer }) {
   const [skipReminderNextTime, setSkipReminderNextTime] = useState(false);
   const [shouldShowReminder, setShouldShowReminder] = useState(true);
 
+  const normalizedPurchaseError = useMemo(() => {
+    if (!purchaseError) {
+      return null;
+    }
+
+    if (
+      purchaseError.includes("EROFS") ||
+      purchaseError.toLowerCase().includes("read-only file system")
+    ) {
+      return "Preview purchases cannot be completed on the hosted site until the real database setup is connected. Use this page as a final review step for now, then test the real Stripe checkout flow after database setup is finished.";
+    }
+
+    return purchaseError;
+  }, [purchaseError]);
+
   const details = useMemo(() => {
     const productId = searchParams.get("productId") || searchParams.get("title") || "teacher-resource";
     const title = searchParams.get("title") || "Teacher resource";
@@ -72,9 +87,9 @@ export function CheckoutPreviewContent({ viewer }: { viewer: Viewer }) {
           titleClassName="text-3xl sm:text-4xl"
         />
       </div>
-      {purchaseError ? (
+      {normalizedPurchaseError ? (
         <div className="mt-4 rounded-[1rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-800">
-          Purchase preview error: {purchaseError}
+          Purchase preview error: {normalizedPurchaseError}
         </div>
       ) : null}
 
