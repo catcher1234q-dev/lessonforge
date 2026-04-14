@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Teacher CEU Portal</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="portal-shell">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Professional Learning Dashboard</p>
+          <h1>Keep CEU records ready for PLBSE submission.</h1>
+          <p class="hero-text">
+            Teachers can sign in, organize CEU evidence, request review, and keep
+            every record in order before the final PLBSE upload.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#auth-panel">Open Teacher Access</a>
+            <a class="button button-secondary" href="#admin-panel">Open Admin Review</a>
+          </div>
+        </div>
+
+        <div class="hero-stack">
+          <aside id="auth-panel" class="hero-card auth-card" aria-labelledby="auth-title">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-label">Teacher Access</p>
+                <h2 id="auth-title">Sign in to your CEU workspace</h2>
+              </div>
+            </div>
+
+            <form id="auth-form" class="stack-form">
+              <label>
+                Teacher Name
+                <input id="auth-name" name="teacherName" type="text" placeholder="Jordan Smith" required />
+              </label>
+              <label>
+                School Email
+                <input id="auth-email" name="email" type="email" placeholder="teacher@school.org" required />
+              </label>
+              <label>
+                School or District
+                <input id="auth-school" name="school" type="text" placeholder="PLBSE District" required />
+              </label>
+              <label>
+                Password
+                <input id="auth-password" name="password" type="password" placeholder="Create or enter your password" required />
+              </label>
+              <button class="button button-primary" type="submit">Enter Portal</button>
+            </form>
+
+            <p class="auth-note">
+              Teachers must be provisioned by an admin before they can sign in.
+            </p>
+          </aside>
+
+          <aside id="admin-panel" class="hero-card auth-card" aria-labelledby="admin-auth-title">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-label">Admin Review</p>
+                <h2 id="admin-auth-title">Open the review workspace</h2>
+              </div>
+            </div>
+
+            <form id="admin-auth-form" class="stack-form">
+              <label>
+                Admin Name
+                <input id="admin-name" name="adminName" type="text" placeholder="PLBSE Coordinator" required />
+              </label>
+              <label>
+                Review Code
+                <input id="admin-code" name="code" type="password" placeholder="Enter admin code" required />
+              </label>
+              <button class="button button-secondary" type="submit">Enter Review Workspace</button>
+            </form>
+
+            <p class="auth-note">
+              The local default review code for this build is
+              <code>plbse-admin</code>.
+            </p>
+          </aside>
+        </div>
+      </section>
+
+      <section id="status-banner" class="status-banner" aria-live="polite"></section>
+
+      <section id="portal-content" class="portal-content" hidden>
+        <section class="dashboard-grid">
+          <article class="panel panel-accent" aria-labelledby="progress-title">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-label">Progress</p>
+                <h2 id="progress-title">Renewal Snapshot</h2>
+              </div>
+              <div class="heading-actions">
+                <span id="completion-badge" class="badge">In progress</span>
+                <button id="logout-button" class="button button-secondary" type="button">
+                  Sign Out
+                </button>
+              </div>
+            </div>
+
+            <div class="stats-grid">
+              <div class="stat-card">
+                <span class="stat-label">Target Hours</span>
+                <strong id="target-hours">120</strong>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label">Hours Logged</span>
+                <strong id="logged-hours">0</strong>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label">Files Ready</span>
+                <strong id="ready-files">0</strong>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label">Items Missing</span>
+                <strong id="missing-count">0</strong>
+              </div>
+            </div>
+
+            <div class="progress-block" aria-label="Completion progress">
+              <div class="progress-meta">
+                <span>CEU completion</span>
+                <span id="progress-percent">0%</span>
+              </div>
+              <div class="progress-bar">
+                <span id="progress-fill"></span>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel" aria-labelledby="teacher-profile-title">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-label">Teacher Profile</p>
+                <h2 id="teacher-profile-title">Renewal Details</h2>
+              </div>
+            </div>
+
+            <form id="profile-form" class="stack-form">
+              <label>
+                Teacher Name
+                <input id="teacher-name" name="teacherName" type="text" placeholder="Enter teacher name" />
+              </label>
+              <label>
+                School or District
+                <input id="school-name" name="schoolName" type="text" placeholder="PLBSE District" />
+              </label>
+              <label>
+                License Area
+                <input id="license-area" name="licenseArea" type="text" placeholder="Elementary, Math, Special Ed..." />
+              </label>
+              <label>
+                Renewal Cycle
+                <input id="renewal-cycle" name="renewalCycle" type="text" placeholder="2026 renewal" />
+              </label>
+              <label>
+                Target CEU Hours
+                <input id="hours-target-input" name="hoursTarget" type="number" min="1" value="120" />
+              </label>
+            </form>
+          </article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article id="upload-panel" class="panel panel-wide" aria-labelledby="upload-title">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-label">Upload Center</p>
+                <h2 id="upload-title">Add CEU Evidence</h2>
+              </div>
+            </div>
+
+            <form id="upload-form" class="upload-form">
+              <label>
+                Activity Title
+                <input id="activity-title" name="title" type="text" placeholder="Reading Academy Completion" required />
+              </label>
+              <label>
+                Provider
+                <input id="activity-provider" name="provider" type="text" placeholder="District PD, Region Service Center..." required />
+              </label>
+              <label>
+                Date Completed
+                <input id="activity-date" name="completedOn" type="date" required />
+              </label>
+              <label>
+                CEU Hours
+                <input id="activity-hours" name="hours" type="number" min="0.5" step="0.5" placeholder="6" required />
+              </label>
+              <label>
+                Evidence Type
+                <select id="activity-type" name="type">
+                  <option value="Certificate">Certificate</option>
+                  <option value="Transcript">Transcript</option>
+                  <option value="Workshop Agenda">Workshop Agenda</option>
+                  <option value="Other">Other</option>
+                </select>
+              </label>
+              <label class="upload-file-field">
+                Upload File
+                <input id="activity-file" name="file" type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.txt" required />
+              </label>
+              <label class="upload-notes">
+                Notes for PLBSE
+                <textarea id="activity-notes" name="notes" rows="4" placeholder="Add course number, audience, or any details that will help with final submission."></textarea>
+              </label>
+              <button id="save-activity-button" class="button button-primary" type="submit">
+                Save Activity
+              </button>
+            </form>
+          </article>
+
+          <article class="panel" aria-labelledby="checklist-title">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-label">Readiness</p>
+                <h2 id="checklist-title">PLBSE Checklist</h2>
+              </div>
+            </div>
+
+            <div id="checklist" class="checklist" aria-live="polite"></div>
+          </article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="panel panel-wide" aria-labelledby="records-title">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-label">Organized Records</p>
+                <h2 id="records-title">Saved Activities</h2>
+              </div>
+              <button id="download-summary" class="button button-secondary" type="button">
+                Download Summary
+              </button>
+            </div>
+
+            <div id="empty-state" class="empty-state">
+              No CEU activities have been saved yet. Add a certificate or transcript
+              to begin organizing records.
+            </div>
+
+            <div id="activity-list" class="activity-list" aria-live="polite"></div>
+          </article>
+
+          <article id="submission-panel" class="panel" aria-labelledby="submission-title">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-label">Submission View</p>
+                <h2 id="submission-title">PLBSE Packet Status</h2>
+              </div>
+            </div>
+
+            <div id="submission-status-card" class="submission-status-card"></div>
+            <div class="submission-actions">
+              <button id="request-review-button" class="button button-primary" type="button">
+                Request Admin Review
+              </button>
+              <a id="open-packet-button" class="button button-secondary" href="#" target="_blank" rel="noreferrer">
+                Open Packet
+              </a>
+            </div>
+            <div id="submission-summary" class="submission-summary"></div>
+          </article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="panel" aria-labelledby="password-title">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-label">Password</p>
+                <h2 id="password-title">Change Password</h2>
+              </div>
+            </div>
+
+            <form id="change-password-form" class="stack-form">
+              <label>
+                Current Password
+                <input id="current-password" name="currentPassword" type="password" placeholder="Enter current password" required />
+              </label>
+              <label>
+                New Password
+                <input id="new-password" name="newPassword" type="password" placeholder="Create a new password" required />
+              </label>
+              <button id="change-password-button" class="button button-secondary" type="submit">
+                Update Password
+              </button>
+            </form>
+          </article>
+        </section>
+      </section>
+
+      <section id="admin-content" class="portal-content" hidden>
+        <section class="dashboard-grid">
+          <article class="panel panel-accent panel-wide" aria-labelledby="admin-overview-title">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-label">Admin Workspace</p>
+                <h2 id="admin-overview-title">Submission Review Queue</h2>
+              </div>
+              <div class="heading-actions">
+                <span id="admin-summary-badge" class="badge">0 packets</span>
+                <button id="admin-logout-button" class="button button-secondary" type="button">
+                  Sign Out
+                </button>
+              </div>
+            </div>
+
+            <div class="admin-queue-toolbar">
+              <label>
+                Search Teachers
+                <input id="admin-queue-search" type="search" placeholder="Search by name, email, school, or license area" />
+              </label>
+              <label>
+                Submission Status
+                <select id="admin-status-filter">
+                  <option value="all">All Statuses</option>
+                  <option value="pending_review">Pending Review</option>
+                  <option value="needs_changes">Needs Changes</option>
+                  <option value="approved">Approved</option>
+                  <option value="submitted_to_plbse">Submitted to PLBSE</option>
+                  <option value="draft">Draft Packet</option>
+                </select>
+              </label>
+              <label>
+                Account State
+                <select id="admin-account-filter">
+                  <option value="all">All Accounts</option>
+                  <option value="active">Active Only</option>
+                  <option value="inactive">Inactive Only</option>
+                </select>
+              </label>
+              <label>
+                Follow-Up
+                <select id="admin-followup-filter">
+                  <option value="all">All Queue Items</option>
+                  <option value="action_needed">Needs Follow-Up</option>
+                  <option value="clear">No Immediate Follow-Up</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="heading-actions queue-actions">
+              <button id="export-queue-button" class="button button-secondary" type="button">
+                Export Queue
+              </button>
+            </div>
+
+            <div id="admin-queue-summary" class="admin-queue-summary"></div>
+            <div id="admin-queue" class="admin-queue"></div>
+          </article>
+
+          <article class="panel" aria-labelledby="admin-detail-title">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-label">Admin Actions</p>
+                <h2 id="admin-detail-title">Review Selected Packet</h2>
+              </div>
+            </div>
+
+            <div id="admin-empty" class="empty-state">
+              Select a teacher packet from the queue to review notes, status, and
+              next steps.
+            </div>
+
+            <form id="admin-review-form" class="stack-form" hidden>
+              <label>
+                Teacher Packet
+                <input id="admin-selected-teacher" type="text" readonly />
+              </label>
+              <label>
+                Review Status
+                <select id="admin-status-select" name="status">
+                  <option value="pending_review">Pending Review</option>
+                  <option value="needs_changes">Needs Changes</option>
+                  <option value="approved">Approved</option>
+                  <option value="submitted_to_plbse">Submitted to PLBSE</option>
+                </select>
+              </label>
+              <label>
+                Admin Notes
+                <textarea id="admin-review-notes" name="reviewNotes" rows="5" placeholder="Add guidance, corrections, or upload confirmation notes."></textarea>
+              </label>
+              <label>
+                Message Template
+                <select id="admin-reminder-template">
+                  <option value="follow_up">Standard Follow-Up</option>
+                  <option value="needs_changes">Needs Changes Notice</option>
+                  <option value="draft_incomplete">Incomplete Draft Reminder</option>
+                  <option value="review_overdue">Review Delay Update</option>
+                </select>
+              </label>
+              <label>
+                Reminder Message
+                <textarea id="admin-reminder-message" name="reminderMessage" rows="6" placeholder="Generate or write a follow-up note for this teacher."></textarea>
+              </label>
+              <div class="submission-actions">
+                <button id="generate-reminder-button" class="button button-secondary" type="button">
+                  Generate Reminder
+                </button>
+                <button id="copy-reminder-button" class="button button-secondary" type="button">
+                  Copy Reminder
+                </button>
+                <a id="email-reminder-button" class="button button-secondary" href="#" target="_blank" rel="noreferrer">
+                  Open Email Draft
+                </a>
+                <button id="print-reminder-button" class="button button-secondary" type="button">
+                  Print Letter
+                </button>
+                <button id="log-reminder-button" class="button button-secondary" type="button">
+                  Log Reminder
+                </button>
+              </div>
+              <div>
+                <p class="panel-label">Reminder Snapshot</p>
+                <div id="admin-reminder-stats" class="admin-reminder-summary"></div>
+              </div>
+              <div>
+                <p class="panel-label">Reminder History</p>
+                <div id="admin-reminder-history" class="audit-log"></div>
+              </div>
+              <button id="save-review-button" class="button button-primary" type="submit">
+                Save Review Update
+              </button>
+              <a id="admin-open-packet-button" class="button button-secondary" href="#" target="_blank" rel="noreferrer">
+                Open Packet
+              </a>
+            </form>
+          </article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="panel panel-wide" aria-labelledby="admin-manage-title">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-label">User Management</p>
+                <h2 id="admin-manage-title">Provision Teacher Access</h2>
+              </div>
+            </div>
+
+            <form id="admin-create-teacher-form" class="upload-form">
+              <label>
+                Teacher Name
+                <input name="teacherName" type="text" placeholder="Jordan Smith" required />
+              </label>
+              <label>
+                School Email
+                <input name="email" type="email" placeholder="teacher@school.org" required />
+              </label>
+              <label>
+                School or District
+                <input name="school" type="text" placeholder="PLBSE District" required />
+              </label>
+              <label>
+                Initial Password
+                <input name="password" type="password" placeholder="Create a starting password" required />
+              </label>
+              <button id="create-teacher-button" class="button button-primary" type="submit">
+                Create Teacher Account
+              </button>
+            </form>
+          </article>
+
+          <article class="panel" aria-labelledby="admin-reset-title">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-label">Password Reset</p>
+                <h2 id="admin-reset-title">Reset Selected Teacher</h2>
+              </div>
+            </div>
+
+            <form id="admin-reset-password-form" class="stack-form">
+              <label>
+                Selected Teacher
+                <input id="admin-reset-teacher" type="text" readonly />
+              </label>
+              <label>
+                New Password
+                <input id="admin-reset-password" name="password" type="password" placeholder="Enter a replacement password" required />
+              </label>
+              <button id="reset-password-button" class="button button-secondary" type="submit">
+                Reset Password
+              </button>
+            </form>
+
+            <div class="submission-actions top-gap">
+              <button id="toggle-account-button" class="button button-tertiary" type="button">
+                Deactivate Account
+              </button>
+            </div>
+          </article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="panel panel-wide" aria-labelledby="audit-title">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-label">Audit Trail</p>
+                <h2 id="audit-title">Recent Security And Workflow Activity</h2>
+              </div>
+              <div class="heading-actions">
+                <select id="audit-filter" class="audit-filter">
+                  <option value="all">All Events</option>
+                  <option value="account">Account Events</option>
+                  <option value="password">Password Events</option>
+                  <option value="submission">Submission Events</option>
+                  <option value="reminder">Reminder Events</option>
+                </select>
+                <button id="export-audit-button" class="button button-secondary" type="button">
+                  Export Audit
+                </button>
+              </div>
+            </div>
+
+            <div id="audit-log" class="audit-log"></div>
+          </article>
+        </section>
+      </section>
+    </main>
+
+    <template id="activity-template">
+      <article class="activity-card">
+        <div class="activity-main">
+          <div class="activity-header">
+            <div>
+              <h3 class="activity-title"></h3>
+              <p class="activity-provider"></p>
+            </div>
+            <span class="activity-hours"></span>
+          </div>
+          <div class="activity-meta"></div>
+          <p class="activity-notes"></p>
+        </div>
+        <div class="activity-side">
+          <a class="button button-secondary open-file" href="#" target="_blank" rel="noreferrer">
+            View File
+          </a>
+          <button class="button button-tertiary delete-activity" type="button">Remove</button>
+        </div>
+      </article>
+    </template>
+
+    <template id="admin-row-template">
+      <article class="admin-row">
+        <div class="admin-row-main">
+          <div class="admin-row-header">
+            <div>
+              <h3 class="admin-row-title"></h3>
+              <p class="admin-row-meta"></p>
+            </div>
+            <span class="admin-row-status badge"></span>
+          </div>
+          <p class="admin-row-summary"></p>
+        </div>
+        <button class="button button-secondary admin-select-button" type="button">
+          Review Packet
+        </button>
+      </article>
+    </template>
+
+    <script type="module" src="app.mjs"></script>
+  </body>
+</html>

@@ -1,0 +1,184 @@
+"use client";
+
+import { Sparkles } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
+import { AuthControls } from "@/components/layout/auth-controls";
+import { PersistenceHeaderBadge } from "@/components/layout/persistence-header-badge";
+import type { PrismaCutoverReport } from "@/lib/lessonforge/prisma-cutover";
+
+type HeaderLink = {
+  description?: string;
+  href: string;
+  label: string;
+};
+
+type SiteHeaderShellProps = {
+  productName: string;
+  shortlistCount: number;
+  primaryLinks: HeaderLink[];
+  secondaryLinks: HeaderLink[];
+  persistenceBadgeHref: string;
+  persistenceReport: PrismaCutoverReport | null;
+  persistenceSummary: string | null;
+};
+
+export function SiteHeaderShell({
+  productName,
+  shortlistCount,
+  primaryLinks,
+  secondaryLinks,
+  persistenceBadgeHref,
+  persistenceReport,
+  persistenceSummary,
+}: SiteHeaderShellProps) {
+  const [isCondensed, setIsCondensed] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsCondensed(window.scrollY > 36);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const hasPersistenceBadge = persistenceReport && persistenceSummary;
+
+  return (
+    <header
+      className={`sticky top-0 z-30 border-b border-white/70 bg-white/80 backdrop-blur-xl transition-all duration-300 ${
+        isCondensed ? "shadow-soft-xl" : ""
+      }`}
+    >
+      <div
+        className={`mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8 transition-all duration-300 ${
+          isCondensed ? "py-3" : "py-4"
+        }`}
+      >
+        <div
+          className={`flex items-start justify-between gap-6 transition-all duration-300 ${
+            isCondensed ? "items-center" : ""
+          }`}
+        >
+          <Link className="flex min-w-0 items-center gap-3" href="/">
+            <div
+              className={`flex shrink-0 items-center justify-center rounded-2xl bg-brand text-white shadow-lg shadow-brand/20 transition-all duration-300 ${
+                isCondensed ? "h-9 w-9" : "h-10 w-10"
+              }`}
+            >
+              <Sparkles className={`${isCondensed ? "h-4 w-4" : "h-5 w-5"}`} />
+            </div>
+            <div className="min-w-0">
+              <p
+                className={`font-[family-name:var(--font-display)] leading-none tracking-[-0.03em] text-ink transition-all duration-300 ${
+                  isCondensed ? "text-[1.35rem]" : "text-[1.7rem]"
+                }`}
+              >
+                {productName}
+              </p>
+              <p
+                className={`mt-1 hidden overflow-hidden text-sm text-ink-muted transition-all duration-300 lg:block ${
+                  isCondensed ? "max-h-0 opacity-0" : "max-h-10 opacity-100"
+                }`}
+              >
+                Build lessons. Sell smarter. Earn more.
+              </p>
+            </div>
+          </Link>
+
+          <div className="flex min-w-0 flex-1 flex-col items-end gap-3">
+            <div
+              className={`hidden flex-wrap items-center justify-end gap-x-5 gap-y-2 text-sm text-ink-soft transition-all duration-300 xl:flex ${
+                isCondensed
+                  ? "max-h-0 -translate-y-2 overflow-hidden opacity-0 pointer-events-none"
+                  : "max-h-24 translate-y-0 opacity-100"
+              }`}
+            >
+              {secondaryLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  className="whitespace-nowrap transition hover:text-ink"
+                  href={link.href}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              {hasPersistenceBadge ? (
+                <PersistenceHeaderBadge
+                  href={persistenceBadgeHref}
+                  initialReport={persistenceReport}
+                  initialSummary={persistenceSummary}
+                />
+              ) : null}
+            </div>
+
+            <div className="flex items-center gap-3">
+              {hasPersistenceBadge ? (
+                <div className="xl:hidden">
+                  <PersistenceHeaderBadge
+                    href={persistenceBadgeHref}
+                    initialReport={persistenceReport}
+                    initialSummary={persistenceSummary}
+                  />
+                </div>
+              ) : null}
+              <AuthControls />
+            </div>
+          </div>
+        </div>
+
+        <div
+          className={`hidden items-center justify-between gap-4 overflow-hidden transition-all duration-300 lg:flex ${
+            isCondensed
+              ? "mt-0 max-h-0 -translate-y-2 opacity-0 pointer-events-none"
+              : "mt-4 max-h-24 translate-y-0 opacity-100"
+          }`}
+        >
+          <nav className="flex min-w-0 flex-wrap items-center gap-2 text-sm text-ink">
+            {primaryLinks.map((link) => (
+              <Link
+                key={link.href}
+                className="inline-flex items-center whitespace-nowrap rounded-full bg-surface-muted px-4 py-2 font-medium transition hover:bg-brand-soft hover:text-brand"
+                href={link.href}
+              >
+                {link.label === "Saved items" ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span>{link.label}</span>
+                    {shortlistCount > 0 ? (
+                      <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-brand px-2 py-0.5 text-xs font-semibold text-white">
+                        {shortlistCount}
+                      </span>
+                    ) : null}
+                  </span>
+                ) : (
+                  link.label
+                )}
+              </Link>
+            ))}
+          </nav>
+
+        </div>
+
+        <div
+          className={`flex items-center gap-3 overflow-hidden transition-all duration-300 lg:hidden ${
+            isCondensed
+              ? "mt-0 max-h-0 -translate-y-2 opacity-0 pointer-events-none"
+              : "mt-3 max-h-24 translate-y-0 opacity-100"
+          }`}
+        >
+          {hasPersistenceBadge ? (
+            <PersistenceHeaderBadge
+              href={persistenceBadgeHref}
+              initialReport={persistenceReport}
+              initialSummary={persistenceSummary}
+            />
+          ) : null}
+        </div>
+      </div>
+    </header>
+  );
+}

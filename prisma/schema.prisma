@@ -1,0 +1,571 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  USER
+}
+
+enum PlanKey {
+  STARTER
+  BASIC
+  PRO
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  PAUSED
+  INCOMPLETE
+}
+
+enum RolloverPolicy {
+  NONE
+}
+
+enum UsageEntryType {
+  DEBIT
+  CREDIT
+  REFUND
+  ADJUSTMENT
+}
+
+enum AiAction {
+  TITLE_SUGGESTION
+  DESCRIPTION_REWRITE
+  STANDARDS_SCAN
+  THUMBNAIL_GENERATION
+  PREVIEW_GENERATION
+}
+
+enum AiJobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum ProductStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  FLAGGED
+  REJECTED
+  REMOVED
+}
+
+enum ResourceType {
+  LESSON_PLAN
+  WORKSHEET
+  ASSESSMENT
+  QUIZ
+  PROJECT
+  SLIDE_DECK
+  CENTER
+  WARM_UP
+  EXIT_TICKET
+  STUDY_GUIDE
+  UNIT_PLAN
+  LAB
+  GRAPHIC_ORGANIZER
+  INTERVENTION_RESOURCE
+  SPED_RESOURCE
+  ELL_RESOURCE
+  HOMESCHOOL_RESOURCE
+  SUPPLEMENTAL_TOOL
+}
+
+enum LicenseType {
+  SINGLE_CLASSROOM
+  MULTIPLE_CLASSROOM
+  SCHOOLWIDE
+  DISTRICTWIDE
+}
+
+enum ProductAssetType {
+  PDF
+  DOCX
+  PPTX
+  XLSX
+  IMAGE
+  ZIP
+}
+
+enum ProductLinkType {
+  GOOGLE_DOCS
+  GOOGLE_SLIDES
+  GOOGLE_FORMS
+  VIDEO
+}
+
+enum ValidationStatus {
+  PENDING
+  VALID
+  INVALID
+  BROKEN
+}
+
+enum ReviewStatus {
+  VISIBLE
+  HIDDEN
+  FLAGGED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FULFILLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  FAILED
+  CANCELED
+}
+
+enum PayoutStatus {
+  PENDING
+  IN_TRANSIT
+  PAID
+  FAILED
+}
+
+enum RefundStatus {
+  SUBMITTED
+  SELLER_RESPONDED
+  APPROVED
+  DENIED
+  PARTIALLY_RESOLVED
+}
+
+enum ReportCategory {
+  BROKEN_FILE
+  COPYRIGHT
+  MISLEADING_LISTING
+  LOW_QUALITY
+  SPAM
+  ACCESS_ISSUE
+}
+
+enum ModerationStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum NotificationType {
+  ORDER_UPDATE
+  PAYOUT_UPDATE
+  REVIEW_RECEIVED
+  REFUND_UPDATE
+  MODERATION_UPDATE
+  AI_USAGE_ALERT
+}
+
+model User {
+  id                    String              @id @default(cuid())
+  email                 String              @unique
+  name                  String?
+  role                  UserRole            @default(USER)
+  avatarUrl             String?
+  sellerProfile         SellerProfile?
+  subscription          Subscription?
+  creditBalance         CreditBalance?
+  products              Product[]           @relation("SellerProducts")
+  favorites             Favorite[]
+  buyerOrders           Order[]             @relation("BuyerOrders")
+  reviews               Review[]
+  reports               Report[]            @relation("UserReports")
+  refundRequests        RefundRequest[]     @relation("BuyerRefundRequests")
+  refundResponses       RefundRequest[]     @relation("SellerRefundResponses")
+  notifications         Notification[]
+  usageLedgerEntries    UsageLedger[]
+  aiJobs                AiJob[]
+  demoSessions          DemoSession[]
+  licenseAssignments    LicenseAssignment[] @relation("AssignedLicenseUsers")
+  createdAdminAuditLogs AdminAuditLog[]     @relation("AuditActor")
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+}
+
+model SellerProfile {
+  id                         String    @id @default(cuid())
+  userId                     String    @unique
+  storeName                  String
+  storeHandle                String    @unique
+  bio                        String?
+  onboardingCompletedAt      DateTime?
+  stripeAccountId            String?   @unique
+  stripeOnboardingStatus     String?
+  stripeChargesEnabled       Boolean   @default(false)
+  stripePayoutsEnabled       Boolean   @default(false)
+  supportEmail               String?
+  averageRating              Float?
+  totalSalesCount            Int       @default(0)
+  totalRevenueCents          Int       @default(0)
+  conversionRate             Float?
+  user                       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payouts                    Payout[]
+  products                   Product[]
+  refundRequests             RefundRequest[] @relation("SellerRefundRequests")
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+}
+
+model Subscription {
+  id                     String             @id @default(cuid())
+  userId                 String             @unique
+  planKey                PlanKey
+  status                 SubscriptionStatus
+  stripeSubscriptionId   String?            @unique
+  currentPeriodStart     DateTime?
+  currentPeriodEnd       DateTime?
+  canceledAt             DateTime?
+  rolloverPolicy         RolloverPolicy     @default(NONE)
+  monthlyCreditAllowance Int
+  hardMonthlyCreditCap   Int
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+}
+
+model CreditBalance {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  availableCredits       Int      @default(0)
+  reservedCredits        Int      @default(0)
+  cycleStartedAt         DateTime?
+  cycleEndsAt            DateTime?
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model UsageLedger {
+  id                 String         @id @default(cuid())
+  userId             String
+  subscriptionId     String?
+  aiJobId            String?
+  entryType          UsageEntryType
+  action             AiAction
+  creditsUsed        Int            @default(0)
+  refundedCredits    Int            @default(0)
+  idempotencyKey     String         @unique
+  inputCharacters    Int?
+  inputFileSizeBytes Int?
+  providerName       String?
+  providerCostCents  Int?
+  reason             String?
+  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aiJob              AiJob?         @relation(fields: [aiJobId], references: [id], onDelete: SetNull)
+  createdAt          DateTime       @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model Product {
+  id                    String            @id @default(cuid())
+  sellerId              String
+  sellerProfileId       String?
+  slug                  String            @unique
+  title                 String
+  shortDescription      String
+  fullDescription       String
+  whatIsIncluded        String?
+  resourceType          ResourceType
+  status                ProductStatus     @default(DRAFT)
+  primaryLicenseType    LicenseType       @default(SINGLE_CLASSROOM)
+  basePriceCents        Int
+  thumbnailUrl          String?
+  previewImageUrls      String[]
+  previewIncluded       Boolean           @default(false)
+  thumbnailIncluded     Boolean           @default(false)
+  rightsConfirmed       Boolean           @default(false)
+  fileTypesSummary      String[]
+  subject               String
+  gradeBand             String
+  standardsSummary      String?
+  isAiAssisted          Boolean           @default(false)
+  freshnessScore        Float             @default(0)
+  boostScore            Float             @default(0)
+  conversionRate        Float?
+  salesVelocityScore    Float?
+  reviewQualityScore    Float?
+  refundPenaltyScore    Float             @default(0)
+  reportPenaltyScore    Float             @default(0)
+  moderationNotes       String?
+  publishedAt           DateTime?
+  lastReviewedAt        DateTime?
+  seller                User              @relation("SellerProducts", fields: [sellerId], references: [id], onDelete: Cascade)
+  sellerProfile         SellerProfile?    @relation(fields: [sellerProfileId], references: [id], onDelete: SetNull)
+  assets                ProductAsset[]
+  links                 ProductLink[]
+  standards             ProductStandard[]
+  orderItems            OrderItem[]
+  reviews               Review[]
+  favorites             Favorite[]
+  reports               Report[]
+  aiJobs                AiJob[]
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  @@index([sellerId, status])
+  @@index([status, publishedAt])
+}
+
+model ProductAsset {
+  id                 String           @id @default(cuid())
+  productId          String
+  assetType          ProductAssetType
+  storageKey         String
+  fileName           String
+  originalUrl        String?
+  previewUrl         String?
+  isPreview          Boolean          @default(false)
+  mimeType           String?
+  fileSizeBytes      Int
+  versionNumber      Int              @default(1)
+  checksum           String?
+  uploadedAt         DateTime         @default(now())
+  product            Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, versionNumber])
+}
+
+model ProductLink {
+  id                   String           @id @default(cuid())
+  productId            String
+  linkType             ProductLinkType
+  label                String
+  url                  String
+  lastValidatedAt      DateTime?
+  lastValidationStatus ValidationStatus @default(PENDING)
+  product              Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Standard {
+  id            String            @id @default(cuid())
+  code          String            @unique
+  framework     String
+  subject       String
+  gradeBand     String
+  description   String
+  products      ProductStandard[]
+  createdAt     DateTime          @default(now())
+}
+
+model ProductStandard {
+  id                  String    @id @default(cuid())
+  productId           String
+  standardId          String
+  confidencePercent   Int?
+  source              String
+  isSellerApproved    Boolean   @default(false)
+  product             Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  standard            Standard  @relation(fields: [standardId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, standardId])
+}
+
+model Review {
+  id                String       @id @default(cuid())
+  productId         String
+  buyerId           String
+  orderItemId       String       @unique
+  rating            Int
+  title             String?
+  body              String?
+  status            ReviewStatus @default(VISIBLE)
+  verifiedPurchase  Boolean      @default(true)
+  product           Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyer             User         @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  orderItem         OrderItem    @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+model Favorite {
+  id         String   @id @default(cuid())
+  userId     String
+  productId  String
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+model Order {
+  id                     String       @id @default(cuid())
+  buyerId                String
+  status                 OrderStatus  @default(PENDING)
+  currency               String       @default("usd")
+  subtotalCents          Int
+  totalCents             Int
+  totalAmount            Int
+  platformFee            Int
+  sellerEarnings         Int
+  salesTaxAmount         Int               @default(0)
+  taxState               String?
+  sellerShareCents       Int
+  platformShareCents     Int
+  stripeCheckoutSessionId String?     @unique
+  stripePaymentIntentId  String?      @unique
+  paidAt                 DateTime?
+  buyer                  User         @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Cascade)
+  items                  OrderItem[]
+  refundRequests         RefundRequest[]
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+
+  @@index([buyerId, status])
+}
+
+model OrderItem {
+  id                    String        @id @default(cuid())
+  orderId               String
+  productId             String
+  sellerId              String
+  licenseType           LicenseType
+  licenseSeatCount      Int           @default(1)
+  unitPriceCents        Int
+  sellerShareCents      Int
+  platformShareCents    Int
+  latestEligibleVersion Int?
+  order                 Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product               Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+  review                Review?
+  licenseAssignments    LicenseAssignment[]
+  createdAt             DateTime      @default(now())
+
+  @@index([orderId, productId])
+}
+
+model Payout {
+  id                    String        @id @default(cuid())
+  sellerProfileId       String
+  orderId               String?
+  stripeTransferId      String?       @unique
+  amountCents           Int
+  status                PayoutStatus  @default(PENDING)
+  paidAt                DateTime?
+  sellerProfile         SellerProfile @relation(fields: [sellerProfileId], references: [id], onDelete: Cascade)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+}
+
+model RefundRequest {
+  id                    String           @id @default(cuid())
+  orderId               String
+  orderItemId           String?
+  buyerId               String
+  sellerProfileId       String?
+  sellerResponderId     String?
+  status                RefundStatus     @default(SUBMITTED)
+  requestedAmountCents  Int?
+  resolvedAmountCents   Int?
+  reason                String
+  sellerResponse        String?
+  adminResolutionNotes  String?
+  submittedAt           DateTime         @default(now())
+  resolvedAt            DateTime?
+  order                 Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  buyer                 User             @relation("BuyerRefundRequests", fields: [buyerId], references: [id], onDelete: Cascade)
+  sellerProfile         SellerProfile?   @relation("SellerRefundRequests", fields: [sellerProfileId], references: [id], onDelete: SetNull)
+  sellerResponder       User?            @relation("SellerRefundResponses", fields: [sellerResponderId], references: [id], onDelete: SetNull)
+}
+
+model Report {
+  id                  String            @id @default(cuid())
+  productId           String
+  reporterId          String
+  category            ReportCategory
+  status              ModerationStatus  @default(OPEN)
+  details             String
+  resolvedAt          DateTime?
+  product             Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  reporter            User              @relation("UserReports", fields: [reporterId], references: [id], onDelete: Cascade)
+  createdAt           DateTime          @default(now())
+}
+
+model Notification {
+  id           String           @id @default(cuid())
+  userId       String
+  type         NotificationType
+  title        String
+  body         String
+  readAt       DateTime?
+  actionUrl    String?
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime         @default(now())
+}
+
+model AdminAuditLog {
+  id              String    @id @default(cuid())
+  actorUserId     String?
+  action          String
+  targetType      String
+  targetId        String
+  metadataJson    Json?
+  actor           User?     @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime  @default(now())
+}
+
+model DemoSession {
+  id             String   @id @default(cuid())
+  userId         String?
+  mode           String
+  expiresAt      DateTime
+  metadataJson   Json?
+  user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt      DateTime @default(now())
+}
+
+model SystemSetting {
+  id                     String   @id @default(cuid())
+  maintenanceModeEnabled Boolean  @default(false)
+  maintenanceMessage     String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model LicenseAssignment {
+  id                  String      @id @default(cuid())
+  orderItemId         String
+  assignedToUserId    String?
+  assignedEmail       String?
+  assignedAt          DateTime?
+  redeemedAt          DateTime?
+  orderItem           OrderItem   @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  assignedToUser      User?       @relation("AssignedLicenseUsers", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+}
+
+model AiJob {
+  id                    String         @id @default(cuid())
+  userId                String
+  productId             String?
+  action                AiAction
+  status                AiJobStatus    @default(QUEUED)
+  inputSnapshotJson     Json?
+  outputSnapshotJson    Json?
+  failureReason         String?
+  providerName          String?
+  idempotencyKey        String         @unique
+  startedAt             DateTime?
+  completedAt           DateTime?
+  product               Product?       @relation(fields: [productId], references: [id], onDelete: SetNull)
+  user                  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usageLedgerEntries    UsageLedger[]
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  @@index([userId, status])
+}

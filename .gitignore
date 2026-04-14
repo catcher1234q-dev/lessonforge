@@ -1,0 +1,16 @@
+.next
+node_modules
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+dist
+build
+coverage
+.vercel
+test-results
+.playwright-cli
+*.log
+tsconfig.tsbuildinfo
