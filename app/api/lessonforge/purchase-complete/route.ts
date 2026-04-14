@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 
 import { hasAppSessionForEmail } from "@/lib/auth/app-session";
 import { getCurrentViewer } from "@/lib/auth/viewer";
+import { hasRealDatabaseUrl } from "@/lib/lessonforge/prisma-preflight";
 import { handlePurchaseRequest } from "@/lib/lessonforge/api-handlers";
 import { saveOrder } from "@/lib/lessonforge/repository";
+import { getPersistenceMode } from "@/lib/prisma/client";
 
 function buildCheckoutReturnParams(formData: FormData) {
   const params = new URLSearchParams();
@@ -39,6 +41,11 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const viewer = await getCurrentViewer();
   const params = buildCheckoutReturnParams(formData);
+  const persistenceMode = getPersistenceMode();
+  const hostedPreviewWithoutWritableStorage =
+    process.env.VERCEL === "1" &&
+    persistenceMode !== "prisma" &&
+    !hasRealDatabaseUrl();
 
   if (!(await hasAppSessionForEmail(viewer.email))) {
     params.set("purchaseError", "Sign in to complete this purchase.");
@@ -72,6 +79,17 @@ export async function POST(request: Request) {
       undefined,
   };
 
+  if (hostedPreviewWithoutWritableStorage) {
+    params.set(
+      "purchaseError",
+      "Preview purchases are not enabled on the live site until the real database setup is connected. Use real Stripe checkout after Supabase and database setup, or keep using this page just as a final review step.",
+    );
+    return NextResponse.redirect(
+      new URL(`/checkout-preview?${params.toString()}`, request.url),
+      303,
+    );
+  }
+
   const response = await handlePurchaseRequest(body, {
     saveOrder,
   });
@@ -99,7 +117,11 @@ export async function POST(request: Request) {
     "error" in response.body && typeof response.body.error === "string"
       ? response.body.error
       : "Unable to complete purchase.";
-  params.set("purchaseError", error);
+  const normalizedError =
+    error.includes("EROFS") || error.includes("read-only file system")
+      ? "Preview purchases cannot save on the hosted site yet because the live database is still not connected. Finish the database setup first, then use real Stripe checkout for the payment test."
+      : error;
+  params.set("purchaseError", normalizedError);
 
   return NextResponse.redirect(
     new URL(`/checkout-preview?${params.toString()}`, request.url),
