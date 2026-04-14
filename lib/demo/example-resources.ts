@@ -6,6 +6,40 @@ import type {
 
 export const demoResources: DemoResource[] = [
   {
+    id: "math-stripe-test-5",
+    title: "Stripe Test Math Warm-Up Pack",
+    subject: "Math",
+    gradeBand: "Grade 5",
+    standardsTag: "CCSS.MATH.CONTENT.5.NF.B.4",
+    updatedAt: "Ready for payment testing",
+    format: "Warm-Up Pack",
+    summary: "A simple published math listing created for checkout and Stripe test purchases.",
+    shortDescription:
+      "Use this listing to test buyer checkout, Stripe payment confirmation, and library delivery.",
+    fullDescription:
+      "This published math product is intentionally simple so it is easy to use during Stripe test mode. It gives you one clear product page, one clear price, and one clear buyer path for checking checkout creation, webhook confirmation, and post-purchase library access.",
+    demoOnly: false,
+    sellerName: "Avery Johnson",
+    sellerHandle: "@teachwithavery",
+    sellerId: "avery-johnson",
+    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_AVERY",
+    priceCents: 600,
+    isPurchasable: true,
+    previewIncluded: true,
+    thumbnailIncluded: true,
+    rightsConfirmed: true,
+    assetVersionNumber: 1,
+    resourceType: "Warm-Up Pack",
+    licenseType: "Single classroom",
+    fileTypes: ["PDF", "DOCX"],
+    includedItems: [
+      "10 math warm-up pages",
+      "teacher answer key",
+      "quick reteach notes",
+      "print-ready PDF and editable file",
+    ],
+  },
+  {
     id: "math-intervention-5",
     title: "Math Intervention Studio",
     subject: "Math",
