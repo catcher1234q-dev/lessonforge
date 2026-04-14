@@ -21,6 +21,8 @@ export function AuthSheet({
   triggerLabel = "Log in",
   triggerVariant = "ghost",
 }: AuthSheetProps) {
+  const authSetupMessage =
+    "Login is not connected yet. The site owner still needs to finish the Supabase setup before accounts can be created.";
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -46,9 +48,7 @@ export function AuthSheet({
 
   async function handleOAuth(provider: Provider) {
     if (!hasSupabaseEnv()) {
-      setError(
-        "Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to enable sign-in.",
-      );
+      setError(authSetupMessage);
       return;
     }
 
@@ -81,9 +81,7 @@ export function AuthSheet({
 
   async function handleMagicLink() {
     if (!hasSupabaseEnv()) {
-      setError(
-        "Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to enable sign-in.",
-      );
+      setError(authSetupMessage);
       return;
     }
 

@@ -185,10 +185,10 @@ export function AccountOverviewClient() {
     return (
       <div className="rounded-[2rem] border border-ink/5 bg-white p-8 shadow-soft-xl">
         <SectionIntro
-          body="This account page is reserved for real signed-in users once Supabase sign-in is configured."
+          body="This account page will open after the site owner finishes the Supabase sign-in setup. Public browsing and product discovery still work while account access is being connected."
           eyebrow="Account access"
           level="h1"
-          title="Sign-in needs to be enabled first."
+          title="Accounts are being connected."
           titleClassName="text-4xl"
         />
         <div className="mt-6 flex flex-wrap gap-3">

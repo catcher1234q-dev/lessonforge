@@ -141,10 +141,10 @@ export function AppAccessGate({ area, children }: AppAccessGateProps) {
     return (
       <div className="rounded-[2rem] border border-ink/5 bg-white p-8 shadow-soft-xl">
         <SectionIntro
-          body={`This ${area === "buyer" ? "buyer" : "seller"} area is meant for real signed-in accounts once Supabase sign-in is configured.`}
+          body={`This ${area === "buyer" ? "buyer" : "seller"} area will open after the site owner finishes the Supabase sign-in setup. Public browsing still works while account access is being connected.`}
           eyebrow="Account access"
           level="h1"
-          title="Sign-in needs to be enabled first."
+          title="Accounts are being connected."
           titleClassName="text-4xl"
         />
         <div className="mt-6 flex flex-wrap gap-3">

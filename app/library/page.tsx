@@ -112,7 +112,7 @@ export default async function LibraryPage({
             <div className="flex flex-col gap-8 xl:flex-row xl:items-start xl:justify-between">
               <div className="max-w-3xl">
                 <SectionIntro
-                  body={`${viewer.name} can reopen files, revisit listings, and handle updates or support from one buyer workspace.`}
+                  body="Reopen files, revisit listings, and handle updates or support from one buyer workspace."
                   eyebrow="Your purchases"
                   level="h1"
                   title="Your files, updates, and support in one library."

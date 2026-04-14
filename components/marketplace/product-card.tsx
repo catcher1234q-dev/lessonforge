@@ -2,6 +2,7 @@ import { ArrowUpRight, BadgeCheck, Star } from "lucide-react";
 import Link from "next/link";
 
 import { HighlightChip } from "@/components/buyer/highlight-chip";
+import { CheckoutButton } from "@/components/marketplace/checkout-button";
 import { FavoriteFormButton } from "@/components/marketplace/favorite-form-button";
 import { secondaryActionLinkClassName } from "@/components/shared/secondary-action-link";
 import { buildCheckoutPreviewHref } from "@/lib/lessonforge/checkout-preview";
@@ -309,13 +310,14 @@ export function ProductCard({
               </p>
             </div>
             <div className="flex min-w-[140px] flex-col items-end gap-2">
-              <Link
-                className={`inline-flex items-center justify-center gap-2 rounded-full ${featured ? "px-5 py-2.5" : "px-4 py-2.5"} bg-brand text-sm font-semibold text-white transition hover:bg-brand-700`}
-                href={checkoutHref}
-                data-testid={buyTestId}
-              >
-                Buy now
-              </Link>
+              <CheckoutButton
+                className={`inline-flex items-center justify-center gap-2 rounded-full ${featured ? "px-5 py-2.5" : "px-4 py-2.5"} bg-brand text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70`}
+                fallbackHref={checkoutHref}
+                label="Buy now"
+                productId={listing.id}
+                returnTo={checkoutReturnTo ?? listingHref}
+                testId={buyTestId}
+              />
               <Link
                 className={secondaryActionLinkClassName("px-3.5 py-2")}
                 href={listingHref}

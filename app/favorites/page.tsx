@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { AppAccessGate } from "@/components/account/app-access-gate";
 import { HighlightChip } from "@/components/buyer/highlight-chip";
+import { CheckoutButton } from "@/components/marketplace/checkout-button";
 import { ProductCard } from "@/components/marketplace/product-card";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -525,9 +526,9 @@ export default async function FavoritesPage({
                           >
                             Open full details
                           </Link>
-                          <Link
-                            className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-slate-300"
-                            href={buildCheckoutPreviewHref({
+                          <CheckoutButton
+                            className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-70"
+                            fallbackHref={buildCheckoutPreviewHref({
                               platformFeeCents: Math.round(listing.priceCents * 0.4),
                               priceCents: listing.priceCents,
                               productId: listing.id,
@@ -537,9 +538,10 @@ export default async function FavoritesPage({
                               teacherPayoutCents: Math.round(listing.priceCents * 0.6),
                               title: listing.title,
                             })}
-                          >
-                            Buy from shortlist
-                          </Link>
+                            label="Buy from shortlist"
+                            productId={listing.id}
+                            returnTo={returnTo}
+                          />
                         </div>
                       </article>
                     );

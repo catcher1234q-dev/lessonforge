@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { FavoriteFormButton } from "@/components/marketplace/favorite-form-button";
+import { CheckoutButton } from "@/components/marketplace/checkout-button";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { WatermarkedPreviewStack } from "@/components/marketplace/watermarked-preview-stack";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -586,12 +587,13 @@ export default async function ProductDetailPage({
                 </p>
 
                 <div className="mt-7 space-y-3">
-                  <Link
-                    className="inline-flex w-full items-center justify-center rounded-full bg-brand px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-brand-700"
-                    href={checkoutHref}
-                  >
-                    Buy now
-                  </Link>
+                  <CheckoutButton
+                    className="inline-flex w-full items-center justify-center rounded-full bg-brand px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
+                    fallbackHref={checkoutHref}
+                    label="Buy now"
+                    productId={listing.id}
+                    returnTo={currentListingHref}
+                  />
                   {listing.previewAssets[0]?.previewUrl ? (
                     <Link
                       className="inline-flex w-full items-center justify-center rounded-full border border-slate-200 px-5 py-3.5 text-sm font-semibold text-ink transition hover:border-brand/30 hover:text-brand"
