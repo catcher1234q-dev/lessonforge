@@ -99,6 +99,8 @@ export default async function LaunchChecklistPage() {
   ]);
 
   const buyerIssueCount = adminOverview.openReports + adminOverview.openRefundRequests;
+  const readyProbes = integrationReadiness.probes.filter((probe) => probe.ready);
+  const blockedProbes = integrationReadiness.probes.filter((probe) => !probe.ready);
 
   return (
     <main className="page-shell min-h-screen">
@@ -184,6 +186,79 @@ export default async function LaunchChecklistPage() {
               <p className="mt-3 text-sm leading-6 text-ink-soft">
                 Good to review after the purchase test so you know the platform still feels stable.
               </p>
+            </article>
+          </section>
+
+          <section className="grid gap-6 lg:grid-cols-2">
+            <article className="rounded-[30px] border border-emerald-100 bg-emerald-50/80 p-7 shadow-[0_18px_50px_rgba(16,185,129,0.08)]">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                Ready now
+              </p>
+              <h2 className="mt-3 text-2xl font-semibold text-ink">
+                These parts can be reviewed without waiting on more setup.
+              </h2>
+              <div className="mt-5 space-y-3 text-sm leading-7 text-ink-soft">
+                <p>
+                  You can keep reviewing the public site, seller flow wording, buyer trust
+                  signals, admin privacy, and all the pages that do not depend on real sign-in or
+                  real payment confirmation.
+                </p>
+                <div className="rounded-[22px] bg-white/80 px-5 py-4">
+                  <p className="font-semibold text-ink">Current configured checks</p>
+                  <ul className="mt-3 space-y-2">
+                    {readyProbes.length > 0 ? (
+                      readyProbes.map((probe) => (
+                        <li key={probe.key}>
+                          <span className="font-semibold text-ink">{probe.label}:</span>{" "}
+                          {probe.detail}
+                        </li>
+                      ))
+                    ) : (
+                      <li>No live integration checks are fully ready yet, so stay focused on visual review and local behavior.</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </article>
+
+            <article className="rounded-[30px] border border-amber-100 bg-amber-50/80 p-7 shadow-[0_18px_50px_rgba(245,158,11,0.10)]">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-700">
+                Waiting on setup
+              </p>
+              <h2 className="mt-3 text-2xl font-semibold text-ink">
+                These launch steps are blocked by keys or external setup, not by page design.
+              </h2>
+              <div className="mt-5 space-y-3 text-sm leading-7 text-ink-soft">
+                <p>
+                  If one of these is not ready, the right next move is usually environment setup in
+                  Vercel, Stripe, or Supabase rather than more UI rebuilding.
+                </p>
+                <div className="rounded-[22px] bg-white/80 px-5 py-4">
+                  <p className="font-semibold text-ink">Still blocked</p>
+                  <ul className="mt-3 space-y-2">
+                    {blockedProbes.map((probe) => (
+                      <li key={probe.key}>
+                        <span className="font-semibold text-ink">{probe.label}:</span>{" "}
+                        {probe.detail}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="flex flex-wrap gap-3 pt-1">
+                  <Link
+                    className="inline-flex items-center justify-center rounded-full bg-amber-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-700"
+                    href="/live-readiness"
+                  >
+                    Open live readiness notes
+                  </Link>
+                  <Link
+                    className={secondaryActionLinkClassName("px-5 py-3")}
+                    href="/owner-access"
+                  >
+                    Open private access
+                  </Link>
+                </div>
+              </div>
             </article>
           </section>
 

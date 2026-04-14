@@ -4,6 +4,7 @@
 - Run `npm run verify:focused` before asking for feedback on buyer, seller, admin, or founder-facing flows.
 - Run `npm run verify:app` before a broader review pass when shared logic and browser flows both changed.
 - Use the fuller verification guide in [docs/verification-checklist.md](/Users/mikhailtripp/Documents/New%20project/docs/verification-checklist.md).
+- Use [docs/live-readiness-status.md](/Users/mikhailtripp/Documents/New%20project/docs/live-readiness-status.md) when you need the plain-English answer to “what works now” versus “what still needs keys.”
 
 ## What To Review Right Now
 - Does the marketplace feel trustworthy before purchase?

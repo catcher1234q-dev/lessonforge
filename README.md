@@ -204,6 +204,7 @@ npm run prisma:verify-seller-flow
 - [Founder Review Checklist](/Users/mikhailtripp/Documents/New%20project/docs/founder-review-checklist.md)
 - [Vercel Launch Setup](/Users/mikhailtripp/Documents/New%20project/docs/vercel-launch-setup.md)
 - [Database Bootstrap](/Users/mikhailtripp/Documents/New%20project/docs/database-bootstrap.md)
+- [Live Readiness Status](/Users/mikhailtripp/Documents/New%20project/docs/live-readiness-status.md)
 
 `npm run prisma:preflight` is the safe first terminal check for the database cutover. It reports whether a real `DATABASE_URL` is configured, whether strict Prisma mode is selected, whether the database is reachable, and whether the repo is ready for the first live seller-flow verification.
 
