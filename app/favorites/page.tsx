@@ -312,7 +312,7 @@ export default async function FavoritesPage({
               body={`${viewer.name} can use this shortlist to compare saved options and move into the best next listing faster.`}
               eyebrow="Saved products"
               level="h1"
-              title="Your shortlist before you buy."
+              title="Compare saved listings before you buy."
               titleClassName="text-5xl leading-tight"
             />
             <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
@@ -460,7 +460,7 @@ export default async function FavoritesPage({
                 <div className="flex flex-wrap items-end justify-between gap-4">
                   <div>
                     <p className="text-sm font-semibold uppercase tracking-[0.22em] text-brand">
-                      Quick picks
+                      Quick decision guide
                     </p>
                     <h2 className="mt-3 text-3xl font-semibold text-ink">
                       Pick the saved listing that stands out fastest
@@ -555,7 +555,7 @@ export default async function FavoritesPage({
                     Open focused compare table
                   </summary>
                   <p className="text-sm font-semibold uppercase tracking-[0.22em] text-brand">
-                    Focused compare
+                    Comparison view
                   </p>
                   <p className="mt-4 max-w-3xl text-sm leading-6 text-ink-soft">
                     This tighter compare view pulls the strongest options by price, proof, freshness, and recent asset updates so you can make a faster final call.

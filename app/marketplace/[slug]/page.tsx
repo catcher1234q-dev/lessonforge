@@ -568,7 +568,7 @@ export default async function ProductDetailPage({
                         href={listing.previewAssets[0].previewUrl}
                         target="_blank"
                       >
-                        Open first preview page
+                        Open cached preview
                       </Link>
                     ) : null}
                   </div>
@@ -603,6 +603,12 @@ export default async function ProductDetailPage({
                       Preview before buying
                     </Link>
                   ) : null}
+                  <Link
+                    className="inline-flex w-full items-center justify-center rounded-full border border-slate-200 px-5 py-3.5 text-sm font-semibold text-ink transition hover:border-brand/30 hover:text-brand"
+                    href={checkoutHref}
+                  >
+                    Open checkout preview
+                  </Link>
                   {viewer.role === "buyer" ? (
                     <FavoriteFormButton
                       initialFavorited={favoriteProductIds.includes(listing.id)}

@@ -116,6 +116,45 @@ async function withPrismaAutoTimeout<T>(operation: Promise<T>) {
   ]);
 }
 
+type CreditCycleWindow = {
+  startsAt: string;
+  endsAt: string;
+  label: string;
+};
+
+function getCurrentCreditCycle(now = new Date()): CreditCycleWindow {
+  const startsAt = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const endsAt = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  const label = startsAt.toLocaleString("en-US", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+
+  return {
+    startsAt: startsAt.toISOString(),
+    endsAt: endsAt.toISOString(),
+    label: `${label} billing cycle`,
+  };
+}
+
+function syncJsonSubscriptionCycle(
+  subscription: SubscriptionRecord,
+  monthlyCredits: number,
+) {
+  const cycle = getCurrentCreditCycle();
+  const planChanged = subscription.monthlyCredits !== monthlyCredits;
+  const cycleChanged = subscription.cycleLabel !== cycle.label;
+
+  subscription.monthlyCredits = monthlyCredits;
+  if (planChanged || cycleChanged) {
+    subscription.availableCredits = monthlyCredits;
+    subscription.cycleLabel = cycle.label;
+  }
+
+  return subscription;
+}
+
 async function readDb(): Promise<LessonForgeDb> {
   let parsed: LessonForgeDb | null = null;
 
@@ -987,24 +1026,23 @@ export async function getOrCreateSubscription(
     );
 
     if (existing) {
-      const planChanged =
-        existing.planKey !== planKey || existing.monthlyCredits !== monthlyCredits;
+      const planChanged = existing.planKey !== planKey;
       existing.sellerEmail = sellerEmail;
       existing.planKey = planKey;
-      existing.monthlyCredits = monthlyCredits;
       if (planChanged) {
         existing.availableCredits = monthlyCredits;
       }
-      return existing;
+      return syncJsonSubscriptionCycle(existing, monthlyCredits);
     }
 
+    const cycle = getCurrentCreditCycle();
     const subscription: SubscriptionRecord = {
       sellerId,
       sellerEmail,
       planKey,
       monthlyCredits,
       availableCredits: monthlyCredits,
-      cycleLabel: "Current cycle",
+      cycleLabel: cycle.label,
       rolloverPolicy: "none",
     };
 
@@ -1066,17 +1104,20 @@ export async function consumeCredits(input: {
     );
 
     if (!subscription) {
+      const cycle = getCurrentCreditCycle();
       subscription = {
         sellerId: input.sellerId,
         sellerEmail: input.sellerEmail,
         planKey: input.planKey,
         monthlyCredits: input.monthlyCredits,
         availableCredits: input.monthlyCredits,
-        cycleLabel: "Current cycle",
+        cycleLabel: cycle.label,
         rolloverPolicy: "none",
       };
       db.lessonforge.subscriptions.unshift(subscription);
     }
+
+    syncJsonSubscriptionCycle(subscription, input.monthlyCredits);
 
     const debited = debitAiCredits(subscription, {
       sellerId: input.sellerId,

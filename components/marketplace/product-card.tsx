@@ -127,10 +127,10 @@ export function ProductCard({
 
   return (
     <article
-      className={`group flex h-full flex-col rounded-[30px] border bg-white p-5 transition duration-300 hover:-translate-y-1 ${
+      className={`group flex h-full flex-col rounded-[30px] bg-white p-5 transition duration-300 hover:-translate-y-1 ${
         featured
-          ? "border-brand/20 shadow-[0_24px_70px_rgba(37,99,235,0.14)] hover:shadow-[0_30px_90px_rgba(37,99,235,0.18)]"
-          : "border-black/5 shadow-[0_18px_50px_rgba(15,23,42,0.06)] hover:shadow-[0_28px_70px_rgba(15,23,42,0.10)]"
+          ? "shadow-[0_24px_70px_rgba(37,99,235,0.14)] hover:shadow-[0_30px_90px_rgba(37,99,235,0.18)]"
+          : "shadow-[0_18px_50px_rgba(15,23,42,0.08)] hover:shadow-[0_28px_70px_rgba(15,23,42,0.12)]"
       }`}
       data-testid={testId}
     >
@@ -154,11 +154,11 @@ export function ProductCard({
           {coverImage ? (
             <img
               alt={`${listing.title} cover preview`}
-              className={`relative z-10 w-full object-cover ${featured ? "aspect-[6/7]" : "aspect-[5/6]"}`}
+              className="relative z-10 aspect-[4/3] w-full object-cover"
               src={coverImage}
             />
           ) : (
-            <div className="relative z-10 flex aspect-[4/5] flex-col justify-between p-5">
+            <div className="relative z-10 flex aspect-[4/3] flex-col justify-between p-5">
               <div className="flex items-start justify-between gap-3">
                 <span className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${theme.accentSoft}`}>
                   {listing.subject}
@@ -203,7 +203,7 @@ export function ProductCard({
               <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/72">
                 {listing.format}
               </p>
-              <h3 className={`mt-2 font-semibold leading-tight text-white ${featured ? "line-clamp-3 text-[1.8rem]" : "line-clamp-2 text-[1.32rem]"}`}>
+              <h3 className="mt-2 line-clamp-2 text-[1.32rem] font-semibold leading-tight text-white">
                 {listing.title}
               </h3>
               <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-medium">
@@ -230,25 +230,12 @@ export function ProductCard({
 
       <div className="flex flex-1 flex-col justify-between px-2 pb-2 pt-5">
         <Link className="block" href={listingHref}>
-          {featured ? (
-            <>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-ink-soft">
-                Sold by {listing.sellerName}
-              </p>
-              <p className="mt-3 line-clamp-3 text-sm leading-7 text-ink-soft">
-                {listing.shortDescription}
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-ink-soft">
-                {listing.sellerName}
-              </p>
-              <p className="mt-2 line-clamp-2 text-base leading-7 text-ink-soft">
-                {listing.shortDescription}
-              </p>
-            </>
-          )}
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-ink-soft">
+            {featured ? `Sold by ${listing.sellerName}` : listing.sellerName}
+          </p>
+          <p className="mt-2 line-clamp-2 text-base leading-7 text-ink-soft">
+            {listing.shortDescription}
+          </p>
         </Link>
 
         <div className="mt-5 space-y-4">

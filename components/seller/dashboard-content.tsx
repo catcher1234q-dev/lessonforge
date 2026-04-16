@@ -1487,6 +1487,31 @@ export function SellerDashboardContent() {
         <div className="mt-5 space-y-4">
           <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
             <article className="rounded-[1.5rem] border border-ink/5 bg-surface-subtle p-5 shadow-soft-xl">
+          {subscription ? (
+            <div className="mb-4">
+              <div className="flex items-center justify-between gap-3 text-sm text-ink-soft">
+                <span>{subscription.cycleLabel}</span>
+                <span>
+                  {Math.max(0, subscription.monthlyCredits - subscription.availableCredits)} / {subscription.monthlyCredits} credits used
+                </span>
+              </div>
+              <div className="mt-2 h-2 rounded-full bg-white">
+                <div
+                  className="h-2 rounded-full bg-brand transition-all"
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      Math.round(
+                        ((subscription.monthlyCredits - subscription.availableCredits) /
+                          Math.max(subscription.monthlyCredits, 1)) *
+                          100,
+                      ),
+                    )}%`,
+                  }}
+                />
+              </div>
+            </div>
+          ) : null}
           <h2 className="text-xl font-semibold text-ink">AI balance</h2>
           <p className="mt-3 text-3xl font-semibold text-ink">
             {subscription ? subscription.availableCredits : "Not started"}

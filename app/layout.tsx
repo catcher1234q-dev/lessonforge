@@ -8,6 +8,17 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: siteConfig.productName,
   description: siteConfig.description,
+  metadataBase: new URL(siteConfig.productionUrl),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: siteConfig.productName,
+    description: siteConfig.description,
+    url: siteConfig.productionUrl,
+    siteName: siteConfig.productName,
+    type: "website",
+  },
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },

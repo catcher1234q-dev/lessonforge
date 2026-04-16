@@ -138,6 +138,10 @@ export function AppAccessGate({ area, children }: AppAccessGateProps) {
   }
 
   if (!hasSupabaseEnv()) {
+    if (hasFallbackAccess) {
+      return <>{children}</>;
+    }
+
     return (
       <div className="rounded-[2rem] border border-ink/5 bg-white p-8 shadow-soft-xl">
         <SectionIntro

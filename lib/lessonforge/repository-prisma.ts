@@ -119,6 +119,28 @@ function unmapProductStatus(status: ProductStatus): NonNullable<ProductRecord["p
   }
 }
 
+type CreditCycleWindow = {
+  startsAt: Date;
+  endsAt: Date;
+  label: string;
+};
+
+function getCurrentCreditCycle(now = new Date()): CreditCycleWindow {
+  const startsAt = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const endsAt = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  const label = startsAt.toLocaleString("en-US", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+
+  return {
+    startsAt,
+    endsAt,
+    label: `${label} billing cycle`,
+  };
+}
+
 function mapReportCategory(category: ReportRecord["category"]) {
   switch (category) {
     case "Broken file":
@@ -332,13 +354,16 @@ function toSubscriptionRecord(
   subscription: Subscription,
   creditBalance: CreditBalance | null,
 ): SubscriptionRecord {
+  const cycleDate = creditBalance?.cycleStartedAt ?? subscription.currentPeriodStart ?? new Date();
+  const cycle = getCurrentCreditCycle(cycleDate);
+
   return {
     sellerId: user.email,
     sellerEmail: user.email,
     planKey: unmapPlanKey(subscription.planKey),
     monthlyCredits: subscription.monthlyCreditAllowance,
     availableCredits: creditBalance?.availableCredits ?? 0,
-    cycleLabel: "Current cycle",
+    cycleLabel: cycle.label,
     rolloverPolicy: "none",
   };
 }
@@ -1296,6 +1321,7 @@ export async function prismaGetOrCreateSubscription(
   planKey: SubscriptionRecord["planKey"],
   monthlyCredits: number,
 ) {
+  const cycle = getCurrentCreditCycle();
   const user = await ensureUser({
     email: sellerEmail,
     name: sellerId,
@@ -1312,6 +1338,9 @@ export async function prismaGetOrCreateSubscription(
     !existingSubscription ||
     mapPlanKey(planKey) !== existingSubscription.planKey ||
     existingSubscription.monthlyCreditAllowance !== monthlyCredits;
+  const cycleChanged =
+    !existingCreditBalance?.cycleStartedAt ||
+    existingCreditBalance.cycleStartedAt.getTime() !== cycle.startsAt.getTime();
 
   const subscription = await prisma.subscription.upsert({
     where: { userId: user.id },
@@ -1321,6 +1350,8 @@ export async function prismaGetOrCreateSubscription(
       hardMonthlyCreditCap: monthlyCredits,
       rolloverPolicy: RolloverPolicy.NONE,
       status: SubscriptionStatus.ACTIVE,
+      currentPeriodStart: cycle.startsAt,
+      currentPeriodEnd: cycle.endsAt,
     },
     create: {
       userId: user.id,
@@ -1329,19 +1360,25 @@ export async function prismaGetOrCreateSubscription(
       rolloverPolicy: RolloverPolicy.NONE,
       monthlyCreditAllowance: monthlyCredits,
       hardMonthlyCreditCap: monthlyCredits,
+      currentPeriodStart: cycle.startsAt,
+      currentPeriodEnd: cycle.endsAt,
     },
   });
 
   const creditBalance = await prisma.creditBalance.upsert({
     where: { userId: user.id },
-    update: planChanged
+    update: planChanged || cycleChanged
       ? {
           availableCredits: monthlyCredits,
+          cycleStartedAt: cycle.startsAt,
+          cycleEndsAt: cycle.endsAt,
         }
       : {},
     create: {
       userId: user.id,
       availableCredits: existingCreditBalance?.availableCredits ?? monthlyCredits,
+      cycleStartedAt: cycle.startsAt,
+      cycleEndsAt: cycle.endsAt,
     },
   });
 
@@ -1358,6 +1395,7 @@ export async function prismaConsumeCredits(input: {
   provider: UsageLedgerEntry["provider"];
   idempotencyKey: string;
 }) {
+  const cycle = getCurrentCreditCycle();
   const user = await ensureUser({
     email: input.sellerEmail,
     name: input.sellerId,
@@ -1395,6 +1433,8 @@ export async function prismaConsumeCredits(input: {
       monthlyCreditAllowance: input.monthlyCredits,
       hardMonthlyCreditCap: input.monthlyCredits,
       rolloverPolicy: RolloverPolicy.NONE,
+      currentPeriodStart: cycle.startsAt,
+      currentPeriodEnd: cycle.endsAt,
     },
     create: {
       userId: user.id,
@@ -1403,15 +1443,33 @@ export async function prismaConsumeCredits(input: {
       rolloverPolicy: RolloverPolicy.NONE,
       monthlyCreditAllowance: input.monthlyCredits,
       hardMonthlyCreditCap: input.monthlyCredits,
+      currentPeriodStart: cycle.startsAt,
+      currentPeriodEnd: cycle.endsAt,
     },
   });
 
+  const existingCreditBalance = await prisma.creditBalance.findUnique({
+    where: { userId: user.id },
+  });
+  const shouldResetCycle =
+    !existingCreditBalance?.cycleStartedAt ||
+    existingCreditBalance.cycleStartedAt.getTime() !== cycle.startsAt.getTime() ||
+    subscription.monthlyCreditAllowance !== input.monthlyCredits;
+
   const creditBalance = await prisma.creditBalance.upsert({
     where: { userId: user.id },
-    update: {},
+    update: shouldResetCycle
+      ? {
+          availableCredits: input.monthlyCredits,
+          cycleStartedAt: cycle.startsAt,
+          cycleEndsAt: cycle.endsAt,
+        }
+      : {},
     create: {
       userId: user.id,
       availableCredits: input.monthlyCredits,
+      cycleStartedAt: cycle.startsAt,
+      cycleEndsAt: cycle.endsAt,
     },
   });
 
@@ -1419,16 +1477,26 @@ export async function prismaConsumeCredits(input: {
     throw new Error("Not enough AI credits remaining for this action.");
   }
 
-  const [updatedCreditBalance, ledgerEntry] = await prisma.$transaction([
-    prisma.creditBalance.update({
-      where: { userId: user.id },
+  const { updatedCreditBalance, ledgerEntry } = await prisma.$transaction(async (tx) => {
+    const updated = await tx.creditBalance.updateMany({
+      where: {
+        userId: user.id,
+        availableCredits: {
+          gte: input.creditsUsed,
+        },
+      },
       data: {
         availableCredits: {
           decrement: input.creditsUsed,
         },
       },
-    }),
-    prisma.usageLedger.create({
+    });
+
+    if (updated.count !== 1) {
+      throw new Error("Not enough AI credits remaining for this action.");
+    }
+
+    const createdLedgerEntry = await tx.usageLedger.create({
       data: {
         userId: user.id,
         subscriptionId: subscription.id,
@@ -1442,8 +1510,17 @@ export async function prismaConsumeCredits(input: {
       include: {
         user: true,
       },
-    }),
-  ]);
+    });
+
+    const refreshedCreditBalance = await tx.creditBalance.findUniqueOrThrow({
+      where: { userId: user.id },
+    });
+
+    return {
+      updatedCreditBalance: refreshedCreditBalance,
+      ledgerEntry: createdLedgerEntry,
+    };
+  });
 
   return {
     subscription: toSubscriptionRecord(user, subscription, updatedCreditBalance),

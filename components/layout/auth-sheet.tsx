@@ -11,6 +11,7 @@ import {
   hasSupabaseEnv,
 } from "@/lib/supabase/client";
 import { syncViewerCookie } from "@/lib/auth/viewer-sync";
+import { buildAuthCallbackUrl } from "@/lib/config/site";
 
 type AuthSheetProps = {
   triggerLabel?: string;
@@ -37,8 +38,7 @@ export function AuthSheet({
     const nextPath = pathname
       ? `${pathname}${queryString ? `?${queryString}` : ""}`
       : "/";
-    const safeNextPath = nextPath.startsWith("/") ? nextPath : "/";
-    return `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNextPath)}`;
+    return buildAuthCallbackUrl(nextPath);
   }
 
   const triggerClassName =

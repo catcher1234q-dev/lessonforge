@@ -13,6 +13,13 @@ type AppEnv = {
   STRIPE_WEBHOOK_SECRET: string;
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: string;
   NEXT_PUBLIC_SITE_URL: string;
+  SUPABASE_SITE_URL: string;
+  SUPABASE_REDIRECT_URLS: string;
+  SMTP_HOST: string;
+  SMTP_PORT: number;
+  SMTP_USER: string;
+  SMTP_PASS: string;
+  EMAIL_FROM: string;
   FEATURE_AI_ENABLED: boolean;
   FEATURE_DEMO_MODE: boolean;
   FEATURE_STRIPE_ENABLED: boolean;
@@ -96,6 +103,16 @@ export const env: AppEnv = {
     "pk_test_replace_me",
   ),
   NEXT_PUBLIC_SITE_URL: readString("NEXT_PUBLIC_SITE_URL", "http://localhost:3000"),
+  SUPABASE_SITE_URL: readString("SUPABASE_SITE_URL", "http://localhost:3000"),
+  SUPABASE_REDIRECT_URLS: readString(
+    "SUPABASE_REDIRECT_URLS",
+    "http://localhost:3000,http://localhost:3000/auth/callback",
+  ),
+  SMTP_HOST: readString("SMTP_HOST"),
+  SMTP_PORT: readNumber("SMTP_PORT", 587),
+  SMTP_USER: readString("SMTP_USER"),
+  SMTP_PASS: readString("SMTP_PASS"),
+  EMAIL_FROM: readString("EMAIL_FROM", "no-reply@lessonforgehub.com"),
   FEATURE_AI_ENABLED: readBoolean("FEATURE_AI_ENABLED", true),
   FEATURE_DEMO_MODE: readBoolean("FEATURE_DEMO_MODE", true),
   FEATURE_STRIPE_ENABLED: readBoolean("FEATURE_STRIPE_ENABLED", true),
