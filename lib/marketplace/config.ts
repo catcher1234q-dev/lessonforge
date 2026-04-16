@@ -1,5 +1,5 @@
 import { getMarketplaceSplitForPlan } from "@/lib/config/marketplace";
-import { defaultPlanKey } from "@/lib/config/plans";
+import { defaultPlanKey, type PlanKey } from "@/lib/config/plans";
 import {
   calculatePlatformFeeCents,
   calculateSellerPayoutCents,
@@ -30,16 +30,16 @@ export function formatCurrency(cents: number) {
   }).format(cents / 100);
 }
 
-export function calculatePlatformFee(priceCents: number) {
-  return calculatePlatformFeeCents(priceCents);
+export function calculatePlatformFee(priceCents: number, planKey?: PlanKey) {
+  return calculatePlatformFeeCents(priceCents, planKey);
 }
 
-export function calculateSellerPayout(priceCents: number) {
-  return calculateSellerPayoutCents(priceCents);
+export function calculateSellerPayout(priceCents: number, planKey?: PlanKey) {
+  return calculateSellerPayoutCents(priceCents, planKey);
 }
 
-export function getTeacherPayoutShareLabel() {
-  return getSellerShareLabel();
+export function getTeacherPayoutShareLabel(planKey?: PlanKey) {
+  return getSellerShareLabel(planKey);
 }
 
 export function getMarketplaceResourceById(resourceId: string) {

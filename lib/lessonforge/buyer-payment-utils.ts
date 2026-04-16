@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 
+import { normalizePlanKey, type PlanKey } from "@/lib/config/plans";
 import {
   calculatePlatformFee,
   calculateSellerPayout,
@@ -26,8 +27,12 @@ export function buildBuyerOrderFromCheckoutSession(input: {
   product: ProductRecord;
   buyerEmail: string;
   buyerName?: string | null;
+  sellerPlanKey?: PlanKey | null;
 }) {
   const amountCents = input.session.amount_total ?? input.product.priceCents ?? 0;
+  const sellerPlanKey = input.sellerPlanKey
+    ? normalizePlanKey(input.sellerPlanKey)
+    : undefined;
 
   return {
     id: `stripe-session-${input.session.id}`,
@@ -42,8 +47,8 @@ export function buildBuyerOrderFromCheckoutSession(input: {
     sellerName: input.product.sellerName ?? "Teacher seller",
     sellerId: input.product.sellerId ?? input.product.id,
     amountCents,
-    sellerShareCents: calculateSellerPayout(amountCents),
-    platformShareCents: calculatePlatformFee(amountCents),
+    sellerShareCents: calculateSellerPayout(amountCents, sellerPlanKey),
+    platformShareCents: calculatePlatformFee(amountCents, sellerPlanKey),
     paymentStatus: "paid",
     stripeCheckoutSessionId: input.session.id,
     stripePaymentIntentId:
@@ -65,8 +70,12 @@ export function buildBuyerOrderFromPaymentIntent(input: {
   paymentIntent: Stripe.PaymentIntent;
   product: ProductRecord;
   buyerEmail: string;
+  sellerPlanKey?: PlanKey | null;
 }) {
   const amountCents = input.paymentIntent.amount_received || input.product.priceCents || 0;
+  const sellerPlanKey = input.sellerPlanKey
+    ? normalizePlanKey(input.sellerPlanKey)
+    : undefined;
 
   return {
     id: `stripe-payment-intent-${input.paymentIntent.id}`,
@@ -77,8 +86,8 @@ export function buildBuyerOrderFromPaymentIntent(input: {
     sellerName: input.product.sellerName ?? "Teacher seller",
     sellerId: input.product.sellerId ?? input.product.id,
     amountCents,
-    sellerShareCents: calculateSellerPayout(amountCents),
-    platformShareCents: calculatePlatformFee(amountCents),
+    sellerShareCents: calculateSellerPayout(amountCents, sellerPlanKey),
+    platformShareCents: calculatePlatformFee(amountCents, sellerPlanKey),
     paymentStatus: "paid",
     stripePaymentIntentId: input.paymentIntent.id,
     versionLabel: `Version ${input.product.assetVersionNumber ?? 1}`,

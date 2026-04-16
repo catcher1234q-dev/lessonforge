@@ -469,6 +469,9 @@ export async function POST(request: Request) {
           product,
           buyerEmail: metadata.buyerEmail,
           buyerName: session.customer_details?.name,
+          sellerPlanKey: session.metadata?.sellerPlanKey
+            ? normalizePlanKey(session.metadata.sellerPlanKey)
+            : null,
         });
 
       await syncSupabaseProductRecord(product).catch(() => null);
@@ -515,6 +518,9 @@ export async function POST(request: Request) {
             paymentIntent,
             product,
             buyerEmail: metadata.buyerEmail,
+            sellerPlanKey: paymentIntent.metadata?.sellerPlanKey
+              ? normalizePlanKey(paymentIntent.metadata.sellerPlanKey)
+              : null,
           });
 
         await syncSupabaseProductRecord(product).catch(() => null);

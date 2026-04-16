@@ -18,7 +18,7 @@ Acceptance criteria:
 - Seed strategy exists for demo users, products, and standards.
 - Core service boundaries are defined for billing, AI usage, catalog, reviews, and moderation.
 - Logging and analytics hooks are in place.
-- Revenue split logic reflects the plan-based `50/50`, `60/40`, and `70/30` marketplace model everywhere.
+- Revenue split logic reflects the plan-based `50/50`, `60/40`, and `80/20` marketplace model everywhere.
 - Repository persistence can fall back safely between demo JSON mode and Prisma mode during the transition.
 
 ## Phase 3: Public Marketplace

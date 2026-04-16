@@ -39,7 +39,7 @@ This document explains the main marketplace records in founder-friendly language
 - `DemoSession`: temporary demo mode state
 
 ## Important Business Rules Reflected In The Data
-- Revenue split depends on plan: Starter `50/50`, Basic `60/40`, Pro `70/30`.
+- Revenue split depends on plan: Starter `50/50`, Basic `60/40`, Pro `80/20`.
 - AI credits never roll over.
 - AI usage is enforced server-side.
 - Reviews require a verified purchase.

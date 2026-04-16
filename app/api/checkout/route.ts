@@ -3,13 +3,18 @@ import { NextResponse } from "next/server";
 import { hasAppSessionForEmail } from "@/lib/auth/app-session";
 import { getCurrentViewer } from "@/lib/auth/viewer";
 import {
+  normalizePlanKey,
+  type PlanKey,
+} from "@/lib/config/plans";
+import {
   logBuyerPaymentEvent,
   productMatchesClientPayload,
   resolveCheckoutProductById,
 } from "@/lib/lessonforge/buyer-payments";
-import { listOrders } from "@/lib/lessonforge/repository";
+import { listOrders, listSellerProfiles } from "@/lib/lessonforge/repository";
 import {
   findSupabaseOrderRecordByCheckoutSessionId,
+  getSupabaseSubscriptionRecord,
   listSupabaseLibraryAccessProductIdsForBuyer,
   listSupabaseOrderRecordsForBuyer,
 } from "@/lib/supabase/admin-sync";
@@ -28,6 +33,38 @@ type CheckoutBody = {
   returnTo?: string;
 };
 
+function isPaidSellerSubscriptionStatus(status?: string | null) {
+  return status === "active" || status === "trialing";
+}
+
+async function resolveSellerPlanKey(
+  resource: ProductRecord,
+  sellerProfiles: Awaited<ReturnType<typeof listSellerProfiles>>,
+): Promise<PlanKey> {
+  const sellerId = resource.sellerId?.trim().toLowerCase();
+
+  if (!sellerId) {
+    return "starter";
+  }
+
+  const syncedSubscription = await getSupabaseSubscriptionRecord(sellerId).catch(
+    () => null,
+  );
+
+  if (
+    syncedSubscription?.plan_name &&
+    isPaidSellerSubscriptionStatus(syncedSubscription.status)
+  ) {
+    return normalizePlanKey(syncedSubscription.plan_name);
+  }
+
+  const matchedProfile = sellerProfiles.find(
+    (profile) => profile.email.trim().toLowerCase() === sellerId,
+  );
+
+  return normalizePlanKey(matchedProfile?.sellerPlanKey === "starter" ? "starter" : undefined);
+}
+
 function getSafeReturnTo(candidate: string | null | undefined) {
   if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//")) {
     return null;
@@ -39,6 +76,7 @@ function getSafeReturnTo(candidate: string | null | undefined) {
 function buildPreviewResponse(
   resource: ProductRecord,
   origin: string,
+  sellerPlanKey: PlanKey,
   returnTo?: string | null,
 ) {
   const previewParams = new URLSearchParams({
@@ -47,8 +85,8 @@ function buildPreviewResponse(
     sellerName: resource.sellerName ?? "Teacher seller",
     sellerId: resource.sellerId ?? resource.sellerName ?? resource.id,
     priceCents: String(resource.priceCents),
-    teacherPayoutCents: String(calculateSellerPayout(resource.priceCents ?? 0)),
-    platformFeeCents: String(calculatePlatformFee(resource.priceCents ?? 0)),
+    teacherPayoutCents: String(calculateSellerPayout(resource.priceCents ?? 0, sellerPlanKey)),
+    platformFeeCents: String(calculatePlatformFee(resource.priceCents ?? 0, sellerPlanKey)),
   });
 
   const safeReturnTo = getSafeReturnTo(returnTo);
@@ -78,6 +116,7 @@ function getSafeAppOrigin(originHeader: string | null) {
 export async function POST(request: Request) {
   const origin = getSafeAppOrigin(request.headers.get("origin"));
   let resource: ProductRecord | null = null;
+  let resolvedSellerPlanKey: PlanKey = "starter";
 
   try {
     const viewer = await getCurrentViewer();
@@ -155,10 +194,11 @@ export async function POST(request: Request) {
 
     const checkoutResource = resource;
 
-    const [existingOrders, syncedOrders, libraryAccessProductIds] = await Promise.all([
+    const [existingOrders, syncedOrders, libraryAccessProductIds, sellerProfiles] = await Promise.all([
       listOrders(),
       listSupabaseOrderRecordsForBuyer(viewer.email).catch(() => [] as OrderRecord[]),
       listSupabaseLibraryAccessProductIdsForBuyer(viewer.email).catch(() => [] as string[]),
+      listSellerProfiles(),
     ]);
 
     const alreadyOwned =
@@ -184,8 +224,11 @@ export async function POST(request: Request) {
       );
     }
 
+    const sellerPlanKey = await resolveSellerPlanKey(checkoutResource, sellerProfiles);
+    resolvedSellerPlanKey = sellerPlanKey;
+
     if (!checkoutResource.sellerStripeAccountEnvKey && !checkoutResource.sellerStripeAccountId) {
-      return buildPreviewResponse(checkoutResource, origin, safeReturnTo);
+      return buildPreviewResponse(checkoutResource, origin, sellerPlanKey, safeReturnTo);
     }
 
     const connectedAccountId =
@@ -193,7 +236,7 @@ export async function POST(request: Request) {
       process.env[checkoutResource.sellerStripeAccountEnvKey as keyof NodeJS.ProcessEnv];
 
     if (!connectedAccountId) {
-      return buildPreviewResponse(checkoutResource, origin, safeReturnTo);
+      return buildPreviewResponse(checkoutResource, origin, sellerPlanKey, safeReturnTo);
     }
 
     const sellerStatus = await getSellerPayoutStatusDetails(
@@ -202,14 +245,14 @@ export async function POST(request: Request) {
     );
 
     if (sellerStatus.status !== "live") {
-      return buildPreviewResponse(checkoutResource, origin, safeReturnTo);
+      return buildPreviewResponse(checkoutResource, origin, sellerPlanKey, safeReturnTo);
     }
 
     const productPriceCents = checkoutResource.priceCents as number;
-    const applicationFeeAmount = calculatePlatformFee(productPriceCents);
+    const applicationFeeAmount = calculatePlatformFee(productPriceCents, sellerPlanKey);
 
     if (!isStripeServerConfigured()) {
-      return buildPreviewResponse(checkoutResource, origin, safeReturnTo);
+      return buildPreviewResponse(checkoutResource, origin, sellerPlanKey, safeReturnTo);
     }
 
     const stripe = getStripeServerClient();
@@ -247,6 +290,7 @@ export async function POST(request: Request) {
           productId: checkoutResource.id,
           sellerId: checkoutResource.sellerId ?? "",
           sellerName: checkoutResource.sellerName ?? "",
+          sellerPlanKey,
           buyerEmail: viewer.email,
           buyerUserId: supabaseUser?.id ?? viewer.email,
           platformFeeAmount: String(applicationFeeAmount),
@@ -260,14 +304,7 @@ export async function POST(request: Request) {
         sellerId: checkoutResource.sellerId ?? "",
         sellerStripeAccountId: connectedAccountId,
         checkoutMode: "stripe",
-        sellerPlanKey:
-          productPriceCents > 0
-            ? calculateSellerPayout(productPriceCents) / productPriceCents >= 0.7
-              ? "pro"
-              : calculateSellerPayout(productPriceCents) / productPriceCents >= 0.6
-                ? "basic"
-                : "starter"
-            : "starter",
+        sellerPlanKey,
       },
     });
 
@@ -287,7 +324,7 @@ export async function POST(request: Request) {
       error instanceof Error &&
       error.message.includes("stripe_balance.stripe_transfers")
     ) {
-      return buildPreviewResponse(resource, origin);
+      return buildPreviewResponse(resource, origin, resolvedSellerPlanKey);
     }
 
     return NextResponse.json(
