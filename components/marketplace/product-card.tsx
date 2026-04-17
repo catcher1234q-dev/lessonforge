@@ -5,7 +5,6 @@ import { HighlightChip } from "@/components/buyer/highlight-chip";
 import { CheckoutButton } from "@/components/marketplace/checkout-button";
 import { FavoriteFormButton } from "@/components/marketplace/favorite-form-button";
 import { secondaryActionLinkClassName } from "@/components/shared/secondary-action-link";
-import { buildCheckoutPreviewHref } from "@/lib/lessonforge/checkout-preview";
 import { buildMarketplaceListingHref } from "@/lib/lessonforge/marketplace-navigation";
 import { formatCurrency } from "@/lib/marketplace/config";
 import type { MarketplaceListing } from "@/lib/demo/catalog";
@@ -110,16 +109,6 @@ export function ProductCard({
   const listingHref = buildMarketplaceListingHref({
     returnTo,
     slug: listing.slug,
-  });
-  const checkoutHref = buildCheckoutPreviewHref({
-    platformFeeCents: Math.round(listing.priceCents * 0.4),
-    priceCents: listing.priceCents,
-    productId: listing.id,
-    returnTo: checkoutReturnTo ?? listingHref,
-    sellerId: listing.sellerId,
-    sellerName: listing.sellerName,
-    teacherPayoutCents: Math.round(listing.priceCents * 0.6),
-    title: listing.title,
   });
   const theme = getSubjectTheme(listing.subject);
   const coverImage = listing.thumbnailUrl ?? listing.previewAssets[0]?.previewUrl;
@@ -299,7 +288,6 @@ export function ProductCard({
             <div className="flex min-w-[140px] flex-col items-end gap-2">
               <CheckoutButton
                 className={`inline-flex items-center justify-center gap-2 rounded-full ${featured ? "px-5 py-2.5" : "px-4 py-2.5"} bg-brand text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70`}
-                fallbackHref={checkoutHref}
                 label="Buy now"
                 productId={listing.id}
                 returnTo={checkoutReturnTo ?? listingHref}

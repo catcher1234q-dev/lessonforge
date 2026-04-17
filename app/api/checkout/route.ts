@@ -13,14 +13,12 @@ import {
 } from "@/lib/lessonforge/buyer-payments";
 import { listOrders, listSellerProfiles } from "@/lib/lessonforge/repository";
 import {
-  findSupabaseOrderRecordByCheckoutSessionId,
   getSupabaseSubscriptionRecord,
   listSupabaseLibraryAccessProductIdsForBuyer,
   listSupabaseOrderRecordsForBuyer,
 } from "@/lib/supabase/admin-sync";
 import {
   calculatePlatformFee,
-  calculateSellerPayout,
 } from "@/lib/marketplace/config";
 import { getSellerPayoutStatusDetails } from "@/lib/stripe/connect";
 import { getStripeServerClient, isStripeServerConfigured } from "@/lib/stripe/server";
@@ -37,16 +35,32 @@ function isPaidSellerSubscriptionStatus(status?: string | null) {
   return status === "active" || status === "trialing";
 }
 
+type SellerPlanResolution = {
+  planKey: PlanKey;
+  matchedProfilePlanKey: string | null;
+  subscriptionPlanName: string | null;
+  subscriptionStatus: string | null;
+  fallbackReason: "missing_seller_id" | "missing_subscription_record" | "subscription_not_paid" | null;
+};
+
 async function resolveSellerPlanKey(
   resource: ProductRecord,
   sellerProfiles: Awaited<ReturnType<typeof listSellerProfiles>>,
-): Promise<PlanKey> {
+): Promise<SellerPlanResolution> {
   const sellerId = resource.sellerId?.trim().toLowerCase();
 
   if (!sellerId) {
-    return "starter";
+    return {
+      planKey: "starter",
+      matchedProfilePlanKey: null,
+      subscriptionPlanName: null,
+      subscriptionStatus: null,
+      fallbackReason: "missing_seller_id",
+    };
   }
 
+  const matchedProfile =
+    sellerProfiles.find((profile) => profile.email.trim().toLowerCase() === sellerId) ?? null;
   const syncedSubscription = await getSupabaseSubscriptionRecord(sellerId).catch(
     () => null,
   );
@@ -55,14 +69,22 @@ async function resolveSellerPlanKey(
     syncedSubscription?.plan_name &&
     isPaidSellerSubscriptionStatus(syncedSubscription.status)
   ) {
-    return normalizePlanKey(syncedSubscription.plan_name);
+    return {
+      planKey: normalizePlanKey(syncedSubscription.plan_name),
+      matchedProfilePlanKey: matchedProfile?.sellerPlanKey ?? null,
+      subscriptionPlanName: syncedSubscription.plan_name ?? null,
+      subscriptionStatus: syncedSubscription.status ?? null,
+      fallbackReason: null,
+    };
   }
 
-  const matchedProfile = sellerProfiles.find(
-    (profile) => profile.email.trim().toLowerCase() === sellerId,
-  );
-
-  return normalizePlanKey(matchedProfile?.sellerPlanKey === "starter" ? "starter" : undefined);
+  return {
+    planKey: "starter",
+    matchedProfilePlanKey: matchedProfile?.sellerPlanKey ?? null,
+    subscriptionPlanName: syncedSubscription?.plan_name ?? null,
+    subscriptionStatus: syncedSubscription?.status ?? null,
+    fallbackReason: syncedSubscription ? "subscription_not_paid" : "missing_subscription_record",
+  };
 }
 
 function getSafeReturnTo(candidate: string | null | undefined) {
@@ -71,35 +93,6 @@ function getSafeReturnTo(candidate: string | null | undefined) {
   }
 
   return candidate;
-}
-
-function buildPreviewResponse(
-  resource: ProductRecord,
-  origin: string,
-  sellerPlanKey: PlanKey,
-  returnTo?: string | null,
-) {
-  const previewParams = new URLSearchParams({
-    productId: resource.id,
-    title: resource.title,
-    sellerName: resource.sellerName ?? "Teacher seller",
-    sellerId: resource.sellerId ?? resource.sellerName ?? resource.id,
-    priceCents: String(resource.priceCents),
-    teacherPayoutCents: String(calculateSellerPayout(resource.priceCents ?? 0, sellerPlanKey)),
-    platformFeeCents: String(calculatePlatformFee(resource.priceCents ?? 0, sellerPlanKey)),
-  });
-
-  const safeReturnTo = getSafeReturnTo(returnTo);
-
-  if (safeReturnTo) {
-    previewParams.set("returnTo", safeReturnTo);
-  }
-
-  return NextResponse.json({
-    url: `${origin}/checkout-preview?${previewParams.toString()}`,
-    mode: "preview",
-    reason: "stripe_preview_fallback",
-  });
 }
 
 function getSafeAppOrigin(originHeader: string | null) {
@@ -116,7 +109,6 @@ function getSafeAppOrigin(originHeader: string | null) {
 export async function POST(request: Request) {
   const origin = getSafeAppOrigin(request.headers.get("origin"));
   let resource: ProductRecord | null = null;
-  let resolvedSellerPlanKey: PlanKey = "starter";
 
   try {
     const viewer = await getCurrentViewer();
@@ -224,11 +216,37 @@ export async function POST(request: Request) {
       );
     }
 
-    const sellerPlanKey = await resolveSellerPlanKey(checkoutResource, sellerProfiles);
-    resolvedSellerPlanKey = sellerPlanKey;
+    const sellerPlanResolution = await resolveSellerPlanKey(
+      checkoutResource,
+      sellerProfiles,
+    );
+    const sellerPlanKey = sellerPlanResolution.planKey;
+
+    if (sellerPlanResolution.fallbackReason) {
+      logBuyerPaymentEvent({
+        event: "checkout_plan_fallback",
+        userId: supabaseUser?.id ?? viewer.email,
+        productId: checkoutResource.id,
+        reason: sellerPlanResolution.fallbackReason,
+        metadata: {
+          seller_id: checkoutResource.sellerId?.trim().toLowerCase() ?? null,
+          seller_email: checkoutResource.sellerId?.trim().toLowerCase() ?? null,
+          seller_profile_plan:
+            sellerPlanResolution.matchedProfilePlanKey ?? null,
+          subscription_plan:
+            sellerPlanResolution.subscriptionPlanName ?? null,
+          subscription_status:
+            sellerPlanResolution.subscriptionStatus ?? null,
+          resolved_plan: sellerPlanKey,
+        },
+      });
+    }
 
     if (!checkoutResource.sellerStripeAccountEnvKey && !checkoutResource.sellerStripeAccountId) {
-      return buildPreviewResponse(checkoutResource, origin, sellerPlanKey, safeReturnTo);
+      return NextResponse.json(
+        { error: "This seller has not connected Stripe payouts yet." },
+        { status: 409 },
+      );
     }
 
     const connectedAccountId =
@@ -236,7 +254,10 @@ export async function POST(request: Request) {
       process.env[checkoutResource.sellerStripeAccountEnvKey as keyof NodeJS.ProcessEnv];
 
     if (!connectedAccountId) {
-      return buildPreviewResponse(checkoutResource, origin, sellerPlanKey, safeReturnTo);
+      return NextResponse.json(
+        { error: "Stripe payout setup is still missing for this seller." },
+        { status: 409 },
+      );
     }
 
     const sellerStatus = await getSellerPayoutStatusDetails(
@@ -245,14 +266,20 @@ export async function POST(request: Request) {
     );
 
     if (sellerStatus.status !== "live") {
-      return buildPreviewResponse(checkoutResource, origin, sellerPlanKey, safeReturnTo);
+      return NextResponse.json(
+        { error: "This seller cannot accept live Stripe checkout yet." },
+        { status: 409 },
+      );
     }
 
     const productPriceCents = checkoutResource.priceCents as number;
     const applicationFeeAmount = calculatePlatformFee(productPriceCents, sellerPlanKey);
 
     if (!isStripeServerConfigured()) {
-      return buildPreviewResponse(checkoutResource, origin, sellerPlanKey, safeReturnTo);
+      return NextResponse.json(
+        { error: "Stripe checkout is not configured yet." },
+        { status: 503 },
+      );
     }
 
     const stripe = getStripeServerClient();
@@ -324,7 +351,13 @@ export async function POST(request: Request) {
       error instanceof Error &&
       error.message.includes("stripe_balance.stripe_transfers")
     ) {
-      return buildPreviewResponse(resource, origin, resolvedSellerPlanKey);
+      return NextResponse.json(
+        {
+          error:
+            "Stripe connected payouts are not fully enabled for this seller yet.",
+        },
+        { status: 409 },
+      );
     }
 
     return NextResponse.json(

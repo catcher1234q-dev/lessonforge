@@ -3,10 +3,12 @@ import { NextResponse } from "next/server";
 import { hasAppSessionForEmail } from "@/lib/auth/app-session";
 import { getCurrentViewer } from "@/lib/auth/viewer";
 import { normalizePlanKey } from "@/lib/config/plans";
-import { listSellerProfiles, saveSellerProfile } from "@/lib/lessonforge/repository";
 import {
   getSupabaseSubscriptionRecord,
+  getSupabaseSellerProfile,
+  listSupabaseSellerProfiles,
   upsertSupabaseProfile,
+  upsertSupabaseSellerProfile,
 } from "@/lib/supabase/admin-sync";
 import { getSupabaseServerUser } from "@/lib/supabase/server-auth";
 import type { SellerProfileDraft } from "@/types";
@@ -18,7 +20,7 @@ export async function GET() {
     return NextResponse.json({ error: "Signed-in seller access required." }, { status: 401 });
   }
 
-  const profiles = await listSellerProfiles();
+  const profiles = await listSupabaseSellerProfiles();
   if (viewer.role === "admin" || viewer.role === "owner") {
     return NextResponse.json({ profiles });
   }
@@ -81,22 +83,55 @@ export async function POST(request: Request) {
             sellerPlanKey: normalizedPlanKey === "starter" ? "starter" : "starter",
           };
 
-    const saved = await saveSellerProfile(sanitizedProfile);
-
     const supabaseUser = await getSupabaseServerUser();
     if (
-      supabaseUser?.id &&
-      supabaseUser.email &&
-      supabaseUser.email.trim().toLowerCase() === body.profile.email.trim().toLowerCase()
+      !supabaseUser?.id ||
+      !supabaseUser.email ||
+      supabaseUser.email.trim().toLowerCase() !== body.profile.email.trim().toLowerCase()
     ) {
-      await upsertSupabaseProfile({
-        id: supabaseUser.id,
-        email: supabaseUser.email,
-        role: "seller",
-      }).catch(() => null);
+      return NextResponse.json(
+        { error: "Supabase authentication is required before saving seller profile data." },
+        { status: 401 },
+      );
     }
 
-    return NextResponse.json({ profile: saved });
+    await upsertSupabaseProfile({
+      id: supabaseUser.id,
+      email: supabaseUser.email,
+      role: "seller",
+    }).catch(() => null);
+
+    const existingProfile = await getSupabaseSellerProfile(body.profile.email).catch(
+      () => null,
+    );
+
+    const saved = await upsertSupabaseSellerProfile({
+      userId: supabaseUser.id,
+      email: supabaseUser.email,
+      displayName: sanitizedProfile.displayName,
+      storeName: sanitizedProfile.storeName,
+      storeHandle: sanitizedProfile.storeHandle,
+      primarySubject: sanitizedProfile.primarySubject,
+      tagline: sanitizedProfile.tagline,
+      sellerPlanKey: sanitizedProfile.sellerPlanKey,
+      onboardingCompleted: sanitizedProfile.onboardingCompleted,
+      stripeAccountId:
+        sanitizedProfile.stripeAccountId ?? existingProfile?.stripeAccountId ?? null,
+      stripeOnboardingStatus:
+        sanitizedProfile.stripeOnboardingStatus ??
+        existingProfile?.stripeOnboardingStatus ??
+        null,
+      stripeChargesEnabled:
+        sanitizedProfile.stripeChargesEnabled ??
+        existingProfile?.stripeChargesEnabled ??
+        false,
+      stripePayoutsEnabled:
+        sanitizedProfile.stripePayoutsEnabled ??
+        existingProfile?.stripePayoutsEnabled ??
+        false,
+    });
+
+    return NextResponse.json({ profile: saved.profile });
   } catch (error) {
     return NextResponse.json(
       {

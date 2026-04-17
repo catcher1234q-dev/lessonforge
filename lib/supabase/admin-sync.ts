@@ -6,6 +6,7 @@ import type {
   LibraryAccessRecord,
   OrderRecord,
   ProductRecord,
+  SellerProfileDraft,
   StripeWebhookEventRecord,
 } from "@/types";
 
@@ -15,6 +16,22 @@ type UpsertSupabaseProfileInput = {
   id: string;
   email: string;
   role?: SupabaseProfileRole;
+};
+
+type UpsertSupabaseSellerProfileInput = {
+  userId: string;
+  email: string;
+  displayName: string;
+  storeName: string;
+  storeHandle: string;
+  primarySubject: string;
+  tagline?: string;
+  sellerPlanKey: PlanKey;
+  onboardingCompleted: boolean;
+  stripeAccountId?: string | null;
+  stripeOnboardingStatus?: string | null;
+  stripeChargesEnabled?: boolean;
+  stripePayoutsEnabled?: boolean;
 };
 
 type SyncSupabaseSubscriptionInput = {
@@ -99,6 +116,169 @@ async function getSupabaseProfileById(id: string) {
   }
 
   return data;
+}
+
+type SupabaseSellerProfileRow = {
+  user_id: string;
+  display_name: string | null;
+  store_name: string;
+  store_handle: string;
+  primary_subject: string | null;
+  tagline: string | null;
+  seller_plan_key: string;
+  onboarding_completed: boolean;
+  stripe_account_id: string | null;
+  stripe_onboarding_status: string | null;
+  stripe_charges_enabled: boolean;
+  stripe_payouts_enabled: boolean;
+  created_at?: string;
+  updated_at?: string;
+};
+
+function toSellerProfileDraft(
+  baseProfile: { email: string },
+  sellerProfile: SupabaseSellerProfileRow,
+): SellerProfileDraft {
+  return {
+    displayName:
+      sellerProfile.display_name ??
+      sellerProfile.store_name ??
+      baseProfile.email.split("@")[0] ??
+      "Seller",
+    email: baseProfile.email,
+    storeName: sellerProfile.store_name,
+    storeHandle: sellerProfile.store_handle,
+    primarySubject: sellerProfile.primary_subject ?? "Math",
+    tagline: sellerProfile.tagline ?? "",
+    sellerPlanKey: normalizePlanKey(sellerProfile.seller_plan_key),
+    onboardingCompleted: sellerProfile.onboarding_completed,
+    stripeAccountId: sellerProfile.stripe_account_id ?? undefined,
+    stripeOnboardingStatus: sellerProfile.stripe_onboarding_status ?? undefined,
+    stripeChargesEnabled: sellerProfile.stripe_charges_enabled,
+    stripePayoutsEnabled: sellerProfile.stripe_payouts_enabled,
+  };
+}
+
+export async function getSupabaseSellerProfile(email: string) {
+  if (!canSyncSupabaseAdminRecords()) {
+    return null;
+  }
+
+  const profile = await getSupabaseProfileByEmail(email);
+
+  if (!profile?.id || !profile.email) {
+    return null;
+  }
+
+  const supabase = getSupabaseServerAdminClient();
+  const { data, error } = await supabase
+    .from("seller_profiles")
+    .select(
+      "user_id, display_name, store_name, store_handle, primary_subject, tagline, seller_plan_key, onboarding_completed, stripe_account_id, stripe_onboarding_status, stripe_charges_enabled, stripe_payouts_enabled, created_at, updated_at",
+    )
+    .eq("user_id", profile.id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Unable to load Supabase seller profile: ${error.message}`);
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return toSellerProfileDraft(
+    {
+      email: profile.email,
+    },
+    data as SupabaseSellerProfileRow,
+  );
+}
+
+export async function listSupabaseSellerProfiles() {
+  if (!canSyncSupabaseAdminRecords()) {
+    return [];
+  }
+
+  const supabase = getSupabaseServerAdminClient();
+  const { data, error } = await supabase
+    .from("seller_profiles")
+    .select(
+      "user_id, display_name, store_name, store_handle, primary_subject, tagline, seller_plan_key, onboarding_completed, stripe_account_id, stripe_onboarding_status, stripe_charges_enabled, stripe_payouts_enabled, profiles!inner(email)",
+    )
+    .order("store_name", { ascending: true });
+
+  if (error) {
+    throw new Error(`Unable to load Supabase seller profiles: ${error.message}`);
+  }
+
+  return ((data ?? []) as Array<SupabaseSellerProfileRow & { profiles?: { email?: string | null } }>)
+    .filter((entry) => Boolean(entry.profiles?.email))
+    .map((entry) =>
+      toSellerProfileDraft(
+        {
+          email: entry.profiles?.email?.trim().toLowerCase() ?? "",
+        },
+        entry,
+      ),
+    );
+}
+
+export async function upsertSupabaseSellerProfile(
+  input: UpsertSupabaseSellerProfileInput,
+) {
+  if (!canSyncSupabaseAdminRecords()) {
+    return { synced: false as const, reason: "missing_env" as const };
+  }
+
+  await upsertSupabaseProfile({
+    id: input.userId,
+    email: input.email,
+    role: "seller",
+  });
+
+  const supabase = getSupabaseServerAdminClient();
+  const { data, error } = await supabase
+    .from("seller_profiles")
+    .upsert(
+      {
+        user_id: input.userId,
+        display_name: input.displayName,
+        store_name: input.storeName,
+        store_handle: input.storeHandle,
+        primary_subject: input.primarySubject,
+        tagline: input.tagline ?? "",
+        seller_plan_key: normalizePlanKey(input.sellerPlanKey),
+        onboarding_completed: input.onboardingCompleted,
+        stripe_account_id: input.stripeAccountId ?? null,
+        stripe_onboarding_status: input.stripeOnboardingStatus ?? null,
+        stripe_charges_enabled: input.stripeChargesEnabled ?? false,
+        stripe_payouts_enabled: input.stripePayoutsEnabled ?? false,
+      },
+      {
+        onConflict: "user_id",
+      },
+    )
+    .select(
+      "user_id, display_name, store_name, store_handle, primary_subject, tagline, seller_plan_key, onboarding_completed, stripe_account_id, stripe_onboarding_status, stripe_charges_enabled, stripe_payouts_enabled, profiles!inner(email)",
+    )
+    .single();
+
+  if (error) {
+    throw new Error(`Unable to sync Supabase seller profile: ${error.message}`);
+  }
+
+  const row = data as SupabaseSellerProfileRow & { profiles?: { email?: string | null } };
+
+  return {
+    synced: true as const,
+    profile: toSellerProfileDraft(
+      {
+        email: row.profiles?.email?.trim().toLowerCase() ?? normalizeEmail(input.email),
+      },
+      row,
+    ),
+  };
 }
 
 function mapProductStatusToSupabaseStatus(productStatus?: ProductRecord["productStatus"]) {

@@ -53,6 +53,9 @@ export type ConnectedSeller = {
   accountId: string;
   displayName: string;
   email: string;
+  status?: "connected" | "setup_incomplete";
+  chargesEnabled?: boolean;
+  payoutsEnabled?: boolean;
 };
 
 export type ViewerRole = "buyer" | "seller" | "admin" | "owner";

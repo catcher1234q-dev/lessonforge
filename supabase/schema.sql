@@ -21,6 +21,23 @@ create table if not exists public.subscriptions (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.seller_profiles (
+  user_id uuid primary key references public.profiles (id) on delete cascade,
+  display_name text,
+  store_name text not null,
+  store_handle text not null unique,
+  primary_subject text,
+  tagline text,
+  seller_plan_key text not null default 'starter' check (seller_plan_key in ('starter', 'basic', 'pro')),
+  onboarding_completed boolean not null default false,
+  stripe_account_id text unique,
+  stripe_onboarding_status text,
+  stripe_charges_enabled boolean not null default false,
+  stripe_payouts_enabled boolean not null default false,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
 create table if not exists public.products (
   id text primary key,
   seller_id uuid not null references public.profiles (id) on delete cascade,
@@ -65,6 +82,7 @@ create table if not exists public.stripe_webhook_events (
 );
 
 create index if not exists subscriptions_user_id_idx on public.subscriptions(user_id);
+create index if not exists seller_profiles_store_handle_idx on public.seller_profiles(store_handle);
 create index if not exists products_seller_id_idx on public.products(seller_id);
 create index if not exists orders_buyer_id_idx on public.orders(buyer_id);
 create index if not exists orders_product_id_idx on public.orders(product_id);
@@ -74,6 +92,7 @@ create index if not exists stripe_webhook_events_product_id_idx on public.stripe
 
 alter table public.profiles enable row level security;
 alter table public.subscriptions enable row level security;
+alter table public.seller_profiles enable row level security;
 alter table public.products enable row level security;
 alter table public.orders enable row level security;
 alter table public.library_access enable row level security;
@@ -116,6 +135,25 @@ create policy "subscriptions_select_own_or_admin"
 on public.subscriptions
 for select
 using (auth.uid() = user_id or public.is_admin_user());
+
+drop policy if exists "seller_profiles_select_own_or_admin" on public.seller_profiles;
+create policy "seller_profiles_select_own_or_admin"
+on public.seller_profiles
+for select
+using (auth.uid() = user_id or public.is_admin_user());
+
+drop policy if exists "seller_profiles_insert_own_or_admin" on public.seller_profiles;
+create policy "seller_profiles_insert_own_or_admin"
+on public.seller_profiles
+for insert
+with check (auth.uid() = user_id or public.is_admin_user());
+
+drop policy if exists "seller_profiles_update_own_or_admin" on public.seller_profiles;
+create policy "seller_profiles_update_own_or_admin"
+on public.seller_profiles
+for update
+using (auth.uid() = user_id or public.is_admin_user())
+with check (auth.uid() = user_id or public.is_admin_user());
 
 drop policy if exists "subscriptions_insert_admin_only" on public.subscriptions;
 create policy "subscriptions_insert_admin_only"

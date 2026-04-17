@@ -117,15 +117,15 @@ LessonForge uses plan-based pricing and revenue splits.
 - `5` one-time AI credits
 
 ### Basic
-- `$10/month`
+- `$19/month`
 - seller keeps `60%`
 - platform keeps `40%`
 - `100` AI credits each billing cycle
 
 ### Pro
-- `$20/month`
-- seller keeps `70%`
-- platform keeps `30%`
+- `$39/month`
+- seller keeps `80%`
+- platform keeps `20%`
 - `300` AI credits each billing cycle
 
 Rules:

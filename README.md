@@ -65,8 +65,8 @@ LessonForge now uses these plan definitions:
 
 ### Pro
 - `$39/month`
-- seller keeps `70%`
-- platform keeps `30%`
+- seller keeps `80%`
+- platform keeps `20%`
 - `300` AI credits each billing cycle
 
 Rules:

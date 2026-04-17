@@ -1,10 +1,4 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
-
-import {
-  getPersistenceMode,
-  isPrismaPersistenceEnabled,
-} from "@/lib/prisma/client";
+import { isPrismaPersistenceEnabled } from "@/lib/prisma/client";
 import { buildStoredAssetPaths } from "@/lib/lessonforge/preview-assets";
 import {
   applyAdminProductModeration,
@@ -91,29 +85,14 @@ const defaultSystemSettings: SystemSettings = {
   updatedAt: new Date(0).toISOString(),
 };
 
-const DB_PATH = path.join(process.cwd(), "data", "db.json");
-const DB_TEMP_PATH = path.join(process.cwd(), "data", "db.json.tmp");
-const PRISMA_FALLBACK_TIMEOUT_MS = 1500;
-
-let mutationQueue = Promise.resolve();
-
 function shouldUsePrisma() {
-  return isPrismaPersistenceEnabled();
+  return true;
 }
 
-const strictPrismaMode = getPersistenceMode() === "prisma";
+const strictPrismaMode = true;
 
 async function withPrismaAutoTimeout<T>(operation: Promise<T>) {
-  if (strictPrismaMode) {
-    return operation;
-  }
-
-  return Promise.race([
-    operation,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error("Prisma auto fallback timeout")), PRISMA_FALLBACK_TIMEOUT_MS),
-    ),
-  ]);
+  return operation;
 }
 
 type CreditCycleWindow = {
@@ -156,73 +135,18 @@ function syncJsonSubscriptionCycle(
 }
 
 async function readDb(): Promise<LessonForgeDb> {
-  let parsed: LessonForgeDb | null = null;
-
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    const raw = await fs.readFile(DB_PATH, "utf8");
-
-    try {
-      parsed = JSON.parse(raw) as LessonForgeDb;
-      break;
-    } catch (error) {
-      if (
-        !(error instanceof SyntaxError) ||
-        !raw.trim().length ||
-        attempt === 1
-      ) {
-        throw error;
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
-  }
-
-  if (!parsed) {
-    throw new Error("Unable to read demo database.");
-  }
-
-  return {
-    teachers: parsed.teachers ?? [],
-    activities: parsed.activities ?? [],
-    auditLog: parsed.auditLog ?? [],
-    lessonforge: {
-      sellerProfiles: parsed.lessonforge?.sellerProfiles ?? [],
-      products: parsed.lessonforge?.products ?? [],
-      orders: parsed.lessonforge?.orders ?? [],
-      reviews: parsed.lessonforge?.reviews ?? [],
-      reports: parsed.lessonforge?.reports ?? [],
-      favorites: parsed.lessonforge?.favorites ?? [],
-      refundRequests: parsed.lessonforge?.refundRequests ?? [],
-      subscriptions: parsed.lessonforge?.subscriptions ?? [],
-      usageLedger: parsed.lessonforge?.usageLedger ?? [],
-      aiActionCache: parsed.lessonforge?.aiActionCache ?? [],
-      monetizationEvents: parsed.lessonforge?.monetizationEvents ?? [],
-      adminAiSettings: parsed.lessonforge?.adminAiSettings ?? defaultAdminAiSettings,
-      systemSettings: parsed.lessonforge?.systemSettings ?? defaultSystemSettings,
-    },
-  };
-}
-
-async function writeDb(db: LessonForgeDb) {
-  const serialized = `${JSON.stringify(db, null, 2)}\n`;
-  await fs.writeFile(DB_TEMP_PATH, serialized, "utf8");
-  await fs.rename(DB_TEMP_PATH, DB_PATH);
+  throw new Error(
+    "Legacy file-based persistence has been removed. Use Supabase or Prisma-backed storage instead.",
+  );
 }
 
 function runMutation<T>(mutator: (db: LessonForgeDb) => Promise<T>) {
-  const pending = mutationQueue.then(async () => {
-    const db = await readDb();
-    const result = await mutator(db);
-    await writeDb(db);
-    return result;
-  });
-
-  mutationQueue = pending.then(
-    () => undefined,
-    () => undefined,
+  void mutator;
+  return Promise.reject(
+    new Error(
+      "Legacy file-based persistence has been removed. Use Supabase or Prisma-backed storage instead.",
+    ),
   );
-
-  return pending;
 }
 
 export async function listAdminAuditLogs() {

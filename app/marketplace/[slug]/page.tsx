@@ -589,7 +589,6 @@ export default async function ProductDetailPage({
                 <div className="mt-7 space-y-3">
                   <CheckoutButton
                     className="inline-flex w-full items-center justify-center rounded-full bg-brand px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
-                    fallbackHref={checkoutHref}
                     label="Buy now"
                     productId={listing.id}
                     returnTo={currentListingHref}

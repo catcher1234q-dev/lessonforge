@@ -22,6 +22,16 @@ function getCardTone(planKey: PlanKey) {
     };
   }
 
+  if (planKey === "pro") {
+    return {
+      badge: "bg-slate-950 text-white",
+      button: "bg-brand text-white hover:bg-brand-700",
+      card: "border-slate-950/10 bg-white shadow-[0_24px_72px_rgba(15,23,42,0.09)]",
+      note: "text-ink-soft",
+      panel: "bg-slate-50",
+    };
+  }
+
   return {
     badge: "bg-slate-100 text-ink-soft",
     button: "bg-brand text-white hover:bg-brand-700",
@@ -33,7 +43,7 @@ function getCardTone(planKey: PlanKey) {
 
 function getPrimaryValueLine(planKey: PlanKey) {
   const plan = planConfig[planKey];
-  return `${plan.sellerSharePercent}% seller payout`;
+  return `Keep ${plan.sellerSharePercent}% of every sale`;
 }
 
 function getSecondaryValueLine(planKey: PlanKey) {
@@ -41,31 +51,71 @@ function getSecondaryValueLine(planKey: PlanKey) {
   return `${plan.activeListingLimit} active listing${plan.activeListingLimit === 1 ? "" : "s"}`;
 }
 
-export function PricingPreview() {
+export function PricingPreview({
+  variant = "default",
+}: {
+  variant?: "default" | "sell";
+}) {
   return (
-    <section id="pricing" className="px-5 py-8 sm:px-6 lg:px-8 lg:py-12">
+    <section
+      id={variant === "sell" ? "sell-pricing" : "pricing"}
+      className={`px-5 sm:px-6 lg:px-8 ${variant === "sell" ? "py-12 lg:py-16" : "py-8 lg:py-12"}`}
+    >
       <div className="mx-auto max-w-6xl">
         <div className="max-w-3xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand">
-            Pricing
-          </p>
-          <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl text-ink sm:text-4xl">
-            Choose the plan that fits how you want to sell
-          </h2>
-          <p className="mt-2 text-base leading-7 text-ink-soft">
-            Start free, upgrade when you want stronger payouts, more AI support, and better seller tools.
-          </p>
+          {variant === "sell" ? (
+            <>
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand">
+                Pricing
+              </p>
+              <p className="mt-3 text-xl font-semibold tracking-[-0.01em] text-ink sm:text-[2rem]">
+                Keep up to 80 percent of every sale
+              </p>
+              <h2 className="mt-4 font-[family-name:var(--font-display)] text-3xl text-ink sm:text-4xl">
+                Choose the plan that fits how you want to sell
+              </h2>
+              <p className="mt-3 text-base leading-7 text-ink-soft">
+                Start free, upgrade when you want stronger payouts, more AI support, and better seller tools.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand">
+                Pricing
+              </p>
+              <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl text-ink sm:text-4xl">
+                Choose the plan that fits how you want to sell
+              </h2>
+              <p className="mt-2 text-base leading-7 text-ink-soft">
+                Start free, upgrade when you want stronger payouts, more AI support, and better seller tools.
+              </p>
+            </>
+          )}
         </div>
 
-        <div className="mt-7 grid gap-4 lg:grid-cols-3">
+        <div className={`grid gap-4 lg:grid-cols-3 ${variant === "sell" ? "mt-10" : "mt-7"}`}>
           {pricingOrder.map((planKey) => {
             const plan = planConfig[planKey];
             const tone = getCardTone(planKey);
+            const badgeLabel =
+              variant === "sell" && planKey === "pro"
+                ? "Best value"
+                : plan.badgeLabel;
+            const ctaLabel =
+              variant === "sell"
+                ? planKey === "starter"
+                  ? "Start Selling"
+                  : planKey === "pro"
+                    ? "Upgrade to Pro"
+                    : "Start Selling"
+                : plan.ctaLabel;
 
             return (
               <article
                 key={plan.key}
-                className={`flex h-full flex-col rounded-[1.4rem] border p-5 ${tone.card}`}
+                className={`flex h-full flex-col rounded-[1.4rem] border p-5 transition ${tone.card} ${
+                  variant === "sell" && planKey === "pro" ? "lg:-translate-y-1" : ""
+                }`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -78,9 +128,13 @@ export function PricingPreview() {
                       <div className="mt-[1.375rem]" />
                     )}
                   </div>
-                  {plan.badgeLabel ? (
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${tone.badge}`}>
-                      {plan.badgeLabel}
+                  {badgeLabel ? (
+                    <span
+                      className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${tone.badge} ${
+                        variant === "sell" && planKey === "pro" ? "shadow-sm" : ""
+                      }`}
+                    >
+                      {badgeLabel}
                     </span>
                   ) : null}
                 </div>
@@ -97,7 +151,7 @@ export function PricingPreview() {
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
                       Keep more
                     </p>
-                    <p className="mt-1 font-semibold text-ink">{getPrimaryValueLine(planKey)}</p>
+                    <p className="mt-1 text-[15px] font-semibold text-ink">{getPrimaryValueLine(planKey)}</p>
                   </div>
                   <div className={`rounded-[1.05rem] px-4 py-3 text-sm leading-6 ${tone.panel}`}>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
@@ -134,7 +188,7 @@ export function PricingPreview() {
                     className={`inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition ${tone.button}`}
                     href="/sell/onboarding"
                   >
-                    {plan.ctaLabel}
+                    {ctaLabel}
                   </Link>
                 </div>
                 <p className="mt-3 text-center text-xs leading-5 text-ink-soft">
@@ -149,12 +203,17 @@ export function PricingPreview() {
           })}
         </div>
 
-        <div className="mt-5 rounded-[1.25rem] border border-black/5 bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft">
+        <div className="mt-6 rounded-[1.25rem] border border-black/5 bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft">
           <p className="font-semibold text-ink">Why paid plans feel stronger</p>
           <p className="mt-1">
             Starter keeps the door open, but Basic and Pro are built to help sellers publish more, keep more from every sale, and use stronger AI support without hitting limits so quickly.
           </p>
         </div>
+        {variant === "sell" ? (
+          <p className="mt-4 text-center text-sm text-ink-muted">
+            Secure payments powered by Stripe
+          </p>
+        ) : null}
       </div>
     </section>
   );

@@ -51,6 +51,7 @@ function toProductRecord(resource: (typeof demoResources)[number]): ProductRecor
 export type BuyerPaymentLogEvent =
   | "checkout_created"
   | "checkout_denied"
+  | "checkout_plan_fallback"
   | "webhook_received"
   | "webhook_processed"
   | "access_granted"
@@ -64,18 +65,26 @@ export function logBuyerPaymentEvent(input: {
   stripeSessionId?: string | null;
   stripePaymentIntentId?: string | null;
   reason?: string | null;
+  metadata?: Record<string, string | number | boolean | null>;
 }) {
-  console.info(
+  const payload = {
+    scope: "lessonforge_buyer_payments",
+    event: input.event,
+    event_id: input.eventId ?? null,
+    user_id: input.userId ?? null,
+    product_id: input.productId ?? null,
+    stripe_session_id: input.stripeSessionId ?? null,
+    stripe_payment_intent_id: input.stripePaymentIntentId ?? null,
+    reason: input.reason ?? null,
+    metadata: input.metadata ?? null,
+    occurred_at: new Date().toISOString(),
+  };
+
+  const logger = input.event === "checkout_plan_fallback" ? console.warn : console.info;
+
+  logger(
     JSON.stringify({
-      scope: "lessonforge_buyer_payments",
-      event: input.event,
-      event_id: input.eventId ?? null,
-      user_id: input.userId ?? null,
-      product_id: input.productId ?? null,
-      stripe_session_id: input.stripeSessionId ?? null,
-      stripe_payment_intent_id: input.stripePaymentIntentId ?? null,
-      reason: input.reason ?? null,
-      occurred_at: new Date().toISOString(),
+      ...payload,
     }),
   );
 }

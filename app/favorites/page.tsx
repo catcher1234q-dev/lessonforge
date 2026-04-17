@@ -18,7 +18,6 @@ import {
   getViewerFavoriteProductIds,
   listLibraryItems,
 } from "@/lib/lessonforge/server-operations";
-import { buildCheckoutPreviewHref } from "@/lib/lessonforge/checkout-preview";
 import { buildMarketplaceListingHref } from "@/lib/lessonforge/marketplace-navigation";
 import { formatCurrency } from "@/lib/marketplace/config";
 
@@ -528,16 +527,6 @@ export default async function FavoritesPage({
                           </Link>
                           <CheckoutButton
                             className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-70"
-                            fallbackHref={buildCheckoutPreviewHref({
-                              platformFeeCents: Math.round(listing.priceCents * 0.4),
-                              priceCents: listing.priceCents,
-                              productId: listing.id,
-                              returnTo,
-                              sellerId: listing.sellerId,
-                              sellerName: listing.sellerName,
-                              teacherPayoutCents: Math.round(listing.priceCents * 0.6),
-                              title: listing.title,
-                            })}
                             label="Buy from shortlist"
                             productId={listing.id}
                             returnTo={returnTo}

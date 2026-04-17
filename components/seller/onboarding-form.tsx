@@ -36,8 +36,14 @@ function buildConnectedSeller(profile: SellerProfileDraft): ConnectedSeller | nu
 
   return {
     accountId: profile.stripeAccountId,
+    chargesEnabled: profile.stripeChargesEnabled,
     email: profile.email,
     displayName: profile.displayName || profile.storeName || "Seller",
+    payoutsEnabled: profile.stripePayoutsEnabled,
+    status:
+      profile.stripeChargesEnabled && profile.stripePayoutsEnabled
+        ? "connected"
+        : "setup_incomplete",
   };
 }
 
@@ -73,31 +79,8 @@ export function SellerOnboardingForm() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const sellerConnected = params.get("seller_connected");
-    const accountId = params.get("account_id");
-    const sellerEmail = params.get("seller_email");
-    const sellerName = params.get("seller_name");
-    const onboardingState = params.get("seller_onboarding");
     const planBilling = params.get("planBilling");
     const targetPlan = normalizePlanKey(params.get("targetPlan"));
-
-    if (
-      params.has("seller_connected") ||
-      params.has("account_id") ||
-      params.has("seller_email") ||
-      params.has("seller_name") ||
-      params.has("seller_onboarding")
-    ) {
-      params.delete("seller_connected");
-      params.delete("account_id");
-      params.delete("seller_email");
-      params.delete("seller_name");
-      params.delete("seller_onboarding");
-      params.delete("planBilling");
-      params.delete("targetPlan");
-      const nextUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
-      window.history.replaceState({}, "", nextUrl);
-    }
 
     void (async () => {
       const response = await fetch("/api/session/viewer");
@@ -124,64 +107,37 @@ export function SellerOnboardingForm() {
         : buildFallbackProfile(payload.viewer);
       setSelectedPlanKey(normalizePlanKey(baseProfile.sellerPlanKey));
 
-      if (sellerConnected === "1" && accountId && sellerEmail) {
-        const nextProfile = buildSavedProfile({
-          ...baseProfile,
-          displayName: baseProfile.displayName || sellerName || "Seller",
-          email: baseProfile.email || sellerEmail,
-          storeName: baseProfile.storeName || sellerName || "Seller",
-          storeHandle:
-            baseProfile.storeHandle ||
-            sellerEmail.split("@")[0]?.replace(/[^a-z0-9-]+/gi, "-") ||
-            "seller",
-          stripeAccountId: accountId,
-          stripeOnboardingStatus: "connected",
-          stripeChargesEnabled: true,
-          stripePayoutsEnabled: true,
-        });
+      let nextProfile = baseProfile;
 
-        const saveResponse = await fetch("/api/lessonforge/seller-profile", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            profile: nextProfile,
-          }),
-        });
-        const savePayload = (await saveResponse.json()) as {
+      if (baseProfile.stripeAccountId) {
+        const connectResponse = await fetch("/api/stripe/connect");
+        const connectPayload = (await connectResponse.json()) as {
           profile?: SellerProfileDraft;
         };
-        const savedProfile = savePayload.profile
-          ? {
-              ...savePayload.profile,
-              sellerPlanKey: normalizePlanKey(savePayload.profile.sellerPlanKey),
-            }
-          : nextProfile;
 
-        setProfile(savedProfile);
-        setSelectedPlanKey(normalizePlanKey(savedProfile.sellerPlanKey));
-        setConnectedSeller(buildConnectedSeller(savedProfile));
-        setReturnState("connected");
-        setMessage(
-          `${sellerName || "Seller"} connected Stripe payouts. Your seller account is ready for the dashboard and product flow.`,
-        );
-        return;
+        if (connectResponse.ok && connectPayload.profile) {
+          nextProfile = {
+            ...connectPayload.profile,
+            sellerPlanKey: normalizePlanKey(connectPayload.profile.sellerPlanKey),
+          };
+        }
       }
 
-      setProfile(baseProfile);
-      setConnectedSeller(buildConnectedSeller(baseProfile));
+      setProfile(nextProfile);
+      setConnectedSeller(buildConnectedSeller(nextProfile));
 
-      if (onboardingState === "refresh") {
-        setReturnState("refresh");
-        setMessage(
-          `${sellerName || "Seller"} still needs to finish Stripe onboarding before payouts can go live.`,
-        );
-      } else if (onboardingState === "complete") {
-        setReturnState("complete");
-        setMessage(
-          `${sellerName || "Seller"} returned from Stripe onboarding. If Stripe still asks for more details, you can reopen onboarding from here.`,
-        );
+      if (nextProfile.stripeAccountId) {
+        if (nextProfile.stripeChargesEnabled && nextProfile.stripePayoutsEnabled) {
+          setReturnState("connected");
+          setMessage(
+            `${nextProfile.displayName || "Seller"} connected Stripe payouts. Your seller account is ready for the dashboard and product flow.`,
+          );
+        } else {
+          setReturnState("refresh");
+          setMessage(
+            `${nextProfile.displayName || "Seller"} still needs to finish Stripe onboarding before payouts can go live.`,
+          );
+        }
       } else if (planBilling === "success") {
         setMessage(
           `${planConfig[targetPlan].label} checkout finished in Stripe. Your paid seller plan should appear after the billing sync completes.`,
@@ -271,15 +227,8 @@ export function SellerOnboardingForm() {
         return;
       }
 
-      const response = await fetch("/api/sellers/onboard", {
+      const response = await fetch("/api/stripe/connect", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          displayName: savedProfile.displayName.trim(),
-          email: savedProfile.email.trim(),
-        }),
       });
 
       const payload = (await response.json()) as { url?: string; error?: string };
@@ -570,7 +519,7 @@ export function SellerOnboardingForm() {
             }}
             type="button"
           >
-            {isConnecting || isSaving ? "Opening Stripe" : "Connect Stripe payouts"}
+            {isConnecting || isSaving ? "Opening Stripe" : "Connect Stripe"}
             <ArrowRight className="h-4 w-4" />
           </button>
         </div>
@@ -611,9 +560,11 @@ export function SellerOnboardingForm() {
           </div>
           <h2 className="mt-4 text-lg font-semibold text-ink">Current payout state</h2>
           <p className="mt-2 text-sm leading-6 text-ink-soft">
-            {connectedSeller
+            {connectedSeller?.status === "connected"
               ? `Connected seller account: ${connectedSeller.displayName} (${connectedSeller.email})`
-              : "No connected Stripe seller account detected yet."}
+              : connectedSeller?.status === "setup_incomplete"
+                ? `Stripe account found for ${connectedSeller.displayName} (${connectedSeller.email}), but onboarding is still incomplete.`
+                : "No connected Stripe seller account detected yet."}
           </p>
           <div className="mt-4 rounded-[1rem] bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft">
             <p className="font-semibold text-ink">Current plan value</p>

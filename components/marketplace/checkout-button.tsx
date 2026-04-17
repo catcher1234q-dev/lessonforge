@@ -5,7 +5,6 @@ import { LoaderCircle } from "lucide-react";
 
 type CheckoutButtonProps = {
   className: string;
-  fallbackHref: string;
   label: string;
   productId: string;
   returnTo?: string;
@@ -15,7 +14,6 @@ type CheckoutButtonProps = {
 
 export function CheckoutButton({
   className,
-  fallbackHref,
   label,
   productId,
   returnTo,
@@ -53,15 +51,6 @@ export function CheckoutButton({
       const nextMessage =
         error instanceof Error ? error.message : "Unable to start checkout.";
       setMessage(nextMessage);
-
-      if (
-        nextMessage.toLowerCase().includes("missing resource data") ||
-        nextMessage.toLowerCase().includes("signed-in buyer access required") ||
-        nextMessage.toLowerCase().includes("sign in")
-      ) {
-        window.location.href = fallbackHref;
-        return;
-      }
     } finally {
       setIsLoading(false);
     }

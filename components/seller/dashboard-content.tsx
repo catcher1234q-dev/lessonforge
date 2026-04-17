@@ -87,8 +87,14 @@ function buildConnectedSeller(profile: SellerProfileDraft): ConnectedSeller | nu
 
   return {
     accountId: profile.stripeAccountId,
+    chargesEnabled: profile.stripeChargesEnabled,
     email: profile.email,
     displayName: profile.displayName || profile.storeName || "Seller",
+    payoutsEnabled: profile.stripePayoutsEnabled,
+    status:
+      profile.stripeChargesEnabled && profile.stripePayoutsEnabled
+        ? "connected"
+        : "setup_incomplete",
   };
 }
 
@@ -691,9 +697,24 @@ export function SellerDashboardContent() {
       const fallbackProfile = buildFallbackProfile(
         payload.viewer?.role === "seller" ? payload.viewer : undefined,
       );
+      let nextProfile = normalizedProfile ?? fallbackProfile;
 
-      setProfile(normalizedProfile ?? fallbackProfile);
-      setSeller(buildConnectedSeller(normalizedProfile ?? fallbackProfile));
+      if (nextProfile.stripeAccountId) {
+        const connectResponse = await fetch("/api/stripe/connect");
+        const connectPayload = (await connectResponse.json()) as {
+          profile?: SellerProfileDraft;
+        };
+
+        if (connectResponse.ok && connectPayload.profile) {
+          nextProfile = {
+            ...connectPayload.profile,
+            sellerPlanKey: normalizePlanKey(connectPayload.profile.sellerPlanKey),
+          };
+        }
+      }
+
+      setProfile(nextProfile);
+      setSeller(buildConnectedSeller(nextProfile));
       setIsProfileLoading(false);
     })();
   }, []);
@@ -1075,11 +1096,18 @@ export function SellerDashboardContent() {
     {
       key: "payouts",
       label: "Payout setup",
-      value: seller ? "Connected" : "Needs setup",
+      value:
+        seller?.status === "connected"
+          ? "Connected"
+          : seller?.status === "setup_incomplete"
+            ? "Setup incomplete"
+            : "Needs setup",
       detail: seller
-        ? `${seller.displayName || profile?.displayName || seller.email || "Your seller account"} can move buyer-ready listings into checkout.`
+        ? seller.status === "connected"
+          ? `${seller.displayName || profile?.displayName || seller.email || "Your seller account"} can move buyer-ready listings into checkout.`
+          : `${seller.displayName || profile?.displayName || seller.email || "Your seller account"} still needs Stripe onboarding completed before payouts can go live.`
         : "Finish seller onboarding before published products can sell.",
-      actionLabel: seller ? "Open onboarding" : "Finish setup",
+      actionLabel: seller?.status === "connected" ? "Open onboarding" : "Finish setup",
       href: "/sell/onboarding",
     },
   ];
