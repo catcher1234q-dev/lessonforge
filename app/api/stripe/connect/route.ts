@@ -34,16 +34,20 @@ async function getAuthenticatedSellerContext() {
   const viewer = await getCurrentViewer();
 
   if (!(await hasAppSessionForEmail(viewer.email))) {
+    console.warn("[stripe-connect] seller check failed: missing app session", {
+      viewerEmail: viewer.email,
+      viewerRole: viewer.role,
+    });
     return { error: NextResponse.json({ error: "Signed-in seller access required." }, { status: 401 }) };
-  }
-
-  if (viewer.role !== "seller" && viewer.role !== "admin" && viewer.role !== "owner") {
-    return { error: NextResponse.json({ error: "Seller access required." }, { status: 403 }) };
   }
 
   const supabaseUser = await getSupabaseServerUser();
 
   if (!supabaseUser?.id || !supabaseUser.email) {
+    console.warn("[stripe-connect] seller check failed: missing supabase user", {
+      viewerEmail: viewer.email,
+      viewerRole: viewer.role,
+    });
     return {
       error: NextResponse.json(
         { error: "Supabase authentication is required before connecting Stripe." },
@@ -55,6 +59,20 @@ async function getAuthenticatedSellerContext() {
   const normalizedEmail = supabaseUser.email.trim().toLowerCase();
 
   const matchedProfile = await getSupabaseSellerProfile(normalizedEmail).catch(() => null);
+
+  const hasSellerRole =
+    viewer.role === "seller" || viewer.role === "admin" || viewer.role === "owner";
+  const hasPersistedSellerProfile = Boolean(matchedProfile);
+
+  if (!hasSellerRole && !hasPersistedSellerProfile) {
+    console.warn("[stripe-connect] seller check failed: no seller role and no persisted seller profile", {
+      viewerEmail: viewer.email,
+      viewerRole: viewer.role,
+      supabaseEmail: normalizedEmail,
+      hasPersistedSellerProfile,
+    });
+    return { error: NextResponse.json({ error: "Seller access required." }, { status: 403 }) };
+  }
 
   return {
     supabaseUser,
