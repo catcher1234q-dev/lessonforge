@@ -227,14 +227,22 @@ export function SellerOnboardingForm() {
   }
 
   async function handleConnectStripe() {
-    if (!profile.displayName.trim() || !profile.email.trim()) {
-      setMessage("Add your display name and email before starting Stripe onboarding.");
+    if (
+      !profile.displayName.trim() ||
+      !profile.email.trim() ||
+      !profile.storeName.trim() ||
+      !profile.storeHandle.trim()
+    ) {
+      setMessage(
+        "Add your display name, email, store name, and store handle before starting Stripe onboarding.",
+      );
       return;
     }
 
     try {
       setIsConnecting(true);
       setMessage(null);
+      console.log("Connecting to Stripe");
 
       const savedProfile = await handleSaveProfile();
 
@@ -242,17 +250,7 @@ export function SellerOnboardingForm() {
         return;
       }
 
-      const response = await fetch("/api/stripe/connect", {
-        method: "POST",
-      });
-
-      const payload = (await response.json()) as { url?: string; error?: string };
-
-      if (!response.ok || !payload.url) {
-        throw new Error(payload.error || "Unable to start seller onboarding.");
-      }
-
-      window.location.href = payload.url;
+      window.location.href = "/api/stripe/connect?redirectToStripe=1";
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Unable to start seller onboarding.",
