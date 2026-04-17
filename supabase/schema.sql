@@ -81,6 +81,24 @@ create table if not exists public.stripe_webhook_events (
   processed_at timestamptz
 );
 
+create table if not exists public.system_settings (
+  id text primary key,
+  maintenance_mode_enabled boolean not null default false,
+  maintenance_message text,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.admin_audit_logs (
+  id text primary key,
+  actor_user_id uuid references public.profiles (id) on delete set null,
+  action text not null,
+  target_type text not null,
+  target_id text not null,
+  metadata_json jsonb,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
 create index if not exists subscriptions_user_id_idx on public.subscriptions(user_id);
 create index if not exists seller_profiles_store_handle_idx on public.seller_profiles(store_handle);
 create index if not exists products_seller_id_idx on public.products(seller_id);
@@ -89,6 +107,8 @@ create index if not exists orders_product_id_idx on public.orders(product_id);
 create unique index if not exists orders_buyer_id_product_id_idx on public.orders(buyer_id, product_id);
 create index if not exists library_access_product_id_idx on public.library_access(product_id);
 create index if not exists stripe_webhook_events_product_id_idx on public.stripe_webhook_events(product_id);
+create index if not exists admin_audit_logs_actor_user_id_idx on public.admin_audit_logs(actor_user_id);
+create index if not exists admin_audit_logs_created_at_idx on public.admin_audit_logs(created_at desc);
 
 alter table public.profiles enable row level security;
 alter table public.subscriptions enable row level security;
@@ -97,6 +117,8 @@ alter table public.products enable row level security;
 alter table public.orders enable row level security;
 alter table public.library_access enable row level security;
 alter table public.stripe_webhook_events enable row level security;
+alter table public.system_settings enable row level security;
+alter table public.admin_audit_logs enable row level security;
 
 create or replace function public.is_admin_user()
 returns boolean
@@ -216,6 +238,20 @@ with check (public.is_admin_user());
 drop policy if exists "stripe_webhook_events_admin_only" on public.stripe_webhook_events;
 create policy "stripe_webhook_events_admin_only"
 on public.stripe_webhook_events
+for all
+using (public.is_admin_user())
+with check (public.is_admin_user());
+
+drop policy if exists "system_settings_admin_only" on public.system_settings;
+create policy "system_settings_admin_only"
+on public.system_settings
+for all
+using (public.is_admin_user())
+with check (public.is_admin_user());
+
+drop policy if exists "admin_audit_logs_admin_only" on public.admin_audit_logs;
+create policy "admin_audit_logs_admin_only"
+on public.admin_audit_logs
 for all
 using (public.is_admin_user())
 with check (public.is_admin_user());

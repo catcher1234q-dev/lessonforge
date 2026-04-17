@@ -19,7 +19,12 @@ export function SignedInHeroCard() {
       return;
     }
 
-    const supabase = getSupabaseBrowserClient();
+    let supabase;
+    try {
+      supabase = getSupabaseBrowserClient();
+    } catch {
+      return;
+    }
 
     void supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);

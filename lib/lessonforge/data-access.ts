@@ -26,7 +26,7 @@ import {
   prismaUpdateRefundRequestStatus,
   prismaUpdateReportStatus,
 } from "@/lib/lessonforge/repository-prisma";
-import { prisma } from "@/lib/prisma/client";
+import { hasRealDatabaseUrl, prisma } from "@/lib/prisma/client";
 import type {
   AdminAiSettings,
   AiActionCacheRecord,
@@ -54,6 +54,73 @@ const defaultSystemSettings: SystemSettings = {
     "LessonForge is temporarily in maintenance mode while the owner applies platform updates.",
   updatedAt: new Date(0).toISOString(),
 };
+
+let systemSettingsTableAvailable: boolean | null = null;
+let adminAuditLogsTableAvailable: boolean | null = null;
+
+function logDatabaseFallback(scope: string, error: unknown) {
+  console.error(
+    `[lessonforge:data-access] ${scope} failed`,
+    error instanceof Error ? error.message : error,
+  );
+}
+
+async function safeDatabaseRead<T>(
+  scope: string,
+  fallbackValue: T,
+  operation: () => Promise<T>,
+): Promise<T> {
+  if (!hasRealDatabaseUrl()) {
+    return fallbackValue;
+  }
+
+  try {
+    return await operation();
+  } catch (error) {
+    logDatabaseFallback(scope, error);
+    return fallbackValue;
+  }
+}
+
+async function checkTableExists(tableName: string) {
+  if (!hasRealDatabaseUrl()) {
+    return false;
+  }
+
+  try {
+    const rows = await prisma.$queryRaw<Array<{ exists: boolean }>>`
+      SELECT EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+          AND table_name = ${tableName}
+      ) AS "exists"
+    `;
+
+    return Boolean(rows[0]?.exists);
+  } catch (error) {
+    logDatabaseFallback(`checkTableExists.${tableName}`, error);
+    return false;
+  }
+}
+
+async function hasSystemSettingsTable() {
+  if (systemSettingsTableAvailable !== null) {
+    return systemSettingsTableAvailable;
+  }
+
+  systemSettingsTableAvailable = await checkTableExists("system_settings");
+  return systemSettingsTableAvailable;
+}
+
+async function hasAdminAuditLogsTable() {
+  if (adminAuditLogsTableAvailable !== null) {
+    return adminAuditLogsTableAvailable;
+  }
+
+  adminAuditLogsTableAvailable = await checkTableExists("admin_audit_logs");
+  return adminAuditLogsTableAvailable;
+}
 
 function mapViewerRoleToUserRole(role?: ViewerRole): UserRole | undefined {
   switch (role) {
@@ -158,32 +225,54 @@ function coerceMonetizationEvent(
   };
 }
 
-export const listPersistedProducts = prismaListPersistedProducts;
+export async function listPersistedProducts() {
+  return safeDatabaseRead("listPersistedProducts", [], () => prismaListPersistedProducts());
+}
 export const saveProduct = prismaSaveProduct;
-export const listAdminAuditLogs = prismaListAdminAuditLogs;
-export const listOrders = prismaListOrders;
+export async function listAdminAuditLogs() {
+  return safeDatabaseRead("listAdminAuditLogs", [], () => prismaListAdminAuditLogs());
+}
+export async function listOrders() {
+  return safeDatabaseRead("listOrders", [], () => prismaListOrders());
+}
 export const saveOrder = prismaSaveOrder;
-export const listFavorites = prismaListFavorites;
+export async function listFavorites() {
+  return safeDatabaseRead("listFavorites", [], () => prismaListFavorites());
+}
 export const toggleFavorite = prismaToggleFavorite;
-export const listReviews = prismaListReviews;
+export async function listReviews() {
+  return safeDatabaseRead("listReviews", [], () => prismaListReviews());
+}
 export const saveReview = prismaSaveReview;
-export const listRefundRequests = prismaListRefundRequests;
+export async function listRefundRequests() {
+  return safeDatabaseRead("listRefundRequests", [], () => prismaListRefundRequests());
+}
 export const saveRefundRequest = prismaSaveRefundRequest;
 export const updateRefundRequestStatus = prismaUpdateRefundRequestStatus;
-export const listReports = prismaListReports;
+export async function listReports() {
+  return safeDatabaseRead("listReports", [], () => prismaListReports());
+}
 export const saveReport = prismaSaveReport;
 export const updateReportStatus = prismaUpdateReportStatus;
 export const updateProductStatus = prismaUpdateProductStatus;
-export const listSubscriptions = prismaListSubscriptions;
-export const listUsageLedger = prismaListUsageLedger;
+export async function listSubscriptions() {
+  return safeDatabaseRead("listSubscriptions", [], () => prismaListSubscriptions());
+}
+export async function listUsageLedger() {
+  return safeDatabaseRead("listUsageLedger", [], () => prismaListUsageLedger());
+}
 export const getOrCreateSubscription = prismaGetOrCreateSubscription;
 export const consumeCredits = prismaConsumeCredits;
 export const refundCredits = prismaRefundCredits;
 
 export async function listSellerProfiles() {
   const [profiles, subscriptions] = await Promise.all([
-    prismaListSellerProfiles(),
-    prismaListSubscriptions().catch(() => [] as SubscriptionRecord[]),
+    safeDatabaseRead("listSellerProfiles", [] as SellerProfileDraft[], () =>
+      prismaListSellerProfiles(),
+    ),
+    safeDatabaseRead("listSellerProfiles.subscriptions", [] as SubscriptionRecord[], () =>
+      prismaListSubscriptions(),
+    ),
   ]);
 
   const planByEmail = new Map(
@@ -211,6 +300,10 @@ export async function saveLesson(product: Parameters<typeof prismaSaveProduct>[0
 }
 
 export async function getSystemSettings(): Promise<SystemSettings> {
+  if (!(await hasSystemSettingsTable())) {
+    return defaultSystemSettings;
+  }
+
   try {
     const record = await prisma.systemSetting.findFirst({
       orderBy: { updatedAt: "desc" },
@@ -235,6 +328,12 @@ export async function updateSystemSettings(
   input: Partial<SystemSettings>,
   actor?: { email?: string; role?: ViewerRole },
 ): Promise<SystemSettings> {
+  if (!(await hasSystemSettingsTable())) {
+    throw new Error(
+      "System settings storage is missing in the database. Run the latest Supabase schema patch before changing maintenance mode.",
+    );
+  }
+
   const current = await getSystemSettings();
   const nextSettings: SystemSettings = {
     maintenanceModeEnabled:
@@ -265,19 +364,25 @@ export async function updateSystemSettings(
     });
   }
 
-  const actorUser = await ensureActorUser(actor);
-  await prisma.adminAuditLog.create({
-    data: {
-      actorUserId: actorUser?.id ?? null,
-      action: "system.settings.updated",
-      targetType: "system",
-      targetId: "system-settings",
-      metadataJson: {
-        maintenanceModeEnabled: nextSettings.maintenanceModeEnabled,
-        maintenanceMessage: nextSettings.maintenanceMessage,
-      } as Prisma.InputJsonValue,
-    },
-  });
+  if (await hasAdminAuditLogsTable()) {
+    const actorUser = await ensureActorUser(actor);
+    await prisma.adminAuditLog.create({
+      data: {
+        actorUserId: actorUser?.id ?? null,
+        action: "system.settings.updated",
+        targetType: "system",
+        targetId: "system-settings",
+        metadataJson: {
+          maintenanceModeEnabled: nextSettings.maintenanceModeEnabled,
+          maintenanceMessage: nextSettings.maintenanceMessage,
+        } as Prisma.InputJsonValue,
+      },
+    });
+  } else {
+    console.warn(
+      "[lessonforge:data-access] admin_audit_logs table is missing; system settings change was saved without an audit log entry.",
+    );
+  }
 
   return nextSettings;
 }

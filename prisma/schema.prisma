@@ -510,13 +510,15 @@ model Notification {
 
 model AdminAuditLog {
   id              String    @id @default(cuid())
-  actorUserId     String?
+  actorUserId     String?   @map("actor_user_id")
   action          String
-  targetType      String
-  targetId        String
-  metadataJson    Json?
+  targetType      String    @map("target_type")
+  targetId        String    @map("target_id")
+  metadataJson    Json?     @map("metadata_json")
   actor           User?     @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
-  createdAt       DateTime  @default(now())
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@map("admin_audit_logs")
 }
 
 model DemoSession {
@@ -531,10 +533,12 @@ model DemoSession {
 
 model SystemSetting {
   id                     String   @id @default(cuid())
-  maintenanceModeEnabled Boolean  @default(false)
-  maintenanceMessage     String?
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  maintenanceModeEnabled Boolean  @default(false) @map("maintenance_mode_enabled")
+  maintenanceMessage     String?  @map("maintenance_message")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
 }
 
 model LicenseAssignment {

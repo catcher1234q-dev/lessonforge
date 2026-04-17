@@ -65,7 +65,13 @@ export function AppAccessGate({ area, children }: AppAccessGateProps) {
       return;
     }
 
-    const supabase = getSupabaseBrowserClient();
+    let supabase;
+    try {
+      supabase = getSupabaseBrowserClient();
+    } catch {
+      setIsSessionLoading(false);
+      return;
+    }
     let isActive = true;
     const loadingTimeout = window.setTimeout(() => {
       if (isActive) {

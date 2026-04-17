@@ -2,6 +2,7 @@ type AppEnv = {
   NEXT_PUBLIC_APP_NAME: string;
   NEXT_PUBLIC_APP_URL: string;
   DATABASE_URL: string;
+  DIRECT_URL: string;
   LESSONFORGE_PERSISTENCE_MODE: "json" | "auto" | "prisma";
   LESSONFORGE_OWNER_ACCESS_CODE: string;
   LESSONFORGE_ADMIN_ACCESS_CODE: string;
@@ -70,10 +71,8 @@ function readNumber(name: string, fallback: number) {
 export const env: AppEnv = {
   NEXT_PUBLIC_APP_NAME: readString("NEXT_PUBLIC_APP_NAME", "LessonForge"),
   NEXT_PUBLIC_APP_URL: readString("NEXT_PUBLIC_APP_URL", "http://localhost:3000"),
-  DATABASE_URL: readString(
-    "DATABASE_URL",
-    "postgresql://USER:PASSWORD@localhost:5432/lessonforge",
-  ),
+  DATABASE_URL: readString("DATABASE_URL"),
+  DIRECT_URL: readString("DIRECT_URL"),
   LESSONFORGE_OWNER_ACCESS_CODE: readString("LESSONFORGE_OWNER_ACCESS_CODE"),
   LESSONFORGE_ADMIN_ACCESS_CODE: readString("LESSONFORGE_ADMIN_ACCESS_CODE"),
   LESSONFORGE_ACCESS_COOKIE_SECRET: readString("LESSONFORGE_ACCESS_COOKIE_SECRET"),

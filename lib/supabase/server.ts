@@ -8,12 +8,46 @@ type SupabaseServerConfig = {
 
 let adminClient: SupabaseClient | null = null;
 
+function hasNonPlaceholderValue(value?: string | null, placeholders: string[] = []) {
+  if (!value) {
+    return false;
+  }
+
+  if (value.includes("replace_me")) {
+    return false;
+  }
+
+  return !placeholders.includes(value);
+}
+
+function isValidUrl(value: string) {
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function getSupabaseServerConfig(): SupabaseServerConfig | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!url || !anonKey || !serviceRoleKey) {
+  if (
+    typeof url !== "string" ||
+    typeof anonKey !== "string" ||
+    typeof serviceRoleKey !== "string"
+  ) {
+    return null;
+  }
+
+  if (
+    !hasNonPlaceholderValue(url, ["https://your-project-ref.supabase.co"]) ||
+    !isValidUrl(url) ||
+    !hasNonPlaceholderValue(anonKey, ["your-anon-key"]) ||
+    !hasNonPlaceholderValue(serviceRoleKey, ["your-service-role-key"])
+  ) {
     return null;
   }
 
@@ -50,4 +84,3 @@ export function getSupabaseServerAdminClient() {
 
   return adminClient;
 }
-

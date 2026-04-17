@@ -83,68 +83,83 @@ export function SellerOnboardingForm() {
     const targetPlan = normalizePlanKey(params.get("targetPlan"));
 
     void (async () => {
-      const response = await fetch("/api/session/viewer");
-      const payload = (await response.json()) as {
-        viewer?: { role?: string; name?: string; email?: string };
-      };
+      try {
+        const response = await fetch("/api/session/viewer");
+        const payload = response.ok
+          ? ((await response.json()) as {
+              viewer?: { role?: string; name?: string; email?: string };
+            })
+          : {};
 
-      if (!response.ok || payload.viewer?.role !== "seller") {
-        return;
-      }
-
-      const profilesResponse = await fetch("/api/lessonforge/seller-profile");
-      const profilesPayload = (await profilesResponse.json()) as {
-        profiles?: SellerProfileDraft[];
-      };
-      const matchedProfile = profilesPayload.profiles?.find(
-        (entry) => entry.email === payload.viewer?.email,
-      );
-      const baseProfile = matchedProfile
-        ? {
-            ...matchedProfile,
-            sellerPlanKey: normalizePlanKey(matchedProfile.sellerPlanKey),
-          }
-        : buildFallbackProfile(payload.viewer);
-      setSelectedPlanKey(normalizePlanKey(baseProfile.sellerPlanKey));
-
-      let nextProfile = baseProfile;
-
-      if (baseProfile.stripeAccountId) {
-        const connectResponse = await fetch("/api/stripe/connect");
-        const connectPayload = (await connectResponse.json()) as {
-          profile?: SellerProfileDraft;
-        };
-
-        if (connectResponse.ok && connectPayload.profile) {
-          nextProfile = {
-            ...connectPayload.profile,
-            sellerPlanKey: normalizePlanKey(connectPayload.profile.sellerPlanKey),
-          };
+        if (!response.ok || payload.viewer?.role !== "seller") {
+          return;
         }
-      }
 
-      setProfile(nextProfile);
-      setConnectedSeller(buildConnectedSeller(nextProfile));
-
-      if (nextProfile.stripeAccountId) {
-        if (nextProfile.stripeChargesEnabled && nextProfile.stripePayoutsEnabled) {
-          setReturnState("connected");
-          setMessage(
-            `${nextProfile.displayName || "Seller"} connected Stripe payouts. Your seller account is ready for the dashboard and product flow.`,
-          );
-        } else {
-          setReturnState("refresh");
-          setMessage(
-            `${nextProfile.displayName || "Seller"} still needs to finish Stripe onboarding before payouts can go live.`,
-          );
-        }
-      } else if (planBilling === "success") {
-        setMessage(
-          `${planConfig[targetPlan].label} checkout finished in Stripe. Your paid seller plan should appear after the billing sync completes.`,
+        const profilesResponse = await fetch("/api/lessonforge/seller-profile");
+        const profilesPayload = profilesResponse.ok
+          ? ((await profilesResponse.json()) as {
+              profiles?: SellerProfileDraft[];
+            })
+          : { profiles: [] };
+        const matchedProfile = profilesPayload.profiles?.find(
+          (entry) => entry.email === payload.viewer?.email,
         );
-      } else if (planBilling === "cancelled") {
+        const baseProfile = matchedProfile
+          ? {
+              ...matchedProfile,
+              sellerPlanKey: normalizePlanKey(matchedProfile.sellerPlanKey),
+            }
+          : buildFallbackProfile(payload.viewer);
+        setSelectedPlanKey(normalizePlanKey(baseProfile.sellerPlanKey));
+
+        let nextProfile = baseProfile;
+
+        if (baseProfile.stripeAccountId) {
+          const connectResponse = await fetch("/api/stripe/connect");
+          const connectPayload = connectResponse.ok
+            ? ((await connectResponse.json()) as {
+                profile?: SellerProfileDraft;
+              })
+            : { profile: undefined };
+
+          if (connectPayload.profile) {
+            nextProfile = {
+              ...connectPayload.profile,
+              sellerPlanKey: normalizePlanKey(connectPayload.profile.sellerPlanKey),
+            };
+          }
+        }
+
+        setProfile(nextProfile);
+        setConnectedSeller(buildConnectedSeller(nextProfile));
+
+        if (nextProfile.stripeAccountId) {
+          if (nextProfile.stripeChargesEnabled && nextProfile.stripePayoutsEnabled) {
+            setReturnState("connected");
+            setMessage(
+              `${nextProfile.displayName || "Seller"} connected Stripe payouts. Your seller account is ready for the dashboard and product flow.`,
+            );
+          } else {
+            setReturnState("refresh");
+            setMessage(
+              `${nextProfile.displayName || "Seller"} still needs to finish Stripe onboarding before payouts can go live.`,
+            );
+          }
+        } else if (planBilling === "success") {
+          setMessage(
+            `${planConfig[targetPlan].label} checkout finished in Stripe. Your paid seller plan should appear after the billing sync completes.`,
+          );
+        } else if (planBilling === "cancelled") {
+          setMessage(
+            `${planConfig[targetPlan].label} checkout was cancelled. Your seller profile is still saved here, and you can reopen paid plan checkout when you are ready.`,
+          );
+        }
+      } catch (error) {
+        setConnectedSeller(null);
         setMessage(
-          `${planConfig[targetPlan].label} checkout was cancelled. Your seller profile is still saved here, and you can reopen paid plan checkout when you are ready.`,
+          error instanceof Error
+            ? error.message
+            : "Seller onboarding could not load right now.",
         );
       }
     })();

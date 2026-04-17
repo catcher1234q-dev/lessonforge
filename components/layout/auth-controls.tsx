@@ -34,7 +34,13 @@ export function AuthControls() {
       return;
     }
 
-    const supabase = getSupabaseBrowserClient();
+    let supabase;
+    try {
+      supabase = getSupabaseBrowserClient();
+    } catch {
+      setIsLoading(false);
+      return;
+    }
     let isActive = true;
     const loadingTimeout = window.setTimeout(() => {
       if (isActive) {
