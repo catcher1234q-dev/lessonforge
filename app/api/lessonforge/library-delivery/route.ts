@@ -6,7 +6,7 @@ import {
   findOrderById,
   orderBelongsToBuyer,
 } from "@/lib/lessonforge/marketplace-rules";
-import { listOrders } from "@/lib/lessonforge/repository";
+import { listOrders } from "@/lib/lessonforge/data-access";
 import {
   findSupabaseOrderRecordById,
   listSupabaseLibraryAccessProductIdsForBuyer,

@@ -334,8 +334,8 @@ export default async function FounderPage() {
               <div className="mt-5 rounded-[1rem] bg-slate-50 px-4 py-4">
                 <p className="text-sm font-semibold text-ink">Who to watch</p>
                 <div className="mt-3 space-y-3">
-                  {adminOverview.monetizationSummary.starterUpgradeWatchlist.length ? (
-                    adminOverview.monetizationSummary.starterUpgradeWatchlist.slice(0, 3).map((seller) => (
+                  {adminOverview.monetizationSummary.sellerWatchlist.length ? (
+                    adminOverview.monetizationSummary.sellerWatchlist.slice(0, 3).map((seller) => (
                       <div key={seller.sellerId} className="rounded-[1rem] bg-white px-4 py-4 text-sm leading-6 text-ink-soft">
                         <p className="font-semibold text-ink">{seller.sellerName}</p>
                         <p className="mt-1">{seller.sellerEmail}</p>

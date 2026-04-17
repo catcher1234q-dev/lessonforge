@@ -5,7 +5,7 @@ import { checkAdminMutationRateLimit } from "@/lib/lessonforge/admin-rate-limit"
 import {
   getAdminAiSettings,
   updateAdminAiSettings,
-} from "@/lib/lessonforge/repository";
+} from "@/lib/lessonforge/data-access";
 import type { AdminAiSettings } from "@/types";
 
 export async function GET() {

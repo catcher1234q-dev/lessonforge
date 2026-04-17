@@ -9,7 +9,7 @@ import {
   getAdminAiSettings,
   refundCredits,
   saveAiActionCacheEntry,
-} from "@/lib/lessonforge/repository";
+} from "@/lib/lessonforge/data-access";
 
 export async function POST(request: Request) {
   const body = (await request.json()) as {

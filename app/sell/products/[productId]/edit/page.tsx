@@ -4,7 +4,7 @@ import { AppAccessGate } from "@/components/account/app-access-gate";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ProductEditor } from "@/components/seller/product-editor";
-import { listPersistedProducts } from "@/lib/lessonforge/repository";
+import { listPersistedProducts } from "@/lib/lessonforge/data-access";
 import { findSupabaseProductRecordById } from "@/lib/supabase/admin-sync";
 
 export const dynamic = "force-dynamic";

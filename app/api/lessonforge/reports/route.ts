@@ -11,7 +11,7 @@ import {
   listReports,
   saveReport,
   updateReportStatus,
-} from "@/lib/lessonforge/repository";
+} from "@/lib/lessonforge/data-access";
 import type { ReportRecord } from "@/types";
 
 export async function GET() {

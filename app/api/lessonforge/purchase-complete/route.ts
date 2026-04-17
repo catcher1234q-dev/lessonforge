@@ -4,7 +4,7 @@ import { hasAppSessionForEmail } from "@/lib/auth/app-session";
 import { getCurrentViewer } from "@/lib/auth/viewer";
 import { hasRealDatabaseUrl } from "@/lib/lessonforge/prisma-preflight";
 import { handlePurchaseRequest } from "@/lib/lessonforge/api-handlers";
-import { saveOrder } from "@/lib/lessonforge/repository";
+import { saveOrder } from "@/lib/lessonforge/data-access";
 import { getPersistenceMode } from "@/lib/prisma/client";
 
 function buildCheckoutReturnParams(formData: FormData) {

@@ -11,7 +11,7 @@ import {
   productMatchesClientPayload,
   resolveCheckoutProductById,
 } from "@/lib/lessonforge/buyer-payments";
-import { listOrders, listSellerProfiles } from "@/lib/lessonforge/repository";
+import { listOrders, listSellerProfiles } from "@/lib/lessonforge/data-access";
 import {
   getSupabaseSubscriptionRecord,
   listSupabaseLibraryAccessProductIdsForBuyer,

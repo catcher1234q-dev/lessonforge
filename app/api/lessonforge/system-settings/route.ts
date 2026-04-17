@@ -5,7 +5,7 @@ import { checkAdminMutationRateLimit } from "@/lib/lessonforge/admin-rate-limit"
 import {
   getSystemSettings,
   updateSystemSettings,
-} from "@/lib/lessonforge/repository";
+} from "@/lib/lessonforge/data-access";
 
 export async function GET() {
   const viewer = await getCurrentViewer();

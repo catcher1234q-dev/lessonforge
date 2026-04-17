@@ -16,7 +16,7 @@ import {
   saveProduct,
   trackMonetizationEvent,
   updateProductStatus,
-} from "@/lib/lessonforge/repository";
+} from "@/lib/lessonforge/data-access";
 import {
   listSupabaseProductRecords,
   syncSupabaseProductRecord,

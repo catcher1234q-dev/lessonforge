@@ -4,7 +4,7 @@ import { SectionIntro } from "@/components/shared/section-intro";
 import { secondaryActionLinkClassName } from "@/components/shared/secondary-action-link";
 import { StartHerePanel } from "@/components/shared/start-here-panel";
 import { getCurrentViewer } from "@/lib/auth/viewer";
-import { getSystemSettings } from "@/lib/lessonforge/repository";
+import { getSystemSettings } from "@/lib/lessonforge/data-access";
 
 export async function MaintenanceGate({
   children,

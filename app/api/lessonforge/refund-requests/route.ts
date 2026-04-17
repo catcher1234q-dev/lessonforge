@@ -12,7 +12,7 @@ import {
   listRefundRequests,
   saveRefundRequest,
   updateRefundRequestStatus,
-} from "@/lib/lessonforge/repository";
+} from "@/lib/lessonforge/data-access";
 import type { RefundRequestRecord } from "@/types";
 
 export async function GET() {

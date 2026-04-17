@@ -13,7 +13,7 @@ import {
   listPersistedProducts,
   listReports,
   listReviews,
-} from "@/lib/lessonforge/repository";
+} from "@/lib/lessonforge/data-access";
 import {
   listSupabaseOrderRecords,
   listSupabaseProductRecords,

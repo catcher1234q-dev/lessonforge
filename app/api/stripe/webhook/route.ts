@@ -15,7 +15,7 @@ import {
   listSellerProfiles,
   saveOrder,
   saveSellerProfile,
-} from "@/lib/lessonforge/repository";
+} from "@/lib/lessonforge/data-access";
 import { getPlanKeyFromSellerStripePriceId } from "@/lib/stripe/seller-plan-billing";
 import { getStripeServerClient, isStripeServerConfigured } from "@/lib/stripe/server";
 import {

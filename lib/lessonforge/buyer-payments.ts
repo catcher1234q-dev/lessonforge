@@ -7,7 +7,7 @@ import {
   productMatchesClientPayload,
 } from "@/lib/lessonforge/buyer-payment-utils";
 import { findSupabaseProductRecordById } from "@/lib/supabase/admin-sync";
-import { listPersistedProducts } from "@/lib/lessonforge/repository";
+import { listPersistedProducts } from "@/lib/lessonforge/data-access";
 import type { ProductRecord } from "@/types";
 
 function toProductRecord(resource: (typeof demoResources)[number]): ProductRecord {

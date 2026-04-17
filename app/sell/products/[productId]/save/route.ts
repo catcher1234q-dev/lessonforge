@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { listPersistedProducts, saveProduct } from "@/lib/lessonforge/repository";
+import { listPersistedProducts, saveProduct } from "@/lib/lessonforge/data-access";
 import { buildSellerProductRevision } from "@/lib/lessonforge/workflow-rules";
 import {
   findSupabaseProductRecordById,

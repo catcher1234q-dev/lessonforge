@@ -15,7 +15,7 @@ import { canAccessAdmin, getPrivateAccessRole } from "@/lib/auth/private-access"
 import { getCurrentViewer } from "@/lib/auth/viewer";
 import { normalizePlanKey, planConfig } from "@/lib/config/plans";
 import { getIntegrationReadiness } from "@/lib/lessonforge/integration-readiness";
-import { getSystemSettings } from "@/lib/lessonforge/repository";
+import { getSystemSettings } from "@/lib/lessonforge/data-access";
 import { getPersistenceReadiness } from "@/lib/lessonforge/persistence-readiness";
 import {
   getAdminOverview,
@@ -443,8 +443,8 @@ export default async function AdminPage() {
                 Seller watchlist
               </p>
               <div className="mt-4 space-y-3">
-                {adminOverview.monetizationSummary.starterUpgradeWatchlist.length ? (
-                  adminOverview.monetizationSummary.starterUpgradeWatchlist.map((seller) => (
+                {adminOverview.monetizationSummary.sellerWatchlist.length ? (
+                  adminOverview.monetizationSummary.sellerWatchlist.slice(0, 3).map((seller: any) => (
                     <div
                       key={seller.sellerId}
                       className="rounded-[1.25rem] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]"
@@ -502,9 +502,7 @@ export default async function AdminPage() {
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm leading-7 text-ink-soft">
-                    No Starter sellers have generated enough traction yet to show an upgrade watchlist.
-                  </p>
+                  <p className="text-sm text-ink-soft">No sellers in the watchlist yet.</p>
                 )}
               </div>
             </div>

@@ -32,7 +32,7 @@ import {
   listReviews,
   listSubscriptions,
   listUsageLedger,
-} from "@/lib/lessonforge/repository";
+} from "@/lib/lessonforge/data-access";
 import {
   getSupabaseSubscriptionRecord,
   listSupabaseLibraryAccessProductIdsForBuyer,
@@ -313,7 +313,7 @@ export async function getAdminOverview() {
       (salesBySeller[subscription.sellerId] ?? 0) >= starterUpgradePromptSalesThresholdCents
     );
   }).length;
-  const starterUpgradeWatchlist = subscriptions
+  const sellerWatchlist = subscriptions
     .filter((subscription) => normalizePlanKey(subscription.planKey) === "starter")
     .map((subscription) => {
       const sellerProducts = effectiveProducts.filter((product) => product.sellerId === subscription.sellerId);
@@ -396,7 +396,7 @@ export async function getAdminOverview() {
       (event) => event.eventType === "locked_feature_clicked",
     ).length,
     starterSellersReadyToUpgrade,
-    starterUpgradeWatchlist,
+    sellerWatchlist,
   };
   const recentMonetizationEvents = monetizationEvents.filter((event) =>
     isWithinLastDays(event.createdAt, 14),

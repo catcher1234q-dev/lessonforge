@@ -19,7 +19,7 @@ export async function verifyPrismaSellerFlow(): Promise<PrismaSellerFlowReport> 
 
   const [{ saveSellerProfile, listSellerProfiles, saveProduct, listPersistedProducts }, { prisma }] =
     await Promise.all([
-      import("../lessonforge/repository"),
+      import("../lessonforge/data-access"),
       import("../prisma/client"),
     ]);
 

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { hasAppSessionForEmail } from "@/lib/auth/app-session";
 import { getCurrentViewer } from "@/lib/auth/viewer";
-import { toggleFavorite } from "@/lib/lessonforge/repository";
+import { toggleFavorite } from "@/lib/lessonforge/data-access";
 
 function getReturnUrl(request: Request, formData?: FormData) {
   const explicitReturnTo = String(formData?.get("returnTo") ?? "").trim();

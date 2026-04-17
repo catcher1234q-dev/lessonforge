@@ -1,4 +1,3 @@
-import { isPrismaPersistenceEnabled } from "@/lib/prisma/client";
 import { buildStoredAssetPaths } from "@/lib/lessonforge/preview-assets";
 import {
   applyAdminProductModeration,
@@ -8,6 +7,7 @@ import {
 import {
   prismaConsumeCredits,
   prismaListAdminAuditLogs,
+  prismaListFavorites,
   prismaGetOrCreateSubscription,
   prismaListOrders,
   prismaListPersistedProducts,
@@ -25,10 +25,12 @@ import {
   prismaSaveRefundRequest,
   prismaSaveReview,
   prismaSaveSellerProfile,
+  prismaToggleFavorite,
   prismaUpdateReportStatus,
   prismaUpdateRefundRequestStatus,
   prismaUpdateProductStatus,
 } from "@/lib/lessonforge/repository-prisma";
+import { prisma } from "@/lib/prisma/client";
 import type {
   AdminAiSettings,
   AdminAuditLog,
@@ -134,12 +136,76 @@ function syncJsonSubscriptionCycle(
   return subscription;
 }
 
-async function readDb(): Promise<any> {
-  return {};
+async function readDb(): Promise<LessonForgeDb> {
+  const [
+    auditLog,
+    sellerProfiles,
+    products,
+    orders,
+    favorites,
+    reviews,
+    reports,
+    refundRequests,
+    subscriptions,
+    usageLedger,
+    systemSetting,
+  ] = await Promise.all([
+    prismaListAdminAuditLogs(),
+    prismaListSellerProfiles(),
+    prismaListPersistedProducts(),
+    prismaListOrders(),
+    prismaListFavorites(),
+    prismaListReviews(),
+    prismaListReports(),
+    prismaListRefundRequests(),
+    prismaListSubscriptions(),
+    prismaListUsageLedger(),
+    prisma.systemSetting.findFirst({
+      orderBy: {
+        updatedAt: "desc",
+      },
+    }),
+  ]);
+
+  return {
+    teachers: [],
+    activities: [],
+    auditLog,
+    lessonforge: {
+      sellerProfiles,
+      products,
+      orders,
+      reviews,
+      reports,
+      favorites,
+      refundRequests,
+      subscriptions,
+      usageLedger,
+      aiActionCache: [],
+      monetizationEvents: [],
+      adminAiSettings: defaultAdminAiSettings,
+      systemSettings: systemSetting
+        ? {
+            maintenanceModeEnabled: systemSetting.maintenanceModeEnabled,
+            maintenanceMessage:
+              systemSetting.maintenanceMessage ||
+              defaultSystemSettings.maintenanceMessage,
+            updatedAt: systemSetting.updatedAt.toISOString(),
+          }
+        : defaultSystemSettings,
+    },
+  } satisfies LessonForgeDb;
 }
 
-async function runMutation<T>(mutator: (db: any) => Promise<T>): Promise<T> {
-  return mutator({} as any);
+async function runMutation<T>(mutator: (db: LessonForgeDb) => Promise<T>): Promise<T> {
+  void mutator;
+  throw new Error(
+    "Legacy in-memory repository mutations were removed. Use Prisma-backed repository helpers instead.",
+  );
+}
+
+export async function saveLesson(product: ProductRecord) {
+  return saveProduct(product);
 }
 
 

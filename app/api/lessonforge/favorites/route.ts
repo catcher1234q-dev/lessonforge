@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { hasAppSessionForEmail } from "@/lib/auth/app-session";
 import { getCurrentViewer } from "@/lib/auth/viewer";
-import { listFavorites, toggleFavorite } from "@/lib/lessonforge/repository";
+import { listFavorites, toggleFavorite } from "@/lib/lessonforge/data-access";
 
 export async function GET() {
   const viewer = await getCurrentViewer();

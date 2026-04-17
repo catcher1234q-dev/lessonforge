@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { hasAppSessionForEmail } from "@/lib/auth/app-session";
 import { getCurrentViewer } from "@/lib/auth/viewer";
 import { normalizePlanKey } from "@/lib/config/plans";
-import { trackMonetizationEvent } from "@/lib/lessonforge/repository";
+import { trackMonetizationEvent } from "@/lib/lessonforge/data-access";
 
 export async function POST(request: Request) {
   const viewer = await getCurrentViewer();
