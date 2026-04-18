@@ -8,7 +8,6 @@ export type PlanConfig = {
   monthlyPriceUsd: number;
   shortDescription: string;
   bestFor: string;
-  activeListingLimit: number;
   ctaLabel: string;
   valueNote?: string;
   badgeLabel?: string;
@@ -58,9 +57,8 @@ export const planConfig: Record<PlanKey, PlanConfig> = {
     label: "Starter",
     monthlyPriceUsd: 0,
     shortDescription:
-      "Best for first time sellers who want to launch one product and test demand before upgrading.",
-    bestFor: "Trying your first listing before committing to a paid plan.",
-    activeListingLimit: 1,
+      "Best for first-time sellers who want to upload products, test demand, and use a small AI allowance.",
+    bestFor: "Trying your first resources before committing to a paid plan.",
     ctaLabel: "Start Free",
     creditGrantLabel: "5 AI credits each billing cycle",
     creditResetPolicy: "billingCycle",
@@ -73,12 +71,13 @@ export const planConfig: Record<PlanKey, PlanConfig> = {
     fullAiGenerationEnabled: false,
     rolloverPolicy: "none",
     featureHighlights: [
-      "1 active listing",
+      "Unlimited product uploads",
       "50 percent seller share / 50 percent platform share",
       "5 AI credits each billing cycle",
       "Basic listing creation",
+      "Publish checks for buyer trust",
       "Community support",
-      "No advanced AI optimization",
+      "Advanced AI tools stay limited by plan",
     ],
   },
   basic: {
@@ -89,7 +88,6 @@ export const planConfig: Record<PlanKey, PlanConfig> = {
       "Best for active classroom sellers who want stronger payouts, more AI support, and enough tools to publish consistently each month.",
     bestFor:
       "Consistent monthly publishing with better payout and better optimization tools.",
-    activeListingLimit: 10,
     ctaLabel: "Choose Basic",
     valueNote: "Most popular for growing sellers",
     badgeLabel: "Recommended",
@@ -104,7 +102,7 @@ export const planConfig: Record<PlanKey, PlanConfig> = {
     fullAiGenerationEnabled: false,
     rolloverPolicy: "none",
     featureHighlights: [
-      "10 active listings",
+      "Unlimited product uploads",
       "60 percent seller share / 40 percent platform share",
       "100 AI credits each billing cycle",
       "AI title and description optimization",
@@ -121,7 +119,6 @@ export const planConfig: Record<PlanKey, PlanConfig> = {
       "Best for serious sellers who want the strongest payout, the deepest AI support, and priority tools to grow faster.",
     bestFor:
       "Heavier selling with the strongest payout and most support.",
-    activeListingLimit: 50,
     ctaLabel: "Choose Pro",
     valueNote: "Best value for serious sellers",
     creditGrantLabel: "300 AI credits each billing cycle",
@@ -135,11 +132,11 @@ export const planConfig: Record<PlanKey, PlanConfig> = {
     fullAiGenerationEnabled: false,
     rolloverPolicy: "none",
     featureHighlights: [
-      "50 active listings",
+      "Unlimited product uploads",
       "80 percent seller share / 20 percent platform share",
       "300 AI credits each billing cycle",
       "Advanced AI listing optimization",
-      "Priority placement support placeholder",
+      "Quality guidance for stronger listings",
       "Advanced analytics dashboard",
       "Priority support",
     ],

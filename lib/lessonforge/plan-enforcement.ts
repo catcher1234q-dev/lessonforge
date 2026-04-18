@@ -57,19 +57,19 @@ export function getListingLimitStatus(input: {
   excludeProductId?: string;
 }): ListingLimitStatus {
   const planKey = normalizePlanKey(input.sellerPlanKey);
-  const limit = planConfig[planKey].activeListingLimit;
   const current = countManagedListingsForSeller(
     input.products,
     input.sellerId,
     input.excludeProductId,
   );
+  const limit = Number.MAX_SAFE_INTEGER;
 
   return {
     planKey,
     limit,
     current,
-    remaining: Math.max(0, limit - current),
-    reached: current >= limit,
+    remaining: limit,
+    reached: false,
   };
 }
 
@@ -107,8 +107,8 @@ export function getPremiumFeatureStatus(
 
 export function getListingLimitUpgradeMessage(planKey: PlanKey) {
   return planKey === "starter"
-    ? "You have reached your limit on the free plan. Upgrade to publish more listings and keep growing."
-    : "You have reached the listing limit on your current plan. Upgrade to keep publishing without slowing down.";
+    ? "Uploads are unlimited. Upgrade when you want more AI help, a higher payout, and better seller tools."
+    : "Uploads are unlimited. Upgrade only when you want more AI help, a higher payout, or stronger seller tools.";
 }
 
 export function getAiUpgradeMessage() {

@@ -309,6 +309,9 @@ export function AdminDashboardClient({
                     <img
                       alt={`${product.title} thumbnail`}
                       className="h-20 w-28 rounded-2xl border border-slate-200 object-cover"
+                      decoding="async"
+                      loading="lazy"
+                      sizes="112px"
                       src={product.thumbnailUrl}
                     />
                     <p className="text-sm leading-6 text-ink-soft">

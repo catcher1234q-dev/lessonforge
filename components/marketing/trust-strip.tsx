@@ -57,7 +57,7 @@ export function TrustStrip() {
             </div>
             <h3 className="mt-4 text-xl font-semibold text-ink">Help is easy to find</h3>
             <p className="mt-2 text-sm leading-6 text-ink-soft">
-              Support, refunds, privacy, and terms are linked in plain view.
+              Support, refund rules, privacy, and terms are linked in plain view.
             </p>
             <Link
               className={`mt-4 ${secondaryActionLinkClassName("w-fit")}`}
@@ -72,7 +72,7 @@ export function TrustStrip() {
         <div className="mt-5 rounded-[1.5rem] border border-brand/10 bg-brand-soft/45 p-4 text-sm leading-6 text-ink-soft">
           <div className="flex items-start gap-3">
             <ShoppingBag className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-            <span>Know what you are buying, know what you keep, and know where to get help.</span>
+            <span>Know what you are buying, know when refunds are reviewed, and know where to get help.</span>
           </div>
         </div>
       </div>

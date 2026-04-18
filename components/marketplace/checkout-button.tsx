@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { LoaderCircle } from "lucide-react";
 
+import { trackFunnelEvent } from "@/lib/analytics/events";
+
 type CheckoutButtonProps = {
   className: string;
   label: string;
@@ -26,6 +28,14 @@ export function CheckoutButton({
   async function handleClick() {
     setIsLoading(true);
     setMessage(null);
+    trackFunnelEvent("checkout_started", {
+      productId,
+      surface: returnTo?.startsWith("/favorites")
+        ? "favorites"
+        : returnTo?.startsWith("/marketplace/")
+          ? "product_page"
+          : "marketplace_card",
+    });
 
     try {
       const response = await fetch("/api/checkout", {
@@ -50,6 +60,10 @@ export function CheckoutButton({
     } catch (error) {
       const nextMessage =
         error instanceof Error ? error.message : "Unable to start checkout.";
+      trackFunnelEvent("checkout_start_failed", {
+        productId,
+        reason: nextMessage.slice(0, 80),
+      });
       setMessage(nextMessage);
     } finally {
       setIsLoading(false);

@@ -607,8 +607,8 @@ function renderSubjectPreviewMotif(subject: string, seed: string, family: string
   }
 }
 
-function splitTitleLines(title: string, maxLineLength: number) {
-  const words = title.split(/\s+/);
+function splitTextLines(value: string, maxLineLength: number, maxLines: number) {
+  const words = value.trim().split(/\s+/).filter(Boolean);
   const lines: string[] = [];
   let current = "";
 
@@ -620,20 +620,57 @@ function splitTitleLines(title: string, maxLineLength: number) {
     } else {
       current = next;
     }
+
+    if (lines.length === maxLines) {
+      break;
+    }
   }
 
-  if (current) {
+  if (current && lines.length < maxLines) {
     lines.push(current);
   }
 
-  return lines.slice(0, 4);
+  const consumed = lines.join(" ").replace(/\s+/g, " ").trim();
+  const original = words.join(" ");
+
+  if (original.length > consumed.length && lines.length) {
+    const lastIndex = lines.length - 1;
+    const lastLine = lines[lastIndex];
+    lines[lastIndex] =
+      lastLine.length > maxLineLength - 1
+        ? `${lastLine.slice(0, Math.max(1, maxLineLength - 2)).trimEnd()}...`
+        : `${lastLine}...`;
+  }
+
+  return lines;
 }
 
-function renderTitleText(lines: string[], x: number, y: number, fontSize: number, fill: string) {
+function splitTitleLines(title: string, maxLineLength: number, maxLines = 3) {
+  return splitTextLines(title, maxLineLength, maxLines);
+}
+
+function renderTextLines(
+  lines: string[],
+  x: number,
+  y: number,
+  fontSize: number,
+  fill: string,
+  options?: {
+    fontWeight?: number;
+    lineGap?: number;
+    opacity?: number;
+    letterSpacing?: number;
+  },
+) {
+  const lineGap = options?.lineGap ?? 14;
+  const opacity = options?.opacity === undefined ? "" : ` opacity="${options.opacity}"`;
+  const letterSpacing =
+    options?.letterSpacing === undefined ? "" : ` letter-spacing="${options.letterSpacing}"`;
+
   return lines
     .map(
       (line, index) =>
-        `<text x="${x}" y="${y + index * (fontSize + 14)}" fill="${fill}" font-size="${fontSize}" font-family="Arial, sans-serif" font-weight="800">${escapeXml(line)}</text>`,
+        `<text x="${x}" y="${y + index * (fontSize + lineGap)}" fill="${fill}" font-size="${fontSize}" font-family="Arial, sans-serif" font-weight="${options?.fontWeight ?? 800}"${opacity}${letterSpacing}>${escapeXml(line)}</text>`,
     )
     .join("");
 }
@@ -833,12 +870,19 @@ export function renderManagedPreviewSvg(input: {
 }) {
   const subject = escapeXml(input.subject);
   const gradeBand = escapeXml(input.gradeBand);
-  const summary = escapeXml(input.summary);
   const sellerName = escapeXml(input.sellerName ?? "Teacher creator");
   const theme = getSubjectArtDirection(input.subject);
-  const titleLines = splitTitleLines(input.title, 18);
-  const previewSeed = `${input.title}:${input.gradeBand}:${input.pageNumber}`;
   const coverCopy = getCoverCopy(input);
+  const titleLines = splitTitleLines(input.title, 20, 2);
+  const titleFontSize = titleLines.length > 1 ? 52 : 56;
+  const titleLineGap = 10;
+  const titleStartY = 212;
+  const titleEndY = titleStartY + (titleLines.length - 1) * (titleFontSize + titleLineGap);
+  const subheadLines = splitTextLines(coverCopy.subhead, 48, 1);
+  const subheadY = Math.min(326, titleEndY + 42);
+  const sellerY = subheadY + 36;
+  const summaryLines = splitTextLines(input.summary, 46, 3);
+  const previewSeed = `${input.title}:${input.gradeBand}:${input.pageNumber}`;
   const family = getProductFamily(input);
   const pageLabel =
     input.pageNumber === 1
@@ -854,15 +898,15 @@ export function renderManagedPreviewSvg(input: {
   <rect x="96" y="96" width="1008" height="282" rx="34" fill="url(#heroFade)" opacity="0.28" />
   <circle cx="972" cy="174" r="94" fill="rgba(255,255,255,0.1)" />
   <circle cx="904" cy="270" r="42" fill="rgba(255,255,255,0.16)" />
-  <rect x="126" y="124" width="204" height="44" rx="22" fill="#fff4d6" />
-  <text x="154" y="153" fill="${theme.ink}" font-size="18" font-family="Arial, sans-serif" font-weight="800" letter-spacing="3">${subject}</text>
-  <rect x="348" y="124" width="228" height="44" rx="22" fill="rgba(255,255,255,0.16)" />
-  <text x="382" y="153" fill="#ffffff" font-size="18" font-family="Arial, sans-serif" font-weight="700">${escapeXml(coverCopy.badge)}</text>
+  <rect x="126" y="124" width="244" height="44" rx="22" fill="#fff4d6" />
+  <text x="154" y="153" fill="${theme.ink}" font-size="16" font-family="Arial, sans-serif" font-weight="800" letter-spacing="2">${subject}</text>
+  <rect x="392" y="124" width="228" height="44" rx="22" fill="rgba(255,255,255,0.16)" />
+  <text x="426" y="153" fill="#ffffff" font-size="18" font-family="Arial, sans-serif" font-weight="700">${escapeXml(coverCopy.badge)}</text>
   <rect x="888" y="124" width="176" height="44" rx="22" fill="#ffffff" />
   <text x="920" y="153" fill="${theme.ink}" font-size="18" font-family="Arial, sans-serif" font-weight="800">${gradeBand}</text>
-  ${renderTitleText(titleLines, 136, 210, 58, "#ffffff")}
-  <text x="136" y="308" fill="rgba(255,255,255,0.86)" font-size="26" font-family="Arial, sans-serif">${escapeXml(coverCopy.subhead)}</text>
-  <text x="136" y="344" fill="rgba(255,255,255,0.72)" font-size="18" font-family="Arial, sans-serif">Created by ${sellerName}</text>
+  ${renderTextLines(titleLines, 136, titleStartY, titleFontSize, "#ffffff", { fontWeight: 800, lineGap: titleLineGap })}
+  ${renderTextLines(subheadLines, 136, subheadY, 24, "rgba(255,255,255,0.86)", { fontWeight: 400, lineGap: 8 })}
+  <text x="136" y="${sellerY}" fill="rgba(255,255,255,0.72)" font-size="18" font-family="Arial, sans-serif">Created by ${sellerName}</text>
   <rect x="126" y="404" width="948" height="1062" rx="34" fill="#f8fafc" stroke="#e2e8f0" />
   <rect x="156" y="434" width="410" height="972" rx="28" fill="${theme.tertiary}" stroke="${theme.secondary}" />
   <rect x="192" y="468" width="338" height="40" rx="20" fill="${theme.badge}" />
@@ -888,7 +932,7 @@ export function renderManagedPreviewSvg(input: {
   <rect x="612" y="1108" width="426" height="298" rx="28" fill="#ffffff" stroke="#dbe4f0" />
   <rect x="648" y="1146" width="390" height="98" rx="22" fill="${theme.primary}" opacity="0.12" />
   <text x="680" y="1202" fill="${theme.ink}" font-size="30" font-family="Arial, sans-serif" font-weight="800">${escapeXml(coverCopy.callout)}</text>
-  <text x="648" y="1298" fill="#475569" font-size="22" font-family="Arial, sans-serif">${summary}</text>
+  ${renderTextLines(summaryLines, 648, 1292, 20, "#475569", { fontWeight: 400, lineGap: 8 })}
   <text x="72" y="876" transform="rotate(-26 72 876)" fill="rgba(147,197,253,0.44)" font-size="42" font-family="Arial, sans-serif" font-weight="800" letter-spacing="8">LESSONFORGE PREVIEW · SAMPLE ONLY · LESSONFORGE PREVIEW</text>
   <text x="46" y="1252" transform="rotate(-26 46 1252)" fill="rgba(226,232,240,0.9)" font-size="42" font-family="Arial, sans-serif" font-weight="800" letter-spacing="8">SAMPLE ONLY · LESSONFORGE PREVIEW · SAMPLE ONLY</text>
   <defs>
@@ -912,9 +956,16 @@ export function renderManagedThumbnailSvg(input: {
   const format = escapeXml(input.format);
   const sellerName = escapeXml(input.sellerName ?? "Teacher creator");
   const theme = getSubjectArtDirection(input.subject);
-  const titleLines = splitTitleLines(input.title, 18);
   const thumbnailSeed = `${input.title}:${input.gradeBand}:${input.format}`;
   const coverCopy = getCoverCopy(input);
+  const titleLines = splitTitleLines(input.title, 18, 2);
+  const titleFontSize = titleLines.length > 1 ? 50 : 56;
+  const titleLineGap = 8;
+  const titleStartY = 230;
+  const titleEndY = titleStartY + (titleLines.length - 1) * (titleFontSize + titleLineGap);
+  const subheadLines = splitTextLines(coverCopy.subhead, 50, 1);
+  const subheadY = Math.min(342, titleEndY + 40);
+  const sellerY = subheadY + 34;
   const family = getProductFamily(input);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" role="img" aria-label="${escapeXml(input.title)} thumbnail">
@@ -924,15 +975,15 @@ export function renderManagedThumbnailSvg(input: {
   <rect x="86" y="86" width="1028" height="728" rx="34" fill="url(#thumbFade)" opacity="0.3" />
   <circle cx="994" cy="182" r="94" fill="rgba(255,255,255,0.1)" />
   <circle cx="922" cy="286" r="40" fill="rgba(255,255,255,0.15)" />
-  <rect x="124" y="124" width="238" height="44" rx="22" fill="#fff4d6" />
-  <text x="152" y="153" fill="${theme.ink}" font-size="18" font-family="Arial, sans-serif" font-weight="800" letter-spacing="3">${subject}</text>
-  <rect x="384" y="124" width="216" height="44" rx="22" fill="rgba(255,255,255,0.16)" />
-  <text x="416" y="153" fill="#ffffff" font-size="18" font-family="Arial, sans-serif" font-weight="700">${escapeXml(coverCopy.badge)}</text>
+  <rect x="124" y="124" width="260" height="44" rx="22" fill="#fff4d6" />
+  <text x="152" y="153" fill="${theme.ink}" font-size="16" font-family="Arial, sans-serif" font-weight="800" letter-spacing="2">${subject}</text>
+  <rect x="408" y="124" width="216" height="44" rx="22" fill="rgba(255,255,255,0.16)" />
+  <text x="440" y="153" fill="#ffffff" font-size="18" font-family="Arial, sans-serif" font-weight="700">${escapeXml(coverCopy.badge)}</text>
   <rect x="922" y="124" width="156" height="44" rx="22" fill="#ffffff" />
   <text x="952" y="153" fill="${theme.ink}" font-size="18" font-family="Arial, sans-serif" font-weight="800">${gradeBand}</text>
-  ${renderTitleText(titleLines, 124, 236, 58, "#ffffff")}
-  <text x="124" y="334" fill="rgba(255,255,255,0.88)" font-size="25" font-family="Arial, sans-serif">${escapeXml(coverCopy.subhead)}</text>
-  <text x="124" y="370" fill="rgba(255,255,255,0.76)" font-size="18" font-family="Arial, sans-serif">Created by ${sellerName}</text>
+  ${renderTextLines(titleLines, 124, titleStartY, titleFontSize, "#ffffff", { fontWeight: 800, lineGap: titleLineGap })}
+  ${renderTextLines(subheadLines, 124, subheadY, 23, "rgba(255,255,255,0.88)", { fontWeight: 400, lineGap: 8 })}
+  <text x="124" y="${sellerY}" fill="rgba(255,255,255,0.76)" font-size="18" font-family="Arial, sans-serif">Created by ${sellerName}</text>
   <rect x="124" y="408" width="444" height="346" rx="28" fill="#ffffff" opacity="0.96" />
   <rect x="600" y="408" width="474" height="346" rx="28" fill="rgba(255,255,255,0.16)" stroke="rgba(255,255,255,0.32)" />
   ${renderFormatThumbnailMotif(input.format, theme)}

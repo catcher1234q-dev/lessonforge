@@ -159,6 +159,9 @@ export function ProductAssetPanel({
           <img
             alt={`${title} thumbnail preview`}
             className="h-auto w-full rounded-[18px] border border-slate-100 object-cover"
+            decoding="async"
+            loading="lazy"
+            sizes="(min-width: 768px) 560px, 100vw"
             src={thumbnailPreviewUrl}
           />
         </div>

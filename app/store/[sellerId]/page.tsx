@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { BadgeCheck, Star } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -7,6 +8,7 @@ import { ProductCard } from "@/components/marketplace/product-card";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { getMarketplaceSellerWithPersistedListings } from "@/lib/lessonforge/server-catalog";
+import { buildNoIndexMetadata, buildPageMetadata } from "@/lib/seo/metadata";
 
 function getStoreTrustLabel(values: {
   listingCount: number;
@@ -47,6 +49,32 @@ function getStorefrontIntro(values: {
   }
 
   return `${values.sellerName} is starting with a focused listing that buyers can preview, review, and compare before purchase.`;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ sellerId: string }>;
+}): Promise<Metadata> {
+  const { sellerId } = await params;
+  const seller = await getMarketplaceSellerWithPersistedListings(sellerId);
+
+  if (!seller) {
+    return buildNoIndexMetadata(
+      "Storefront not found",
+      "This LessonForgeHub seller storefront could not be found.",
+    );
+  }
+
+  const subjectSummary = seller.featuredSubjects.length
+    ? seller.featuredSubjects.slice(0, 3).join(", ")
+    : "classroom";
+
+  return buildPageMetadata({
+    title: `${seller.name} Storefront`,
+    description: `Browse ${seller.name}'s ${subjectSummary} resources on LessonForgeHub, including protected previews and buyer-friendly listing details.`,
+    path: `/store/${seller.id}`,
+  });
 }
 
 export default async function SellerStorefrontPage({

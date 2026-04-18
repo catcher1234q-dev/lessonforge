@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import Link from "next/link";
 import { AlertTriangle, Bot, CreditCard, ShieldCheck } from "lucide-react";
 
@@ -21,6 +23,12 @@ import {
   getAdminOverview,
   getAdminRankingOverview,
 } from "@/lib/lessonforge/server-operations";
+import { buildNoIndexMetadata } from "@/lib/seo/metadata";
+
+export const metadata: Metadata = buildNoIndexMetadata(
+  "Admin",
+  "Private LessonForgeHub admin operations area.",
+);
 
 export default async function AdminPage() {
   const [viewer, systemSettings, persistenceReadiness, privateAccessRole, integrationReadiness] = await Promise.all([
@@ -411,12 +419,12 @@ export default async function AdminPage() {
                 </p>
               </article>
               <article className="rounded-[1.5rem] bg-slate-50 p-5">
-                <p className="text-sm text-ink-soft">Listing cap hits</p>
+                <p className="text-sm text-ink-soft">Legacy listing prompts</p>
                 <p className="mt-2 text-3xl font-semibold text-ink">
                   {adminOverview.monetizationSummary.listingLimitHits}
                 </p>
                 <p className="mt-3 text-sm leading-6 text-ink-soft">
-                  Times sellers hit plan listing limits and saw an upgrade prompt.
+                  Historical listing prompts before uploads were opened up.
                 </p>
               </article>
               <article className="rounded-[1.5rem] bg-slate-50 p-5">

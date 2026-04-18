@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import { AppAccessGate } from "@/components/account/app-access-gate";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -10,6 +12,12 @@ import {
   getViewerContext,
   listLibraryItems,
 } from "@/lib/lessonforge/server-operations";
+import { buildNoIndexMetadata } from "@/lib/seo/metadata";
+
+export const metadata: Metadata = buildNoIndexMetadata(
+  "Library",
+  "Private LessonForgeHub buyer library for purchased classroom resources.",
+);
 
 export default async function LibraryPage({
   searchParams,
@@ -73,7 +81,7 @@ export default async function LibraryPage({
                     {purchasedProductTitle ?? justPurchasedItem.productTitle} is now in your library
                   </h2>
                   <p className="mt-2 text-sm leading-7 text-ink-soft">
-                    You can open the purchased files right now, revisit the listing later, or keep browsing for more resources.
+                    You can open the purchased files right now, revisit the listing later, or keep browsing for more resources with this purchase safely saved.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
@@ -108,7 +116,7 @@ export default async function LibraryPage({
             </section>
           ) : null}
 
-          <section className="rounded-[36px] border border-black/5 bg-white p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
+          <section className="rounded-[36px] border border-black/5 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:p-8">
             <div className="flex flex-col gap-8 xl:flex-row xl:items-start xl:justify-between">
               <div className="max-w-3xl">
                 <SectionIntro
@@ -116,17 +124,35 @@ export default async function LibraryPage({
                   eyebrow="Your purchases"
                   level="h1"
                   title="Your files, updates, and support in one library."
-                  titleClassName="text-5xl leading-tight"
+                  titleClassName="text-4xl leading-tight sm:text-5xl"
                 />
                 <p className="mt-3 text-sm leading-7 text-ink-soft">
                   This is the signed-in space for reopening full files, checking newer versions,
                   and handling anything that needs follow-up after purchase.
                 </p>
-                <div className="mt-6 rounded-[1.5rem] border border-sky-100 bg-sky-50/80 px-5 py-4 text-sm leading-6 text-ink-soft">
-                  <p className="font-semibold text-ink">Start here</p>
-                  <p className="mt-1">
-                    Open the first purchase below, then switch into updated or support views only when you need them.
-                  </p>
+                <div className="mt-6 grid gap-3 md:grid-cols-3">
+                  {[
+                    {
+                      title: "Open files again",
+                      body: "Purchased resources stay tied to this library account.",
+                    },
+                    {
+                      title: "Check updates",
+                      body: "New eligible versions surface here when sellers refresh assets.",
+                    },
+                    {
+                      title: "Get help",
+                      body: "Refund and issue reporting stay attached to each purchase.",
+                    },
+                  ].map((item) => (
+                    <div
+                      key={item.title}
+                      className="rounded-[1.25rem] border border-sky-100 bg-sky-50/80 px-4 py-4 text-sm leading-6 text-ink-soft"
+                    >
+                      <p className="font-semibold text-ink">{item.title}</p>
+                      <p className="mt-1">{item.body}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
 

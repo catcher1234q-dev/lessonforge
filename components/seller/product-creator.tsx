@@ -4,11 +4,11 @@ import { useEffect, useState, type ChangeEvent } from "react";
 import { ArrowRight, FileUp, Lock, WandSparkles } from "lucide-react";
 import Link from "next/link";
 
+import { trackFunnelEvent } from "@/lib/analytics/events";
 import { normalizePlanKey, planConfig } from "@/lib/config/plans";
 import { ProductAssetPanel } from "@/components/seller/product-asset-panel";
 import {
   getAiUpgradeMessage,
-  getListingLimitUpgradeMessage,
   getLockedFeatureMessage,
 } from "@/lib/lessonforge/plan-enforcement";
 import { buildSellerPlanCheckoutHref } from "@/lib/stripe/seller-plan-billing";
@@ -127,7 +127,7 @@ function formatUsd(cents: number) {
 }
 
 async function trackMonetizationEvent(input: {
-  eventType: "listing_limit_hit" | "ai_credit_limit_hit" | "locked_feature_clicked" | "upgrade_click";
+  eventType: "ai_credit_limit_hit" | "locked_feature_clicked" | "upgrade_click";
   source: "seller_creator";
   planKey: string;
   metadata?: Record<string, unknown>;
@@ -144,6 +144,52 @@ async function trackMonetizationEvent(input: {
   } catch {
     // Quietly fail. Monetization tracking should never block seller work.
   }
+}
+
+function normalizeListingTitle(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getSimilarTitleWarning(title: string, existingTitles: string[]) {
+  const normalizedTitle = normalizeListingTitle(title);
+
+  if (normalizedTitle.length < 8) {
+    return null;
+  }
+
+  const titleWords = new Set(
+    normalizedTitle.split(" ").filter((word) => word.length > 2),
+  );
+
+  for (const existingTitle of existingTitles) {
+    const normalizedExisting = normalizeListingTitle(existingTitle);
+
+    if (!normalizedExisting || normalizedExisting === normalizedTitle) {
+      if (normalizedExisting === normalizedTitle) {
+        return `You already have a listing titled "${existingTitle}". Make sure this one is clearly different before publishing.`;
+      }
+
+      continue;
+    }
+
+    const existingWords = new Set(
+      normalizedExisting.split(" ").filter((word) => word.length > 2),
+    );
+    const overlap = Array.from(titleWords).filter((word) =>
+      existingWords.has(word),
+    ).length;
+    const similarity = overlap / Math.max(titleWords.size, 1);
+
+    if (titleWords.size >= 3 && similarity >= 0.8) {
+      return `This title is very close to "${existingTitle}". Clear, distinct listings are easier for buyers to trust.`;
+    }
+  }
+
+  return null;
 }
 
 export function ProductCreator() {
@@ -187,6 +233,7 @@ export function ProductCreator() {
     fullListingOptimization: { unlocked: boolean; upgradePlanKey: "starter" | "basic" | "pro" };
     revenueInsights: { unlocked: boolean; upgradePlanKey: "starter" | "basic" | "pro" };
   } | null>(null);
+  const [existingSellerTitles, setExistingSellerTitles] = useState<string[]>([]);
   const currentPlanKey = normalizePlanKey(profile?.sellerPlanKey);
   const currentPlan = planConfig[currentPlanKey];
   const canRunStandardsScan =
@@ -198,8 +245,49 @@ export function ProductCreator() {
   const canSaveWithoutAi = status !== "Published";
   const saveBlockedByAi =
     !canSaveWithoutAi && (aiKillSwitchEnabled || !canRunStandardsScan);
-  const listingLimitReached = listingUsage?.reached ?? false;
-  const saveBlocked = saveBlockedByAi || listingLimitReached;
+  const saveBlocked = saveBlockedByAi;
+  const priceCentsPreview = Math.round(Number(price) * 100);
+  const publishReadinessItems = [
+    {
+      label: "Title added",
+      complete: title.trim().length > 0,
+      help: "Add a title that names the grade, topic, and resource type.",
+    },
+    {
+      label: "Useful description",
+      complete:
+        fullDescription.trim().length >= 40 ||
+        shortDescription.trim().length >= 20,
+      help: "Write enough detail for another teacher to know if it fits their class.",
+    },
+    {
+      label: "Price set",
+      complete: Number.isFinite(priceCentsPreview) && priceCentsPreview >= 100,
+      help: "Set a valid price before publishing.",
+    },
+    {
+      label: "File attached",
+      complete: files.length > 0,
+      help: "Make sure the buyer will receive the resource file.",
+    },
+    {
+      label: "Preview added",
+      complete: previewIncluded,
+      help: "Add a preview so buyers know what they are getting.",
+    },
+    {
+      label: "Thumbnail added",
+      complete: thumbnailIncluded,
+      help: "Add a cover image so the listing looks ready in browse pages.",
+    },
+    {
+      label: "Rights confirmed",
+      complete: rightsConfirmed,
+      help: "Confirm you own or have rights to sell this content.",
+    },
+  ];
+  const missingPublishItems = publishReadinessItems.filter((item) => !item.complete);
+  const similarTitleWarning = getSimilarTitleWarning(title, existingSellerTitles);
   const optimizationPreview = buildOptimizationPreview({
     title,
     shortDescription,
@@ -303,6 +391,34 @@ export function ProductCreator() {
     })();
   }, [profile?.email, profile?.sellerPlanKey, seller?.email]);
 
+  useEffect(() => {
+    const sellerId = profile?.email || seller?.email;
+
+    if (!sellerId) {
+      return;
+    }
+
+    void (async () => {
+      try {
+        const response = await fetch("/api/lessonforge/products");
+        const payload = (await response.json()) as { products?: ProductRecord[] };
+
+        if (!response.ok) {
+          return;
+        }
+
+        setExistingSellerTitles(
+          (payload.products ?? [])
+            .filter((product) => product.sellerId === sellerId)
+            .map((product) => product.title)
+            .filter(Boolean),
+        );
+      } catch {
+        // Duplicate guidance should never block creating a listing.
+      }
+    })();
+  }, [profile?.email, seller?.email]);
+
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const nextFiles = Array.from(event.target.files ?? []);
     setFiles(nextFiles);
@@ -316,20 +432,6 @@ export function ProductCreator() {
   }
 
   async function handleSave() {
-    if (listingLimitReached) {
-      setMessage(getListingLimitUpgradeMessage(currentPlanKey));
-      await trackMonetizationEvent({
-        eventType: "listing_limit_hit",
-        source: "seller_creator",
-        planKey: currentPlanKey,
-        metadata: {
-          currentListings: listingUsage?.current ?? 0,
-          listingLimit: listingUsage?.limit ?? currentPlan.activeListingLimit,
-        },
-      });
-      return;
-    }
-
     if (!title.trim()) {
       setMessage("Add a title before saving the product.");
       return;
@@ -338,6 +440,15 @@ export function ProductCreator() {
     const priceCents = Math.round(Number(price) * 100);
     if (!Number.isFinite(priceCents) || priceCents < 100) {
       setMessage("Set a valid price of at least $1.00.");
+      return;
+    }
+
+    if (status === "Published" && missingPublishItems.length > 0) {
+      setMessage(
+        `Finish these publish checks first: ${missingPublishItems
+          .map((item) => item.label.toLowerCase())
+          .join(", ")}.`,
+      );
       return;
     }
 
@@ -468,6 +579,19 @@ export function ProductCreator() {
       return;
     }
     const savedProductRecord = payload.product;
+    trackFunnelEvent(
+      savedProductRecord.productStatus === "Published"
+        ? "seller_listing_published"
+        : "seller_listing_saved_draft",
+      {
+        productId: savedProductRecord.id,
+        subject,
+        resourceType,
+        status: savedProductRecord.productStatus ?? "Draft",
+        hasPreview: previewIncluded,
+        hasThumbnail: thumbnailIncluded,
+      },
+    );
 
     setTitle("");
     setShortDescription("");
@@ -494,76 +618,71 @@ export function ProductCreator() {
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
-      <section className="rounded-[32px] border border-black/5 bg-white p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
+      <section className="rounded-[32px] border border-black/5 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:p-8">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand">
-          Product creation
+          First listing
         </p>
-        <h1 className="mt-4 font-[family-name:var(--font-display)] text-5xl leading-tight text-ink">
-          Create a listing with draft and review-ready statuses.
+        <h1 className="mt-4 font-[family-name:var(--font-display)] text-4xl leading-tight text-ink sm:text-5xl">
+          Create one clear resource buyers can trust.
         </h1>
         <p className="mt-5 max-w-3xl text-lg leading-8 text-ink-soft">
-          Start with the basics a buyer needs to understand the listing, then
-          add publish-ready detail only when you want to move past a draft.
+          Start with a classroom resource you already understand well. Save it
+          as a draft first, then add the preview, thumbnail, and rights check
+          when you are ready to publish.
         </p>
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          {[
+            {
+              title: "Upload",
+              body: "Choose one file or resource set that is ready for another teacher to open.",
+            },
+            {
+              title: "Explain",
+              body: "Add the title, grade, subject, price, and a buyer-facing summary.",
+            },
+            {
+              title: "Publish",
+              body: "Add preview, thumbnail, and rights confirmation before going live.",
+            },
+          ].map((step) => (
+            <div
+              key={step.title}
+              className="rounded-[1.35rem] border border-ink/5 bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft"
+            >
+              <p className="font-semibold text-ink">{step.title}</p>
+              <p className="mt-1">{step.body}</p>
+            </div>
+          ))}
+        </div>
         <div className="mt-6 rounded-[1.35rem] border border-sky-100 bg-sky-50/80 p-4">
           <p className="text-sm font-semibold uppercase tracking-[0.16em] text-sky-800">
             Start here
           </p>
           <p className="mt-2 text-base font-semibold text-ink">
-            Build the first draft before worrying about publish details.
+            A draft is safe. It does not need to be perfect.
           </p>
           <p className="mt-2 text-sm leading-6 text-ink-soft">
-            Upload the file, add the title, subject, grade band, and price, then save the draft. Come back for publish checks only when the listing is close to going live.
+            Upload the file, add the title, subject, grade band, and price, then save. Come back for buyer-ready checks only when the listing is close to going live.
           </p>
         </div>
-        {listingLimitReached ? (
-          <div className="mt-5 rounded-[1.5rem] border border-amber-200 bg-amber-50 p-5">
-            <div className="flex items-start gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-100 text-amber-800">
-                <Lock className="h-5 w-5" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-800">
-                  Free plan limit reached
-                </p>
-                <p className="mt-2 text-base font-semibold text-ink">
-                  {getListingLimitUpgradeMessage(currentPlanKey)}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-ink-soft">
-                  Starter includes {currentPlan.activeListingLimit} active listing. Upgrade to Basic to unlock up to {planConfig.basic.activeListingLimit} active listings, a better payout split, and stronger AI support.
-                </p>
-                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                  <Link
-                    className="inline-flex items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
-                    href={buildSellerPlanCheckoutHref({
-                      planKey: "basic",
-                      returnTo: "/sell/dashboard?focus=plan",
-                    })}
-                    onClick={() =>
-                      void trackMonetizationEvent({
-                        eventType: "upgrade_click",
-                        source: "seller_creator",
-                        planKey: currentPlanKey,
-                        metadata: {
-                          reason: "listing_limit",
-                          targetPlan: "basic",
-                        },
-                      })
-                    }
-                  >
-                    Upgrade to Basic
-                  </Link>
-                  <Link
-                    className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
-                    href="/sell/dashboard"
-                  >
-                    Open seller dashboard
-                  </Link>
-                </div>
-              </div>
+        <div className="mt-5 rounded-[1.5rem] border border-emerald-100 bg-emerald-50/80 p-5">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800">
+              <FileUp className="h-5 w-5" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-800">
+                Unlimited uploads
+              </p>
+              <p className="mt-2 text-base font-semibold text-ink">
+                You can keep uploading products. AI tools are limited by your plan.
+              </p>
+              <p className="mt-2 text-sm leading-6 text-ink-soft">
+                Quality still matters: clear previews, accurate descriptions, and original or properly licensed files help buyers trust your listings.
+              </p>
             </div>
           </div>
-        ) : null}
+        </div>
         {isCreatorReady ? (
           <p className="sr-only" data-testid="seller-creator-ready">
             Creator ready
@@ -578,7 +697,7 @@ export function ProductCreator() {
           Current AI plan: {formatPlanLabel(currentPlanKey)}
         </p>
         <p className="mt-2 text-sm text-ink-soft">
-          Listing usage: {listingUsage ? `${listingUsage.current}/${listingUsage.limit} active listings used` : `${currentPlan.activeListingLimit} active listing${currentPlan.activeListingLimit === 1 ? "" : "s"} included`}
+          Uploads are unlimited. {listingUsage ? `${listingUsage.current} listing${listingUsage.current === 1 ? "" : "s"} tracked for this seller.` : "AI credits are the plan-based limit."}
         </p>
         {aiKillSwitchEnabled ? (
           <div className="mt-4 rounded-[1.25rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
@@ -650,6 +769,9 @@ export function ProductCreator() {
         <div className="mt-6 grid gap-4">
           <label className="block">
             <span className="text-sm font-semibold text-ink">Resource files</span>
+            <span className="mt-1 block text-sm leading-6 text-ink-soft">
+              Pick a resource that is already useful on its own: a worksheet, slide deck, assessment, warm up, exit ticket, or lesson pack.
+            </span>
             <input
               className="mt-2 block w-full text-sm text-ink-soft"
               data-testid="seller-creator-files"
@@ -661,6 +783,9 @@ export function ProductCreator() {
 
           <label className="block">
             <span className="text-sm font-semibold text-ink">Title</span>
+            <span className="mt-1 block text-sm leading-6 text-ink-soft">
+              A strong title names the grade, topic, and resource type so teachers can scan it quickly.
+            </span>
             <input
               className="mt-2 w-full rounded-[1.25rem] border border-ink/10 bg-surface-subtle px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
               data-testid="seller-creator-title"
@@ -668,6 +793,15 @@ export function ProductCreator() {
               placeholder="5th Grade Fraction Exit Ticket Pack"
               value={title}
             />
+            {similarTitleWarning ? (
+              <div className="mt-3 rounded-[1rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
+                <p className="font-semibold">Possible duplicate title</p>
+                <p className="mt-1">{similarTitleWarning}</p>
+                <p className="mt-1 text-amber-900">
+                  Avoid duplicate listings. Clear, distinct resources are easier for buyers to trust.
+                </p>
+              </div>
+            ) : null}
           </label>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -736,7 +870,7 @@ export function ProductCreator() {
               Explain what the buyer gets and why it is worth opening.
             </p>
             <p className="mt-2 text-sm leading-6 text-ink-soft">
-              These fields are what buyers scan in browse, on the product page, and during checkout.
+              Keep this practical: what is included, when a teacher should use it, and what problem it solves in class.
             </p>
           </div>
 
@@ -931,9 +1065,51 @@ export function ProductCreator() {
               </div>
             ) : (
               <p className="mt-4 text-sm leading-6 text-ink-soft">
-                This paid-plan preview is ready now. TODO: connect the live server-side rewrite action into this panel so credits are consumed only when a seller requests the final optimized output.
+                Optimization guidance is available for this plan. Use it after the draft has enough buyer-facing detail to improve.
               </p>
             )}
+          </div>
+
+          <div className="rounded-[1.35rem] border border-brand/10 bg-brand-soft/30 p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand">
+                  Listing readiness
+                </p>
+                <p className="mt-2 text-base font-semibold text-ink">
+                  {missingPublishItems.length === 0
+                    ? "This listing has the basics needed to publish."
+                    : "Finish these checks before publishing."}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-ink-soft">
+                  Drafts can stay unfinished. Published listings need enough detail for buyers to know what they are getting.
+                </p>
+              </div>
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-brand">
+                {publishReadinessItems.length - missingPublishItems.length}/{publishReadinessItems.length} ready
+              </span>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {publishReadinessItems.map((item) => (
+                <div
+                  key={item.label}
+                  className={`rounded-[1rem] border px-4 py-3 text-sm leading-6 ${
+                    item.complete
+                      ? "border-emerald-100 bg-white text-emerald-950"
+                      : "border-amber-100 bg-amber-50/80 text-amber-950"
+                  }`}
+                >
+                  <p className="font-semibold">
+                    {item.complete ? "Done: " : "Missing: "}
+                    {item.label}
+                  </p>
+                  <p className="mt-1 text-ink-soft">{item.help}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 rounded-[1rem] border border-ink/5 bg-white px-4 py-3 text-sm leading-6 text-ink-soft">
+              Low-effort or repeated listings may be reviewed and may perform worse in discovery. Start with one strong resource before uploading many at once.
+            </div>
           </div>
 
           <div className="rounded-[1.25rem] border border-amber-100 bg-amber-50/80 p-4">
@@ -941,10 +1117,10 @@ export function ProductCreator() {
               Buyer-ready check
             </p>
             <p className="mt-2 text-base font-semibold text-ink">
-              Use these checks only when the listing is getting close to publish.
+              Use these checks when the listing is getting close to publish.
             </p>
             <p className="mt-2 text-sm leading-6 text-ink-soft">
-              Published listings need a preview, a thumbnail, and a rights-to-sell confirmation.
+              Published listings need a preview, a thumbnail, and a rights-to-sell confirmation so buyers know what they are getting.
             </p>
             <div className="mt-3 space-y-3 text-sm text-ink-soft">
               <label className="flex items-start gap-3">
@@ -1012,13 +1188,11 @@ export function ProductCreator() {
           >
             {isSaving
               ? "Saving listing"
-              : listingLimitReached
-                ? "Upgrade to publish more"
               : saveBlockedByAi && aiKillSwitchEnabled
                 ? "AI temporarily disabled"
               : saveBlockedByAi && !canRunStandardsScan
                 ? "Insufficient AI credits"
-              : "Save product"}
+              : "Save listing draft"}
             <ArrowRight className="h-4 w-4" />
           </button>
           <Link
@@ -1112,9 +1286,21 @@ export function ProductCreator() {
           </div>
           <h2 className="mt-4 text-lg font-semibold">Listing flow</h2>
           <div className="mt-3 space-y-2 text-sm leading-6 text-white/75">
-            <p>Save draft first.</p>
-            <p>Move to review when the listing is ready.</p>
-            <p>Published products can appear in browse, storefront, and checkout.</p>
+            <p>Draft first so you can work safely.</p>
+            <p>Move to review after preview, thumbnail, and rights checks are done.</p>
+            <p>Published buyer-ready products can appear in browse, storefront, and checkout.</p>
+          </div>
+        </section>
+
+        <section className="rounded-[24px] border border-black/5 bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
+          <h2 className="text-lg font-semibold text-ink">Good first product</h2>
+          <div className="mt-3 space-y-3 text-sm leading-6 text-ink-soft">
+            <p>
+              Choose a resource with a clear classroom use, not your biggest bundle. A focused first listing is easier to finish and easier for buyers to understand.
+            </p>
+            <p>
+              If you are not ready to publish, save a draft and return from the seller dashboard.
+            </p>
           </div>
         </section>
 

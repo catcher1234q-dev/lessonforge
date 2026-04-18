@@ -280,7 +280,7 @@ export function ProductEditor({ product }: { product: ProductRecord }) {
             <p className="mt-1">
               {lowAiCredits
                 ? getAiUpgradeMessage()
-                : "Unlock more listings and better tools."}
+                : "Unlock more AI help and stronger seller tools."}
             </p>
             <div className="mt-4 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -799,7 +799,7 @@ export function ProductEditor({ product }: { product: ProductRecord }) {
                 }
                 type="button"
               >
-                Unlock more listings and better tools
+                Learn why this is locked
               </button>
             </div>
           ) : null}

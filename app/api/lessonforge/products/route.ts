@@ -5,10 +5,6 @@ import { getCurrentViewer } from "@/lib/auth/viewer";
 import { normalizePlanKey } from "@/lib/config/plans";
 import { checkAdminMutationRateLimit } from "@/lib/lessonforge/admin-rate-limit";
 import { handleProductModerationRequest } from "@/lib/lessonforge/api-handlers";
-import {
-  getListingLimitStatus,
-  getListingLimitUpgradeMessage,
-} from "@/lib/lessonforge/plan-enforcement";
 import { validateProductForSave } from "@/lib/lessonforge/product-validation";
 import {
   listPersistedProducts,
@@ -82,47 +78,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const [products, profiles] = await Promise.all([
-      listPersistedProducts(),
-      listSellerProfiles(),
-    ]);
-    const existingProduct = products.find((entry) => entry.id === body.product?.id);
+    const profiles = await listSellerProfiles();
     const effectiveSellerId =
       body.product.sellerId ||
       (viewer.role === "seller" ? viewer.email : undefined);
     const profile =
       profiles.find((entry) => entry.email === effectiveSellerId) ??
       profiles.find((entry) => entry.email === viewer.email);
-    const listingUsage = getListingLimitStatus({
-      sellerPlanKey: normalizePlanKey(profile?.sellerPlanKey),
-      products,
-      sellerId: effectiveSellerId,
-      excludeProductId: existingProduct?.id,
-    });
-
-    if (!existingProduct && listingUsage.reached) {
-      await trackMonetizationEvent({
-        sellerId: effectiveSellerId || viewer.email,
-        sellerEmail: effectiveSellerId || viewer.email,
-        planKey: listingUsage.planKey,
-        eventType: "listing_limit_hit",
-        source: "seller_creator",
-        metadata: {
-          currentListings: listingUsage.current,
-          listingLimit: listingUsage.limit,
-        },
-      });
-
-      return NextResponse.json(
-        {
-          error: getListingLimitUpgradeMessage(listingUsage.planKey),
-          code: "listing_limit_reached",
-          listingUsage,
-          upgradePlanKey: "basic",
-        },
-        { status: 403 },
-      );
-    }
 
     const validationError = validateProductForSave(body.product);
     if (validationError) {

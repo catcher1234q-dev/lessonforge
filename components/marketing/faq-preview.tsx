@@ -15,9 +15,14 @@ const questions = [
       "You can return to your library to reopen purchased resources and find support if something needs attention.",
   },
   {
+    question: "Can I get a refund after downloading?",
+    answer:
+      "Digital purchases are usually final after access is delivered. Refunds are reviewed for broken files, missing access, misleading listings, duplicate charges, or rights issues.",
+  },
+  {
     question: "How do sellers get paid?",
     answer:
-      "Sellers connect Stripe, choose a plan, and see the payout percentage before they start selling.",
+      "Sellers connect Stripe, choose a plan, and see the payout percentage before they start selling. Refunds, disputes, or rights issues can affect payout timing.",
   },
   {
     question: "Where do I go if something looks wrong?",

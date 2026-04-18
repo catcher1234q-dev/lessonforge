@@ -56,20 +56,26 @@ export function LegalPageShell({
           </div>
 
           <div className="mt-8 rounded-[1.5rem] border border-brand/10 bg-brand-soft px-5 py-5 text-sm leading-7 text-brand-700">
-            <p>
-              Questions about these policies can be sent to{" "}
-              <a className="font-semibold underline-offset-4 hover:underline" href={`mailto:${siteConfig.supportEmail}`}>
-                {siteConfig.supportEmail}
-              </a>
-              .
-            </p>
-            <p className="mt-2">
-              Ready to get back to the marketplace?{" "}
-              <Link className="font-semibold underline-offset-4 hover:underline" href="/marketplace">
-                Browse listings
-              </Link>
-              .
-            </p>
+            <div className="grid gap-4 sm:grid-cols-[1.2fr_0.8fr] sm:items-start">
+              <div>
+                <p className="font-semibold text-ink">Need help understanding this policy?</p>
+                <p className="mt-2">
+                  Questions can be sent to{" "}
+                  <a className="font-semibold underline-offset-4 hover:underline" href={`mailto:${siteConfig.supportEmail}`}>
+                    {siteConfig.supportEmail}
+                  </a>
+                  . You can also open the support page for buyer, seller, and policy next steps.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 sm:items-end">
+                <Link className="font-semibold underline-offset-4 hover:underline" href="/support">
+                  Open support
+                </Link>
+                <Link className="font-semibold underline-offset-4 hover:underline" href="/marketplace">
+                  Browse listings
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </div>

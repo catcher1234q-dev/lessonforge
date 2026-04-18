@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import { Heart } from "lucide-react";
 import Link from "next/link";
 
@@ -20,6 +22,12 @@ import {
 } from "@/lib/lessonforge/server-operations";
 import { buildMarketplaceListingHref } from "@/lib/lessonforge/marketplace-navigation";
 import { formatCurrency } from "@/lib/marketplace/config";
+import { buildNoIndexMetadata } from "@/lib/seo/metadata";
+
+export const metadata: Metadata = buildNoIndexMetadata(
+  "Favorites",
+  "Private LessonForgeHub buyer shortlist for saved marketplace resources.",
+);
 
 type FavoriteListing = Awaited<ReturnType<typeof getFavoriteListingsForViewer>>[number];
 
@@ -518,6 +526,8 @@ export default async function FavoritesPage({
                         <div className="mt-5 flex flex-wrap gap-3">
                           <Link
                             className="inline-flex rounded-full bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700"
+                            data-analytics-event="product_details_clicked"
+                            data-analytics-props={JSON.stringify({ productId: listing.id, surface: "favorites" })}
                             href={buildMarketplaceListingHref({
                               returnTo,
                               slug: listing.slug,
@@ -821,6 +831,8 @@ export default async function FavoritesPage({
                 {libraryItems.length ? (
                   <Link
                     className="inline-flex rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
+                    data-analytics-event="library_cta_clicked"
+                    data-analytics-props={JSON.stringify({ surface: "favorites_empty_state" })}
                     data-testid="favorites-empty-view-library"
                     href="/library"
                   >
@@ -829,6 +841,8 @@ export default async function FavoritesPage({
                 ) : null}
                 <Link
                   className="inline-flex rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+                  data-analytics-event="return_browsing_clicked"
+                  data-analytics-props={JSON.stringify({ surface: "favorites_empty_state" })}
                   data-testid="favorites-empty-browse-marketplace"
                   href="/marketplace"
                 >

@@ -35,7 +35,8 @@ export function SiteHeaderShell({
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsCondensed(window.scrollY > 36);
+      const shouldCondense = window.scrollY > 36;
+      setIsCondensed((current) => (current === shouldCondense ? current : shouldCondense));
     };
 
     handleScroll();
@@ -53,12 +54,12 @@ export function SiteHeaderShell({
       }`}
     >
       <div
-        className={`mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8 transition-all duration-300 ${
-          isCondensed ? "py-3" : "py-4"
-        }`}
+          className={`mx-auto w-full max-w-7xl px-4 transition-all duration-300 sm:px-6 lg:px-8 ${
+            isCondensed ? "py-3" : "py-4"
+          }`}
       >
         <div
-          className={`flex items-start justify-between gap-6 transition-all duration-300 ${
+          className={`flex items-start justify-between gap-3 transition-all duration-300 sm:gap-6 ${
             isCondensed ? "items-center" : ""
           }`}
         >
@@ -73,7 +74,7 @@ export function SiteHeaderShell({
             <div className="min-w-0">
               <p
                 className={`font-[family-name:var(--font-display)] leading-none tracking-[-0.03em] text-ink transition-all duration-300 ${
-                  isCondensed ? "text-[1.35rem]" : "text-[1.7rem]"
+                  isCondensed ? "text-[1.15rem] sm:text-[1.35rem]" : "text-[1.35rem] sm:text-[1.7rem]"
                 }`}
               >
                 {productName}
@@ -126,14 +127,14 @@ export function SiteHeaderShell({
           className={`overflow-hidden transition-all duration-300 ${
             isCondensed
               ? "mt-0 max-h-0 -translate-y-2 opacity-0 pointer-events-none"
-              : "mt-4 max-h-24 translate-y-0 opacity-100"
+              : "mt-4 max-h-28 translate-y-0 opacity-100"
           }`}
         >
-          <nav className="flex min-w-0 flex-wrap items-center gap-2 text-sm text-ink">
+          <nav className="-mx-1 flex min-w-0 items-center gap-2 overflow-x-auto px-1 pb-1 text-sm text-ink [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {primaryLinks.map((link) => (
               <Link
                 key={link.href}
-                className="inline-flex items-center whitespace-nowrap rounded-full bg-surface-muted px-4 py-2 font-medium transition hover:bg-brand-soft hover:text-brand"
+                className="inline-flex min-h-10 shrink-0 items-center whitespace-nowrap rounded-full bg-surface-muted px-4 py-2 font-medium transition hover:bg-brand-soft hover:text-brand"
                 href={link.href}
               >
                 {link.label}

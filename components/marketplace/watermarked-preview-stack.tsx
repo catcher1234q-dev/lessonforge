@@ -53,6 +53,9 @@ function PreviewAssetPanel({
           <img
             alt={asset.label}
             className="h-full w-full object-cover object-top"
+            decoding="async"
+            loading="lazy"
+            sizes="80px"
             src={asset.previewUrl}
           />
         </div>
@@ -252,6 +255,9 @@ function PreviewSheet({
               <img
                 alt={asset.label}
                 className="h-80 w-full object-cover object-top"
+                decoding="async"
+                loading="lazy"
+                sizes="(min-width: 768px) 520px, 100vw"
                 src={asset.previewUrl}
               />
             </div>
@@ -296,6 +302,9 @@ function PreviewSheet({
                 <img
                   alt={asset.label}
                   className="h-96 w-full object-cover object-top"
+                  decoding="async"
+                  loading="lazy"
+                  sizes="(min-width: 768px) 520px, 100vw"
                   src={asset.previewUrl}
                 />
               </div>
@@ -351,6 +360,9 @@ function PreviewSheet({
             <img
               alt={asset.label}
               className="h-72 w-full object-cover object-top"
+              decoding="async"
+              loading="lazy"
+              sizes="(min-width: 768px) 520px, 100vw"
               src={asset.previewUrl}
             />
           </div>
@@ -427,6 +439,9 @@ export function WatermarkedPreviewStack({
                     <img
                       alt={asset.label}
                       className="h-60 w-full object-cover object-top"
+                      decoding="async"
+                      loading="lazy"
+                      sizes="(min-width: 768px) 520px, 100vw"
                       src={asset.previewUrl}
                     />
                     <div className="absolute inset-x-0 bottom-0 p-4">

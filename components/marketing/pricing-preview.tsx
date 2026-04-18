@@ -42,8 +42,9 @@ function getCardTone(planKey: PlanKey) {
 }
 
 function getSecondaryValueLine(planKey: PlanKey) {
-  const plan = planConfig[planKey];
-  return `${plan.activeListingLimit} active listing${plan.activeListingLimit === 1 ? "" : "s"}`;
+  return planKey === "starter"
+    ? "Unlimited product uploads"
+    : "Unlimited uploads";
 }
 
 function getPlanHighlights(planKey: PlanKey) {
@@ -55,7 +56,7 @@ function getPlanHighlights(planKey: PlanKey) {
       value: `Keep ${plan.sellerSharePercent}% of every sale`,
     },
     {
-      label: "Listings",
+      label: "Uploads",
       value: getSecondaryValueLine(planKey),
     },
     {
@@ -89,7 +90,7 @@ export function PricingPreview({
                 Choose the plan that fits your shop
               </h2>
               <p className="mt-3 text-base leading-7 text-ink-soft">
-                Start free. Upgrade when you want more listings and a higher payout.
+                Start free. Upgrade when you want more AI help and a higher payout.
               </p>
             </>
           ) : (
@@ -104,7 +105,7 @@ export function PricingPreview({
                 Choose the plan that fits your shop
               </h2>
               <p className="mt-2 text-base leading-7 text-ink-soft">
-                Start free. Upgrade when you want more listings and a higher payout.
+                Start free. Upgrade when you want more AI help and a higher payout.
               </p>
             </>
           )}
@@ -212,10 +213,10 @@ export function PricingPreview({
                 </div>
                 <p className="mt-3 text-center text-xs leading-5 text-ink-soft">
                   {planKey === "starter"
-                    ? "Good for trying one listing before you commit."
+                    ? "Good for trying your first resources before you commit."
                     : planKey === "basic"
-                      ? "A good fit when you are ready for more listings and a higher payout."
-                      : "For sellers with more listings who want the highest payout."}
+                      ? "A good fit when you want more AI support and a higher payout."
+                      : "For sellers who want the strongest payout and the most monthly AI help."}
                 </p>
               </article>
             );

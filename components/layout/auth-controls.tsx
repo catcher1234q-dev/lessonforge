@@ -104,7 +104,7 @@ export function AuthControls() {
       }
 
       return (
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
           <AuthSheet triggerLabel="Log in" />
           <AuthSheet triggerLabel="Create account" triggerVariant="primary" />
         </div>
@@ -112,15 +112,15 @@ export function AuthControls() {
     }
 
     return (
-      <>
+      <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
         <AuthSheet triggerLabel="Log in" />
         <AuthSheet triggerLabel="Create account" triggerVariant="primary" />
-      </>
+      </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center justify-end gap-3">
       <AccountMenu session={session} />
     </div>
   );

@@ -10,6 +10,7 @@ import {
   getSupabaseBrowserClient,
   hasSupabaseEnv,
 } from "@/lib/supabase/client";
+import { trackFunnelEvent } from "@/lib/analytics/events";
 import { syncViewerCookie } from "@/lib/auth/viewer-sync";
 import { buildAuthCallbackUrl } from "@/lib/config/site";
 
@@ -43,10 +44,15 @@ export function AuthSheet({
 
   const triggerClassName =
     triggerVariant === "primary"
-      ? "rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
-      : "rounded-full px-4 py-2 text-sm font-medium text-ink-soft transition hover:bg-surface-muted";
+      ? "inline-flex min-h-10 items-center justify-center rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
+      : "inline-flex min-h-10 items-center justify-center rounded-full px-4 py-2 text-sm font-medium text-ink-soft transition hover:bg-surface-muted";
 
   async function handleOAuth(provider: Provider) {
+    trackFunnelEvent("auth_oauth_started", {
+      provider,
+      surface: triggerLabel,
+    });
+
     if (!hasSupabaseEnv()) {
       setError(authSetupMessage);
       return;
@@ -80,6 +86,10 @@ export function AuthSheet({
   }
 
   async function handleMagicLink() {
+    trackFunnelEvent("auth_magic_link_started", {
+      surface: triggerLabel,
+    });
+
     if (!hasSupabaseEnv()) {
       setError(authSetupMessage);
       return;
@@ -108,6 +118,9 @@ export function AuthSheet({
       }
 
       setMessage("Check your email for a LessonForge magic link.");
+      trackFunnelEvent("auth_magic_link_requested", {
+        surface: triggerLabel,
+      });
       setEmail("");
     } catch (caughtError) {
       setError(
@@ -158,7 +171,18 @@ export function AuthSheet({
 
   return (
     <>
-      <button className={triggerClassName} onClick={() => setIsOpen(true)}>
+      <button
+        className={triggerClassName}
+        onClick={() => {
+          trackFunnelEvent(
+            triggerLabel.toLowerCase().includes("create")
+              ? "signup_entry_clicked"
+              : "login_entry_clicked",
+            { surface: pathname ?? "unknown" },
+          );
+          setIsOpen(true);
+        }}
+      >
         {triggerLabel}
       </button>
 

@@ -1,15 +1,11 @@
 import { SiteHeaderShell } from "@/components/layout/site-header-shell";
 import { getPrivateAccessRole } from "@/lib/auth/private-access";
 import { getPersistenceReadiness } from "@/lib/lessonforge/persistence-readiness";
-import {
-  getViewerContext,
-  getViewerFavoriteProductIds,
-} from "@/lib/lessonforge/server-operations";
+import { getViewerContext } from "@/lib/lessonforge/server-operations";
 
 export async function SiteHeader() {
-  const [viewer, favoriteProductIds, privateAccessRole] = await Promise.all([
+  const [viewer, privateAccessRole] = await Promise.all([
     getViewerContext(),
-    getViewerFavoriteProductIds(),
     getPrivateAccessRole(),
   ]);
   const canSeeAdmin = (privateAccessRole === "admin" || privateAccessRole === "owner") &&

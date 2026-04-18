@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Search } from "lucide-react";
 import Link from "next/link";
 
@@ -14,6 +15,14 @@ import {
   getViewerContext,
   getViewerFavoriteProductIds,
 } from "@/lib/lessonforge/server-operations";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Marketplace",
+  description:
+    "Browse teacher-made classroom resources by subject, grade, price, preview readiness, and seller trust signals on LessonForgeHub.",
+  path: "/marketplace",
+});
 
 function buildMarketplaceReturnTo(params: Record<string, string | string[] | undefined>) {
   const search = new URLSearchParams();
@@ -145,6 +154,29 @@ function getFeaturedShelfReason(listing: {
   return "Featured pick";
 }
 
+const quickDiscoveryLinks = [
+  {
+    label: "Math practice",
+    detail: "Fluency, intervention, and small-group work",
+    href: "/marketplace?subject=Math",
+  },
+  {
+    label: "ELA resources",
+    detail: "Reading, writing, and discussion supports",
+    href: "/marketplace?subject=ELA",
+  },
+  {
+    label: "Preview-ready",
+    detail: "Start with listings that include protected previews",
+    href: "/marketplace?trust=asset-ready",
+  },
+  {
+    label: "Under $10",
+    detail: "Browse lower-cost resources first",
+    href: "/marketplace?price=under-10",
+  },
+] as const;
+
 function isEarlyCatalogState(input: {
   listingCount: number;
   query: string;
@@ -227,9 +259,9 @@ export default async function MarketplacePage({
     subject === "All" &&
     trustFilter === "all" &&
     gradeBand === "All" &&
-      resourceType === "All" &&
-      priceFilter === "all" &&
-      sort === "best-match";
+    resourceType === "All" &&
+    priceFilter === "all" &&
+    sort === "best-match";
   const showEarlyCatalogNote = isEarlyCatalogState({
     listingCount: listings.length,
     query,
@@ -255,24 +287,41 @@ export default async function MarketplacePage({
 
       <section className="px-5 pb-20 pt-10 sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-7xl flex-col gap-10">
-          <div className="rounded-[36px] border border-black/5 bg-white/90 p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
+          <div className="rounded-[36px] border border-black/5 bg-white/90 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:p-8">
             <div>
               <SectionIntro
-                body="Search by title, subject, or standard, then open the listings that look strongest."
+                body="Search by title, subject, or standard, then compare listings with previews, review signals, and seller trust cues before you buy."
                 eyebrow="Marketplace"
                 level="h1"
-                title="Browse polished classroom resources with clearer trust signals."
-                titleClassName="max-w-3xl text-5xl leading-tight sm:text-6xl"
+                title="Find classroom resources you can trust and use quickly."
+                titleClassName="max-w-3xl text-4xl leading-tight sm:text-6xl"
               />
 
-                <div className="mt-6 rounded-[1.5rem] border border-sky-100 bg-sky-50/80 px-5 py-4 text-sm leading-6 text-ink-soft">
-                  <p className="font-semibold text-ink">Quick browse path</p>
-                  <p className="mt-1">
-                    Start broad, open a few strong listings, and use filters only when the catalog still feels too wide.
-                  </p>
+              <div className="mt-6 rounded-[1.5rem] border border-sky-100 bg-sky-50/80 px-5 py-4 text-sm leading-6 text-ink-soft">
+                <p className="font-semibold text-ink">Quick browse path</p>
+                <p className="mt-1">
+                  Start broad, open a few strong listings, and use previews plus trust signals to narrow the shortlist before checkout.
+                </p>
+              </div>
+              <div className="mt-4 grid gap-3 lg:grid-cols-3">
+                <div className="rounded-[1.15rem] border border-emerald-100 bg-emerald-50/80 px-4 py-3 text-sm leading-6 text-emerald-900">
+                  Secure checkout powered by Stripe
                 </div>
+                <div className="rounded-[1.15rem] border border-sky-100 bg-sky-50/80 px-4 py-3 text-sm leading-6 text-sky-900">
+                  Protected previews before purchase
+                </div>
+                  <div className="rounded-[1.15rem] border border-amber-100 bg-amber-50/80 px-4 py-3 text-sm leading-6 text-amber-900">
+                    Purchased files delivered through your library
+                  </div>
+                  <Link
+                    className="rounded-[1.15rem] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold leading-6 text-ink transition hover:border-slate-300"
+                    href="/support"
+                  >
+                    Support, refund, privacy, and terms are easy to find
+                  </Link>
+                </div>
+              </div>
             </div>
-          </div>
 
           <section className="rounded-[32px] border border-black/5 bg-white/80 p-6 shadow-[0_18px_50px_rgba(15,23,42,0.05)]">
             <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -286,6 +335,11 @@ export default async function MarketplacePage({
             <form
               action="/marketplace"
               className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between"
+              data-analytics-event="marketplace_search_used"
+              data-analytics-props={JSON.stringify({
+                hadExistingQuery: Boolean(query),
+                activeFilterCount,
+              })}
               id="marketplace-filters"
             >
               {subject !== "All" ? <input name="subject" type="hidden" value={subject} /> : null}
@@ -302,7 +356,9 @@ export default async function MarketplacePage({
               </label>
 
               <button
-                className="inline-flex items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 sm:w-auto"
+                data-analytics-event="marketplace_search_button_clicked"
+                data-analytics-props={JSON.stringify({ hadExistingQuery: Boolean(query), activeFilterCount })}
                 type="submit"
               >
                 Search marketplace
@@ -319,6 +375,34 @@ export default async function MarketplacePage({
                 selectedSubject={subject}
                 selectedTrustFilter={trustFilter}
               />
+            </div>
+            <div className="mt-6 rounded-[24px] bg-slate-50/80 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-ink">Not sure where to start?</p>
+                  <p className="mt-1 text-sm leading-6 text-ink-soft">
+                    Try a guided starting point, then narrow from there.
+                  </p>
+                </div>
+                <Link
+                  className="text-sm font-semibold text-brand transition hover:text-brand-700"
+                  href="/marketplace"
+                >
+                  Clear all filters
+                </Link>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {quickDiscoveryLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    className="rounded-[18px] bg-white px-4 py-3 text-left shadow-[0_10px_28px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(15,23,42,0.08)]"
+                    href={link.href}
+                  >
+                    <span className="block text-sm font-semibold text-ink">{link.label}</span>
+                    <span className="mt-1 block text-xs leading-5 text-ink-soft">{link.detail}</span>
+                  </Link>
+                ))}
+              </div>
             </div>
           </section>
 
@@ -415,6 +499,9 @@ export default async function MarketplacePage({
                 </>
               ) : null}
               .
+            </div>
+            <div className="text-ink-soft">
+              Preview first, then buy with confidence.
             </div>
             {listings.length > 0 && activeFilterCount > 1 ? (
               <div className="text-ink-soft">
@@ -576,7 +663,7 @@ export default async function MarketplacePage({
             </section>
           ) : null}
 
-          {listings.length && !subjectPreviewShelves.length ? (
+          {listings.length > 0 && !subjectPreviewShelves.length ? (
             <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3">
               {listings.map((listing) => (
                 <ProductCard
@@ -587,7 +674,9 @@ export default async function MarketplacePage({
                 />
               ))}
             </section>
-          ) : (
+          ) : null}
+
+          {listings.length === 0 ? (
             <SearchEmptyState
               gradeBand={gradeBand}
               priceFilter={priceFilter}
@@ -596,7 +685,7 @@ export default async function MarketplacePage({
               subject={subject}
               trustFilter={trustFilter}
             />
-          )}
+          ) : null}
         </div>
       </section>
 

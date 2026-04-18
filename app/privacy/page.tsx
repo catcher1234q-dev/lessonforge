@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 
 import { LegalPageShell } from "@/components/legal/legal-page-shell";
-import { siteConfig } from "@/lib/config/site";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
-  title: `Privacy Policy | ${siteConfig.productName}`,
-  description: `How ${siteConfig.productName} handles account, marketplace, and payment information.`,
-};
+export const metadata: Metadata = buildPageMetadata({
+  title: "Privacy Policy",
+  description:
+    "How LessonForgeHub handles account information, marketplace activity, payments, seller data, and support records.",
+  path: "/privacy",
+});
 
 const sections = [
   {

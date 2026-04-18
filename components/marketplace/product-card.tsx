@@ -116,7 +116,7 @@ export function ProductCard({
 
   return (
     <article
-      className={`group flex h-full flex-col rounded-[30px] bg-white p-5 transition duration-300 hover:-translate-y-1 ${
+      className={`group flex h-full flex-col rounded-[30px] bg-white p-5 transition duration-300 [contain-intrinsic-size:540px] [content-visibility:auto] hover:-translate-y-1 ${
         featured
           ? "shadow-[0_24px_70px_rgba(37,99,235,0.14)] hover:shadow-[0_30px_90px_rgba(37,99,235,0.18)]"
           : "shadow-[0_18px_50px_rgba(15,23,42,0.08)] hover:shadow-[0_28px_70px_rgba(15,23,42,0.12)]"
@@ -133,7 +133,12 @@ export function ProductCard({
         />
       </div>
 
-      <Link className="block" href={listingHref}>
+      <Link
+        className="block"
+        data-analytics-event="product_card_clicked"
+        data-analytics-props={JSON.stringify({ productId: listing.id, surface: "image" })}
+        href={listingHref}
+      >
         <div
           className={`relative overflow-hidden rounded-[24px] border ${theme.frame} ${
             featured ? "shadow-[0_18px_50px_rgba(15,23,42,0.12)]" : "shadow-[0_14px_40px_rgba(15,23,42,0.08)]"
@@ -143,7 +148,10 @@ export function ProductCard({
           {coverImage ? (
             <img
               alt={`${listing.title} cover preview`}
-              className="relative z-10 aspect-[4/3] w-full object-cover"
+              className="relative z-10 aspect-[4/3] w-full bg-slate-100 object-contain"
+              decoding="async"
+              loading={featured ? "eager" : "lazy"}
+              sizes="(min-width: 1536px) 33vw, (min-width: 768px) 50vw, 100vw"
               src={coverImage}
             />
           ) : (
@@ -218,7 +226,12 @@ export function ProductCard({
       </Link>
 
       <div className="flex flex-1 flex-col justify-between px-2 pb-2 pt-5">
-        <Link className="block" href={listingHref}>
+        <Link
+          className="block"
+          data-analytics-event="product_card_clicked"
+          data-analytics-props={JSON.stringify({ productId: listing.id, surface: "copy" })}
+          href={listingHref}
+        >
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-ink-soft">
             {featured ? `Sold by ${listing.sellerName}` : listing.sellerName}
           </p>
@@ -228,6 +241,29 @@ export function ProductCard({
         </Link>
 
         <div className="mt-5 space-y-4">
+          <div className="grid gap-2 rounded-[20px] bg-slate-50 px-3 py-3 text-xs leading-5 text-ink-soft sm:grid-cols-2">
+            <div>
+              <span className="block font-semibold text-ink">Grade</span>
+              <span>{listing.gradeBand}</span>
+            </div>
+            <div>
+              <span className="block font-semibold text-ink">Format</span>
+              <span>{listing.resourceType}</span>
+            </div>
+            <div>
+              <span className="block font-semibold text-ink">Subject</span>
+              <span>{listing.subject}</span>
+            </div>
+            <div>
+              <span className="block font-semibold text-ink">Preview</span>
+              <span>
+                {listing.assetHealthStatus === "Preview and thumbnail ready"
+                  ? "Ready to review"
+                  : "Check details"}
+              </span>
+            </div>
+          </div>
+
           {featured ? (
             <div className="rounded-[22px] border border-brand/15 bg-brand-soft/70 px-4 py-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-brand">
@@ -243,6 +279,18 @@ export function ProductCard({
             <HighlightChip
               label={listing.licenseType}
               toneClassName="bg-brand-soft text-brand"
+            />
+            <HighlightChip
+              label={
+                listing.assetHealthStatus === "Preview and thumbnail ready"
+                  ? "Preview available"
+                  : "Preview details"
+              }
+              toneClassName="bg-emerald-50 text-emerald-800"
+            />
+            <HighlightChip
+              label="Library access after purchase"
+              toneClassName="bg-slate-100 text-ink-soft"
             />
             {featured ? (
               <HighlightChip
@@ -276,29 +324,31 @@ export function ProductCard({
             </div>
           </div>
 
-          <div className="flex items-end justify-between gap-4 border-t border-slate-100 pt-4">
+          <div className="flex flex-col gap-4 border-t border-slate-100 pt-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="min-w-0">
               <p className={`${featured ? "text-[2.2rem]" : "text-2xl"} font-semibold text-ink`}>
                 {formatCurrency(listing.priceCents)}
               </p>
               <p className="mt-1 text-xs text-ink-soft">
-                Preview first, buy now, or save to compare later
+                Secure checkout and library delivery after purchase
               </p>
             </div>
-            <div className="flex min-w-[140px] flex-col items-end gap-2">
+            <div className="flex w-full flex-col gap-2 sm:min-w-[140px] sm:w-auto sm:items-end">
               <CheckoutButton
-                className={`inline-flex items-center justify-center gap-2 rounded-full ${featured ? "px-5 py-2.5" : "px-4 py-2.5"} bg-brand text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70`}
+                className={`inline-flex w-full items-center justify-center gap-2 rounded-full ${featured ? "px-5 py-2.5" : "px-4 py-2.5"} bg-brand text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto`}
                 label="Buy now"
                 productId={listing.id}
                 returnTo={checkoutReturnTo ?? listingHref}
                 testId={buyTestId}
               />
               <Link
-                className={secondaryActionLinkClassName("px-3.5 py-2")}
-                href={listingHref}
+                className={secondaryActionLinkClassName("w-full justify-center px-3.5 py-2 sm:w-auto")}
+                data-analytics-event="product_details_clicked"
+                data-analytics-props={JSON.stringify({ productId: listing.id, surface: "product_card" })}
                 data-testid={viewTestId}
+                href={listingHref}
               >
-                Open details
+                View details
                 <ArrowUpRight className="h-4 w-4" />
               </Link>
               {returnTo !== "/favorites" ? (

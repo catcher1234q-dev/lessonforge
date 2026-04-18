@@ -1,9 +1,18 @@
+import type { Metadata } from "next";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 import { PricingPreview } from "@/components/marketing/pricing-preview";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Sell Teaching Resources",
+  description:
+    "Start selling classroom resources on LessonForgeHub with Stripe payouts, simple listing tools, and seller plans up to 80 percent payout.",
+  path: "/sell",
+});
 
 const steps = [
   {
@@ -42,6 +51,8 @@ export default function SellPage() {
               <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row sm:items-center">
                 <Link
                   className="inline-flex min-w-[180px] items-center justify-center gap-2 rounded-full bg-brand px-6 py-3.5 text-base font-semibold text-white transition hover:bg-brand-700"
+                  data-analytics-event="seller_onboarding_start_clicked"
+                  data-analytics-props={JSON.stringify({ surface: "sell_hero" })}
                   href="/sell/onboarding"
                 >
                   Start Selling
@@ -49,6 +60,8 @@ export default function SellPage() {
                 </Link>
                 <Link
                   className="inline-flex min-w-[180px] items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3.5 text-base font-semibold text-ink transition hover:border-slate-300"
+                  data-analytics-event="pricing_anchor_clicked"
+                  data-analytics-props={JSON.stringify({ surface: "sell_hero" })}
                   href="#sell-pricing"
                 >
                   View Pricing
@@ -103,6 +116,42 @@ export default function SellPage() {
                   >
                     Upgrade to Pro
                   </Link>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-[30px] border border-black/5 bg-slate-950 p-6 text-white shadow-[0_18px_50px_rgba(15,23,42,0.12)] sm:p-8">
+            <div className="grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-center">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/60">
+                  Seller trust
+                </p>
+                <h2 className="mt-3 text-2xl font-semibold">
+                  Payout setup and policy expectations stay visible.
+                </h2>
+                <p className="mt-3 text-sm leading-7 text-white/72">
+                  Sellers can review payout setup, plan splits, publishing requirements, refund expectations, and dispute rules before relying on live buyer checkout.
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+                <Link
+                  className="rounded-[1rem] bg-white/8 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/12"
+                  href="/support"
+                >
+                  Support center
+                </Link>
+                <Link
+                  className="rounded-[1rem] bg-white/8 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/12"
+                  href="/terms"
+                >
+                  Seller terms
+                </Link>
+                <Link
+                  className="rounded-[1rem] bg-white/8 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/12"
+                  href="/refund-policy"
+                >
+                  Refund expectations
+                </Link>
               </div>
             </div>
           </section>

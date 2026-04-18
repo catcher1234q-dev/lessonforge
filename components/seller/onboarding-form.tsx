@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, BadgeDollarSign, Store } from "lucide-react";
+import { ArrowRight, BadgeDollarSign, CheckCircle2, FilePlus2, ShieldCheck, Store } from "lucide-react";
 import Link from "next/link";
 
 import { secondaryActionLinkClassName } from "@/components/shared/secondary-action-link";
+import { trackFunnelEvent } from "@/lib/analytics/events";
 import { normalizePlanKey, planConfig, type PlanKey } from "@/lib/config/plans";
 import { buildSellerPlanCheckoutHref } from "@/lib/stripe/seller-plan-billing";
 import type { ConnectedSeller, SellerProfileDraft } from "@/types";
@@ -76,6 +77,37 @@ export function SellerOnboardingForm() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [returnState, setReturnState] = useState<"connected" | "refresh" | "complete" | null>(null);
   const selectedPlan = planConfig[normalizePlanKey(selectedPlanKey)];
+  const profileBasicsComplete = Boolean(
+    profile.displayName.trim() &&
+      profile.email.trim() &&
+      profile.storeName.trim() &&
+      profile.storeHandle.trim(),
+  );
+  const payoutsConnected = connectedSeller?.status === "connected";
+  const payoutsStarted = Boolean(profile.stripeAccountId || connectedSeller);
+  const setupSteps = [
+    {
+      label: "Store profile",
+      status: profileBasicsComplete ? "Complete" : "Needed",
+      detail: "Add the name, email, store name, and handle buyers will recognize.",
+      icon: Store,
+      ready: profileBasicsComplete,
+    },
+    {
+      label: "Stripe payouts",
+      status: payoutsConnected ? "Connected" : payoutsStarted ? "In progress" : "Next",
+      detail: "Connect Stripe so real sales can route safely to your seller payout account.",
+      icon: ShieldCheck,
+      ready: payoutsConnected,
+    },
+    {
+      label: "First listing",
+      status: profileBasicsComplete && payoutsConnected ? "Ready" : "After setup",
+      detail: "Upload one classroom-ready resource with a preview, thumbnail, and rights confirmation.",
+      icon: FilePlus2,
+      ready: profileBasicsComplete && payoutsConnected,
+    },
+  ];
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -87,11 +119,12 @@ export function SellerOnboardingForm() {
         const response = await fetch("/api/session/viewer");
         const payload = response.ok
           ? ((await response.json()) as {
+              signedIn?: boolean;
               viewer?: { role?: string; name?: string; email?: string };
             })
           : {};
 
-        if (!response.ok || payload.viewer?.role !== "seller") {
+        if (!response.ok || !payload.signedIn || !payload.viewer?.email) {
           return;
         }
 
@@ -210,6 +243,11 @@ export function SellerOnboardingForm() {
         setSelectedPlanKey(normalizePlanKey(savedProfile.sellerPlanKey));
       }
       setConnectedSeller(buildConnectedSeller(savedProfile));
+      trackFunnelEvent("seller_profile_saved", {
+        selectedPlan: selectedPlanKey,
+        savedPlan: savedProfile.sellerPlanKey,
+        hasStoreHandle: Boolean(savedProfile.storeHandle),
+      });
       setMessage(
         selectedPlanKey === "starter"
           ? "Seller profile saved. You can keep refining it before launch."
@@ -243,6 +281,9 @@ export function SellerOnboardingForm() {
       setIsConnecting(true);
       setMessage(null);
       console.log("Connecting to Stripe");
+      trackFunnelEvent("seller_stripe_connect_clicked", {
+        selectedPlan: selectedPlanKey,
+      });
 
       const savedProfile = await handleSaveProfile();
 
@@ -262,18 +303,49 @@ export function SellerOnboardingForm() {
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
-      <section className="rounded-[32px] border border-black/5 bg-white p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
+      <section className="rounded-[32px] border border-black/5 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:p-8">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand">
           Seller onboarding
         </p>
-        <h1 className="mt-4 font-[family-name:var(--font-display)] text-5xl leading-tight text-ink">
-          Set up your store before publishing real listings.
+        <h1 className="mt-4 font-[family-name:var(--font-display)] text-4xl leading-tight text-ink sm:text-5xl">
+          Set up payouts and publish your first resource.
         </h1>
         <p className="mt-5 max-w-3xl text-lg leading-8 text-ink-soft">
-          This dedicated flow keeps seller setup separate from the homepage. Fill
-          out the basic store identity first, save it, then connect Stripe so
-          payouts and identity checks happen in the right place.
+          Start with the store basics, connect Stripe for payouts, then create one
+          buyer-ready listing with a preview, thumbnail, and rights confirmation.
         </p>
+
+        <div className="mt-7 grid gap-3 lg:grid-cols-3">
+          {setupSteps.map((step) => {
+            const Icon = step.icon;
+
+            return (
+              <div
+                key={step.label}
+                className={`rounded-[1.35rem] border px-4 py-4 ${
+                  step.ready
+                    ? "border-emerald-100 bg-emerald-50/80"
+                    : "border-ink/5 bg-surface-subtle"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-brand">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <span
+                    className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${
+                      step.ready ? "bg-emerald-100 text-emerald-700" : "bg-white text-ink-soft"
+                    }`}
+                  >
+                    {step.status}
+                  </span>
+                </div>
+                <p className="mt-4 font-semibold text-ink">{step.label}</p>
+                <p className="mt-2 text-sm leading-6 text-ink-soft">{step.detail}</p>
+              </div>
+            );
+          })}
+        </div>
 
         <div
           className={`mt-6 rounded-[1.35rem] border p-4 ${
@@ -296,7 +368,7 @@ export function SellerOnboardingForm() {
               ? "Stripe is done. The last step is creating your first listing."
               : returnState === "refresh"
                 ? "Your saved seller setup is still here."
-                : "Add the four basics that make your store feel real."}
+                : "Add the four basics that make your store feel real, then save before connecting payouts."}
           </p>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
             {(returnState === "connected"
@@ -460,12 +532,12 @@ export function SellerOnboardingForm() {
                   <div className="mt-4 grid gap-2 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
                     <div className="rounded-[1rem] bg-white px-3 py-3 text-sm text-ink-soft">
                       Keep more
-                      <p className="mt-1 font-semibold text-ink">{plan.sellerSharePercent}% payout</p>
+                      <p className="mt-1 font-semibold text-ink">Keep {plan.sellerSharePercent}%</p>
                     </div>
                     <div className="rounded-[1rem] bg-white px-3 py-3 text-sm text-ink-soft">
                       Publish
                       <p className="mt-1 font-semibold text-ink">
-                        {plan.activeListingLimit} listing{plan.activeListingLimit === 1 ? "" : "s"}
+                        Unlimited uploads
                       </p>
                     </div>
                     <div className="rounded-[1rem] bg-white px-3 py-3 text-sm text-ink-soft">
@@ -491,7 +563,7 @@ export function SellerOnboardingForm() {
                 Selected plan: {selectedPlan.label}
               </p>
               <p className="mt-1">
-                {selectedPlan.label} gives you {selectedPlan.sellerSharePercent}% seller payout, {selectedPlan.activeListingLimit} active listing{selectedPlan.activeListingLimit === 1 ? "" : "s"}, and {selectedPlan.creditGrantLabel.toLowerCase()}.
+                {selectedPlan.label} gives you {selectedPlan.sellerSharePercent}% seller payout, unlimited product uploads, and {selectedPlan.creditGrantLabel.toLowerCase()}.
               </p>
               <p className="mt-2 text-ink-soft">
                 {selectedPlan.key === "starter"
@@ -526,15 +598,39 @@ export function SellerOnboardingForm() {
           </button>
           <button
             className="inline-flex items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+            data-analytics-event="seller_stripe_connect_button_pressed"
+            data-analytics-props={JSON.stringify({ selectedPlan: selectedPlanKey })}
             disabled={isConnecting || isSaving}
             onClick={() => {
               void handleConnectStripe();
             }}
             type="button"
           >
-            {isConnecting || isSaving ? "Opening Stripe" : "Connect Stripe"}
+            {isConnecting || isSaving ? "Opening Stripe" : "Connect Stripe payouts"}
             <ArrowRight className="h-4 w-4" />
           </button>
+        </div>
+
+        <div className="mt-6 grid gap-3 rounded-[1.35rem] border border-brand/10 bg-brand-soft/35 p-4 sm:grid-cols-3">
+          {[
+            {
+              title: "Already used in class",
+              body: "A resource you have taught before is usually the easiest first listing.",
+            },
+            {
+              title: "Easy to preview",
+              body: "Include a sample page or cover so buyers understand what they will receive.",
+            },
+            {
+              title: "Clear next step",
+              body: "After Stripe, create one draft. You can improve it before publishing.",
+            },
+          ].map((item) => (
+            <div key={item.title} className="rounded-[1rem] bg-white/80 px-4 py-3 text-sm leading-6 text-ink-soft">
+              <p className="font-semibold text-ink">{item.title}</p>
+              <p className="mt-1">{item.body}</p>
+            </div>
+          ))}
         </div>
 
         {message ? (
@@ -560,8 +656,9 @@ export function SellerOnboardingForm() {
             ) : (
               <>
                 <p>A recognizable store identity on listings and storefront pages.</p>
-                <p>Enough setup to move into the dashboard and product flow.</p>
-                <p>Stripe payout setup and AI plan choices later on.</p>
+                <p>Stripe payout setup is required before products can sell through live buyer checkout.</p>
+                <p>Refunds, disputes, chargebacks, or rights issues can delay, adjust, or reverse seller earnings while they are reviewed.</p>
+                <p>A clearer next step into your first listing when setup is complete.</p>
               </>
             )}
           </div>
@@ -582,8 +679,16 @@ export function SellerOnboardingForm() {
           <div className="mt-4 rounded-[1rem] bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft">
             <p className="font-semibold text-ink">Current plan value</p>
             <p className="mt-1">
-              {selectedPlan.label} keeps {selectedPlan.sellerSharePercent}% of each sale, includes {selectedPlan.activeListingLimit} active listing{selectedPlan.activeListingLimit === 1 ? "" : "s"}, and gives you {selectedPlan.creditGrantLabel.toLowerCase()}.
+              {selectedPlan.label} keeps {selectedPlan.sellerSharePercent}% of each sale, supports unlimited product uploads, and gives you {selectedPlan.creditGrantLabel.toLowerCase()}.
             </p>
+          </div>
+          <div className="mt-4 rounded-[1rem] border border-ink/5 bg-white px-4 py-4 text-sm leading-6 text-ink-soft">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 text-brand" />
+              <p>
+                Stripe may ask for identity and bank details. That is normal for payout setup and helps keep money movement secure.
+              </p>
+            </div>
           </div>
         </section>
       </aside>

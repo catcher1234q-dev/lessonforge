@@ -348,7 +348,7 @@ export async function getAdminOverview() {
       const latestMonetizationEvent = sellerMonetizationEvents[0] ?? null;
       const latestTriggerLabel =
         latestMonetizationEvent?.eventType === "listing_limit_hit"
-          ? "Most recent trigger: hit the listing cap."
+          ? "Most recent trigger: historical listing prompt."
           : latestMonetizationEvent?.eventType === "ai_credit_limit_hit"
             ? "Most recent trigger: ran out of AI room."
             : latestMonetizationEvent?.eventType === "locked_feature_clicked"
@@ -448,9 +448,9 @@ export async function getAdminOverview() {
   const triggerMix = [
     {
       key: "listing_limit_hit",
-      label: "Listing limits",
+      label: "Legacy listing prompts",
       count: monetizationSummary.listingLimitHits,
-      detail: "Sellers are mostly feeling pressure from running out of listing room.",
+      detail: "Historical listing prompts before uploads were opened up.",
     },
     {
       key: "ai_credit_limit_hit",

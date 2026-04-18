@@ -5,21 +5,21 @@ import { SectionIntro } from "@/components/shared/section-intro";
 const steps = [
   {
     icon: UploadCloud,
-    title: "Start in the right place",
+    title: "Create or upload",
     description:
-      "Buyers start in the marketplace. Sellers start in onboarding or product creation.",
+      "Teachers can upload finished resources or build listings around the materials they already use in class.",
   },
   {
     icon: ShieldCheck,
-    title: "Open the product or workflow",
+    title: "List and optimize",
     description:
-      "Preview the listing, compare your options, or move a seller listing closer to buyer-ready.",
+      "Add previews, clarify the listing, and use optional AI tools to make the resource easier to trust and buy.",
   },
   {
     icon: LibraryBig,
-    title: "Finish in the right place",
+    title: "Sell and earn",
     description:
-      "Saved items, purchases, dashboards, and follow-up actions all connect back into the flow.",
+      "Buyers check out securely, sellers track earnings, and purchased files stay available from the buyer library.",
   },
 ];
 
@@ -28,9 +28,9 @@ export function HowItWorks() {
     <section id="how-it-works" className="px-5 py-10 sm:px-6 lg:px-8 lg:py-12">
       <div className="mx-auto max-w-7xl rounded-[2rem] border border-ink/5 bg-white p-6 shadow-soft-xl sm:p-8">
         <SectionIntro
-          body="Think of the site as one simple flow from start to finish."
+          body="The platform is built to feel simple on the surface while still protecting checkout, files, and payouts behind the scenes."
           eyebrow="How It Works"
-          title="The flow only has 3 steps."
+          title="A simple marketplace flow for teachers."
           titleClassName="text-3xl sm:text-4xl"
           bodyClassName="text-base leading-7"
         />

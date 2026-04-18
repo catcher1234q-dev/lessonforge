@@ -15,6 +15,11 @@ export function SearchEmptyState({
   resourceType: string;
   priceFilter: string;
 }) {
+  const browseStarters = [
+    { label: "Browse Math", href: "/marketplace?subject=Math" },
+    { label: "Browse ELA", href: "/marketplace?subject=ELA" },
+    { label: "Browse preview-ready", href: "/marketplace?trust=asset-ready" },
+  ] as const;
   const suggestions = [
     trustFilter !== "all"
       ? {
@@ -58,9 +63,9 @@ export function SearchEmptyState({
   );
 
   return (
-    <div className="rounded-[32px] border border-dashed border-slate-300 bg-white/80 p-10 text-center shadow-[0_18px_50px_rgba(15,23,42,0.05)]">
+    <div className="rounded-[32px] border border-dashed border-slate-300 bg-white/80 p-8 text-center shadow-[0_18px_50px_rgba(15,23,42,0.05)] sm:p-10">
       <span className="inline-flex rounded-full bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-700">
-        Start here
+        No dead end
       </span>
       <p className="text-sm font-semibold uppercase tracking-[0.22em] text-brand">
         No exact matches yet
@@ -70,8 +75,8 @@ export function SearchEmptyState({
       </h2>
       <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-ink-soft">
         {hasActiveFilters
-          ? "The fastest next step is widening the search so you can see more of the catalog before giving up on the browse."
-          : "The catalog is still getting started. The fastest next step is opening all listings again or adding the first real listing."}
+          ? "Widen the search a little so you can compare more of the catalog before deciding nothing fits."
+          : "Try the full catalog, change subjects, or start selling if you already have a classroom resource ready to list."}
       </p>
       <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
         <Link
@@ -84,10 +89,27 @@ export function SearchEmptyState({
         <Link
           className="inline-flex rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
           data-testid="marketplace-empty-reset"
-          href="/sell/products/new"
+          href="/marketplace?trust=asset-ready"
         >
-          Add the first listing
+          Browse preview-ready
         </Link>
+      </div>
+      <div className="mx-auto mt-7 max-w-3xl rounded-[24px] bg-slate-50 px-5 py-5 text-left">
+        <p className="text-sm font-semibold text-ink">Try a broader starting point</p>
+        <p className="mt-1 text-sm leading-6 text-ink-soft">
+          Start with a subject or preview-ready resources, then use filters after you see what is available.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          {browseStarters.map((starter) => (
+            <Link
+              key={starter.href}
+              className="rounded-full bg-white px-4 py-2 text-sm font-medium text-ink-soft shadow-[0_10px_28px_rgba(15,23,42,0.04)] transition hover:text-ink"
+              href={starter.href}
+            >
+              {starter.label}
+            </Link>
+          ))}
+        </div>
       </div>
       {suggestions.length ? (
         <div className="mx-auto mt-6 max-w-3xl">

@@ -19,7 +19,6 @@ import {
 } from "@/lib/config/plans";
 import {
   getAiUpgradeMessage,
-  getListingLimitUpgradeMessage,
   getLockedFeatureMessage,
 } from "@/lib/lessonforge/plan-enforcement";
 import {
@@ -118,7 +117,7 @@ function buildFallbackProfile(viewer?: {
 }
 
 async function trackMonetizationEvent(input: {
-  eventType: "listing_limit_hit" | "ai_credit_limit_hit" | "locked_feature_clicked" | "upgrade_click";
+  eventType: "ai_credit_limit_hit" | "locked_feature_clicked" | "upgrade_click";
   source: "seller_dashboard";
   planKey: string;
   metadata?: Record<string, unknown>;
@@ -350,8 +349,8 @@ function getSellerFilterEmptyState(filter: SellerListingFilter, hasResources: bo
   if (!hasResources) {
     return {
       title: "No uploaded resources yet",
-      body: "Create your first listing from the seller flow to populate this dashboard and start tracking readiness, trust, and payout progress.",
-      actionLabel: "Create product",
+      body: "Create your first listing to start building a real storefront, give buyers something to browse, and unlock sales and earnings tracking here.",
+      actionLabel: "Create first listing",
       actionHref: "/sell/products/new",
     };
   }
@@ -385,7 +384,7 @@ function getSellerFilterEmptyState(filter: SellerListingFilter, hasResources: bo
 
   return {
     title: "No listings match this filter right now",
-    body: "Try another seller dashboard mode or keep improving your current drafts.",
+    body: "Try another dashboard mode, publish another listing, or go back to the full catalog view to plan your next seller move.",
     actionLabel: "View all listings",
     actionHref: "/sell/dashboard",
   };
@@ -1019,7 +1018,7 @@ export function SellerDashboardContent() {
   const hasLiveListings = (salesSummary?.liveListings ?? 0) > 0;
   const hasBuyerReadyListings = (salesSummary?.buyerReadyListings ?? 0) > 0;
   const hasAnyListings = resources.length > 0;
-  const listingLimitReached = listingUsage?.reached ?? false;
+  const sellerListingCount = listingUsage?.current ?? resources.length;
   const currentPlanKey = normalizePlanKey(profile?.sellerPlanKey);
   const lowAiCredits =
     Boolean(subscription) &&
@@ -1114,7 +1113,7 @@ export function SellerDashboardContent() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <div className="rounded-[2rem] border border-ink/5 bg-white p-8 shadow-soft-xl">
+      <div className="rounded-[2rem] border border-ink/5 bg-white p-6 shadow-soft-xl sm:p-8">
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand">
           Seller Dashboard
         </p>
@@ -1123,19 +1122,33 @@ export function SellerDashboardContent() {
             Dashboard ready
           </p>
         ) : null}
-        <h1 className="mt-4 font-[family-name:var(--font-display)] text-5xl text-ink">
-          Your listings, payouts, and launch progress live here.
+        <h1 className="mt-4 font-[family-name:var(--font-display)] text-4xl leading-tight text-ink sm:text-5xl">
+          Your seller workspace for listings, payouts, and earnings.
         </h1>
         <p className="mt-4 max-w-3xl text-lg leading-8 text-ink-soft">
-          Start with setup, earnings, and the next listing move that gets you closer to buyers.
+          See what is ready to sell, what still needs setup, and the exact next action that moves your store closer to a first or next sale.
         </p>
-        <div className="mt-6 rounded-[1.5rem] bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft">
-          <p className="font-semibold text-ink">Start here</p>
-          <p className="mt-1">
-            Finish payouts first if needed, then use the summary cards below to see earnings, live listings, and the clearest next seller move.
-          </p>
+        <div className="mt-6 grid gap-3 lg:grid-cols-3">
+          <div className="rounded-[1.5rem] bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft">
+            <p className="font-semibold text-ink">1. Confirm payouts</p>
+            <p className="mt-1">
+              Connect Stripe before relying on real buyer checkout and seller earnings.
+            </p>
+          </div>
+          <div className="rounded-[1.5rem] bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft">
+            <p className="font-semibold text-ink">2. Publish one strong listing</p>
+            <p className="mt-1">
+              A clear preview, cover, rights confirmation, and buyer-ready copy matter most.
+            </p>
+          </div>
+          <div className="rounded-[1.5rem] bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft">
+            <p className="font-semibold text-ink">3. Watch earnings and blockers</p>
+            <p className="mt-1">
+              Use the cards below to spot sales, payout status, listing issues, and growth prompts.
+            </p>
+          </div>
         </div>
-        {(listingLimitReached || lowAiCredits || !premiumAccess?.revenueInsights.unlocked) ? (
+        {(lowAiCredits || !premiumAccess?.revenueInsights.unlocked) ? (
           <div className="mt-5 rounded-[1.5rem] border border-brand/10 bg-brand-soft/35 px-5 py-4 text-sm leading-6 text-ink">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
@@ -1143,18 +1156,14 @@ export function SellerDashboardContent() {
                   Upgrade to grow faster
                 </p>
                 <p className="mt-2 font-semibold text-ink">
-                  {listingLimitReached
-                    ? getListingLimitUpgradeMessage(currentPlanKey)
-                    : lowAiCredits
+                  {lowAiCredits
                       ? getAiUpgradeMessage()
-                      : "Unlock more listings and better tools."}
+                      : "Unlock more AI help and better seller insights."}
                 </p>
                 <p className="mt-2 text-ink-soft">
-                  {listingLimitReached
-                    ? `You are using ${listingUsage?.current ?? 0} of ${listingUsage?.limit ?? planConfig.starter.activeListingLimit} included listings on ${formatPlanLabel(currentPlanKey)}.`
-                    : lowAiCredits
+                  {lowAiCredits
                       ? `Only ${subscription?.availableCredits ?? 0} AI credits are left, which is tight for the next standards scan or optimization pass.`
-                      : "Basic unlocks fuller listing optimization, revenue insight visibility, and more room to keep publishing every month."}
+                      : "Uploads are unlimited. Paid plans add stronger AI support, better payout share, and clearer seller insights."}
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row">
@@ -1170,9 +1179,7 @@ export function SellerDashboardContent() {
                       source: "seller_dashboard",
                       planKey: currentPlanKey,
                       metadata: {
-                        reason: listingLimitReached
-                          ? "listing_limit"
-                          : lowAiCredits
+                        reason: lowAiCredits
                             ? "ai_credits"
                             : "premium_insights",
                         targetPlan: "basic",
@@ -1186,7 +1193,7 @@ export function SellerDashboardContent() {
                   className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
                   href="/sell/products/new"
                 >
-                  Create product
+                  {hasAnyListings ? "Create listing" : "Create first listing"}
                 </Link>
               </div>
             </div>
@@ -1346,17 +1353,25 @@ export function SellerDashboardContent() {
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Link
             className="inline-flex items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+            data-analytics-event="seller_onboarding_start_clicked"
+            data-analytics-props={JSON.stringify({ surface: "seller_dashboard" })}
             data-testid="seller-dashboard-onboarding"
             href="/sell/onboarding"
           >
-            Seller onboarding
+            Check payout setup
           </Link>
           <Link
             className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
+            data-analytics-event="seller_first_listing_cta_clicked"
+            data-analytics-props={JSON.stringify({ surface: "seller_dashboard", hasAnyListings })}
             data-testid="seller-dashboard-create-product"
             href="/sell/products/new"
           >
-            {aiSettings?.aiKillSwitchEnabled ? "Create product without AI" : "Create product"}
+            {aiSettings?.aiKillSwitchEnabled
+              ? "Create listing without AI"
+              : hasAnyListings
+                ? "Create listing"
+                : "Create first listing"}
           </Link>
         </div>
       </div>
@@ -1443,7 +1458,7 @@ export function SellerDashboardContent() {
           <div>
             <h2 className="text-xl font-semibold text-ink">Focus now</h2>
             <p className="mt-2 text-sm leading-6 text-ink-soft">
-              Check earnings, confirm payout setup, then work the listings that need attention.
+              Use this as a short operating checklist: payout setup first, one buyer-ready listing next, then steady listing improvement.
             </p>
           </div>
           <div className="rounded-[1rem] bg-surface-subtle px-4 py-3 text-sm leading-6 text-ink-soft">
@@ -1461,14 +1476,14 @@ export function SellerDashboardContent() {
               <p className="font-semibold text-ink">1. Confirm payouts</p>
               <p className="mt-1">
                 {seller
-                  ? "Payouts are connected, so you can focus on creating or fixing listings now."
-                  : "Complete seller onboarding first if you want products to become buyable."}
+                  ? "Payouts are connected, so you can focus on publishing and improving listings."
+                  : "Complete seller onboarding first so products can move into real checkout and payout flow."}
               </p>
             </div>
             <div className="rounded-[1rem] bg-white px-4 py-4">
               <p className="font-semibold text-ink">2. Create or improve a listing</p>
               <p className="mt-1">
-                Use `Create product` for new work, or jump into the listing cards below to fix missing previews and thumbnails.
+                Use Create listing for new work, or jump into the listing cards below to fix missing previews, thumbnails, and rights confirmation.
               </p>
             </div>
             <div className="rounded-[1rem] bg-white px-4 py-4">
@@ -1551,8 +1566,8 @@ export function SellerDashboardContent() {
           </p>
           <p className="mt-2 text-sm leading-7 text-ink-soft">
             {listingUsage
-              ? `${listingUsage.current}/${listingUsage.limit} active listings used on this plan.`
-              : `This plan includes up to ${planConfig[normalizePlanKey(profile?.sellerPlanKey)].activeListingLimit} active listings.`}
+              ? `${sellerListingCount} listing${sellerListingCount === 1 ? "" : "s"} tracked. Uploads are unlimited.`
+              : "Uploads are unlimited. AI credits are the plan-based limit."}
           </p>
           <p className="mt-2 text-sm leading-7 text-ink-soft">
             {aiSettings?.aiKillSwitchEnabled
@@ -1598,32 +1613,12 @@ export function SellerDashboardContent() {
               Manage paid plan
             </Link>
           ) : null}
-          {listingLimitReached ? (
-            <div className="mt-4 rounded-[1rem] border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-950">
-              <p className="font-semibold">Listing cap reached</p>
-              <p className="mt-1">{getListingLimitUpgradeMessage(normalizePlanKey(profile?.sellerPlanKey))}</p>
-              <Link
-                className="mt-3 inline-flex items-center justify-center rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
-                href={buildSellerPlanCheckoutHref({
-                  planKey: "basic",
-                  returnTo: "/sell/dashboard?focus=plan",
-                })}
-                onClick={() =>
-                  void trackMonetizationEvent({
-                    eventType: "upgrade_click",
-                    source: "seller_dashboard",
-                      planKey: currentPlanKey,
-                    metadata: {
-                      reason: "listing_limit",
-                      targetPlan: "basic",
-                    },
-                  })
-                }
-              >
-                Upgrade to Basic
-              </Link>
-            </div>
-          ) : null}
+          <div className="mt-4 rounded-[1rem] border border-emerald-100 bg-emerald-50 px-4 py-4 text-sm leading-6 text-emerald-950">
+            <p className="font-semibold">Unlimited uploads are available</p>
+            <p className="mt-1">
+              Keep adding products when they are useful and distinct. AI tools still use plan credits, and stronger previews and descriptions help buyers trust each listing.
+            </p>
+          </div>
           <div className="mt-5 rounded-[1rem] border border-ink/5 bg-surface-subtle p-4">
             <p className="text-sm font-semibold text-ink">What each plan supports</p>
             <div className="mt-3 space-y-3">
@@ -1652,7 +1647,7 @@ export function SellerDashboardContent() {
                           : "Built for higher-volume sellers who want the strongest payout share and the largest monthly AI allowance."}
                     </p>
                     <p className="mt-2 text-sm leading-6 text-ink-soft">
-                      {plan.activeListingLimit} active listing{plan.activeListingLimit === 1 ? "" : "s"} included.
+                      Unlimited product uploads. AI credits are limited by plan.
                     </p>
                   </div>
                 );
@@ -1836,7 +1831,7 @@ export function SellerDashboardContent() {
                     }
                     type="button"
                   >
-                    Unlock more listings and better tools
+                    Learn why this is locked
                   </button>
                 </div>
               ) : null}
@@ -2182,6 +2177,9 @@ export function SellerDashboardContent() {
                         <img
                           alt={`${resource.title} thumbnail`}
                           className="h-16 w-24 rounded-2xl border border-slate-200 object-cover"
+                          decoding="async"
+                          loading="lazy"
+                          sizes="96px"
                           src={resource.thumbnailUrl}
                         />
                         <p className="text-sm leading-6 text-ink-soft">
@@ -2271,7 +2269,7 @@ export function SellerDashboardContent() {
               <p className="mt-2 leading-6 text-ink-soft">{sellerFilterEmptyState.body}</p>
               {!hasAnyListings ? (
                 <p className="mt-2 leading-6 text-ink-soft">
-                  The fastest next move is one clean listing with a preview, thumbnail, and rights confirmation so this dashboard can start tracking real seller progress.
+                  Start with a focused resource you have already used in class. Save it as a draft, then add the preview, thumbnail, and rights confirmation when it is ready for buyers.
                 </p>
               ) : null}
               <Link

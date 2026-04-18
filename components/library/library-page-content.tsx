@@ -107,14 +107,14 @@ export function LibraryPageContent({
             title: `${filteredLibraryItems.length} purchase${
               filteredLibraryItems.length === 1 ? "" : "s"
             } needing attention`,
-            body: "Use this view for purchases with an open refund or a delivery issue.",
+            body: "Use this view for purchases with an open refund, delivery issue, or access item that needs follow-up.",
         }
         : {
             label: "All purchases",
             title: `${buyerLibraryItems.length} purchased resource${
               buyerLibraryItems.length === 1 ? "" : "s"
             } in one place`,
-          body: "Start in the full library, then narrow into updates or support only when you need to.",
+          body: "Start in the full library, then narrow into updates or support when you need a faster path to the right file.",
         };
   const activeFilterPill =
     activeFilter === "updated"
@@ -306,15 +306,14 @@ export function LibraryPageContent({
               Need help with this purchase?
             </p>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-soft">
-              Download the protected files again, reopen the listing or storefront, or submit a refund
-              or issue report if something about the purchase needs attention.
+              Download the protected files again, reopen the listing or storefront, or report a real access, broken-file, misleading-listing, duplicate-charge, or rights issue.
             </p>
           </div>
           <div className="rounded-[18px] border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-900">
             <div className="flex items-start gap-2">
               <ShieldCheck className="mt-0.5 h-4 w-4" />
               <span>
-                Purchased originals are delivered through a protected short-lived link. Public product pages continue to show only watermarked previews.
+                Purchased originals are delivered through protected access. Public product pages continue to show only watermarked previews.
               </span>
             </div>
           </div>
@@ -376,6 +375,9 @@ export function LibraryPageContent({
           <div className="rounded-[20px] border border-white bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand">
               Refunds and issue reporting
+            </p>
+            <p className="mt-2 text-sm leading-6 text-ink-soft">
+              Digital purchases are usually final after access is delivered. Refunds are reviewed for broken files, missing access, materially misleading listings, duplicate charges, or rights issues.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               <button
@@ -468,7 +470,7 @@ export function LibraryPageContent({
                     Browse your library
                   </p>
                   <p className="mt-2 text-sm leading-7 text-ink-soft">
-                    Switch between all purchases, updates, and support only when you need a faster view.
+                    Switch between all purchases, updates, and support views so you can reopen the right resource without digging.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -552,8 +554,23 @@ export function LibraryPageContent({
             {filteredLibraryItems.length === 0 ? (
               <article className="rounded-[28px] border border-dashed border-slate-300 bg-white p-8 text-sm leading-7 text-ink-soft">
                 {activeFilter === "updated"
-                  ? `No updated purchases for ${viewer.name} yet. When sellers publish a newer eligible version, it will surface here.`
+                  ? `No updated purchases for ${viewer.name} yet. When sellers publish a newer eligible version, it will surface here automatically.`
                   : `No purchases needing support attention for ${viewer.name} right now. Refund requests or delivery issues will surface here when they exist.`}
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <Link
+                    className="inline-flex rounded-full bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700"
+                    href="/library"
+                    onClick={() => setActiveFilter("all")}
+                  >
+                    View all purchases
+                  </Link>
+                  <Link
+                    className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-slate-300"
+                    href="/marketplace"
+                  >
+                    Browse more resources
+                  </Link>
+                </div>
               </article>
             ) : null}
 
@@ -638,7 +655,10 @@ export function LibraryPageContent({
                               <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
                                 <img
                                   alt={`${item.productTitle} purchased preview`}
-                                  className="aspect-[5/6] w-full object-cover object-top"
+                                  className="aspect-[5/6] w-full bg-slate-100 object-contain object-top"
+                                  decoding="async"
+                                  loading="lazy"
+                                  sizes="(min-width: 1280px) 52vw, 100vw"
                                   src={getLibraryPreviewImage(item)}
                                 />
                               </div>
@@ -810,7 +830,10 @@ export function LibraryPageContent({
                           <div className="relative">
                             <img
                               alt={`${item.productTitle} purchased preview`}
-                              className="aspect-[16/10] w-full object-cover object-top"
+                              className="aspect-[16/10] w-full bg-slate-100 object-contain object-top"
+                              decoding="async"
+                              loading="lazy"
+                              sizes="(min-width: 1024px) 42vw, 100vw"
                               src={getLibraryPreviewImage(item)}
                             />
                             <div className="absolute inset-x-0 bottom-0 p-4">
@@ -899,8 +922,34 @@ export function LibraryPageContent({
           </>
         ) : (
           <article className="rounded-[28px] border border-dashed border-slate-300 bg-white p-8 text-sm leading-7 text-ink-soft">
-            No purchases yet for {viewer.name}. Complete a purchase from any live marketplace
-            listing and it will appear here automatically in the library.
+            <p className="font-semibold text-ink">No purchases yet for {viewer.name}.</p>
+            <p className="mt-2">
+              Complete a purchase from any live marketplace listing and it will appear here automatically with protected download access, listing follow-up, and support options.
+            </p>
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              {[
+                {
+                  title: "Preview first",
+                  body: "Open product previews before buying so you know what you are choosing.",
+                },
+                {
+                  title: "Save strong options",
+                  body: "Use favorites to build a shortlist before checkout.",
+                },
+                {
+                  title: "Return here later",
+                  body: "Completed purchases appear in this library for signed-in access.",
+                },
+              ].map((item) => (
+                <div
+                  key={item.title}
+                  className="rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3"
+                >
+                  <p className="font-semibold text-ink">{item.title}</p>
+                  <p className="mt-1">{item.body}</p>
+                </div>
+              ))}
+            </div>
             {favoriteCount > 0 ? (
               <p
                 className="mt-4"

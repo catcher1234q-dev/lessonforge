@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import Link from "next/link";
 
 import { CutoverSummaryCard } from "@/components/admin/cutover-summary-card";
@@ -14,6 +16,12 @@ import { siteConfig } from "@/lib/config/site";
 import { getIntegrationReadiness } from "@/lib/lessonforge/integration-readiness";
 import { getAdminOverview } from "@/lib/lessonforge/server-operations";
 import { getPersistenceReadiness } from "@/lib/lessonforge/persistence-readiness";
+import { buildNoIndexMetadata } from "@/lib/seo/metadata";
+
+export const metadata: Metadata = buildNoIndexMetadata(
+  "Founder",
+  "Private LessonForgeHub founder controls and launch readiness area.",
+);
 
 function formatBoolean(value: boolean) {
   return value ? "On" : "Off";
@@ -319,7 +327,7 @@ export default async function FounderPage() {
                   </p>
                 </div>
                 <div className="rounded-[1rem] bg-slate-50 px-4 py-4 text-sm text-ink-soft">
-                  Listing cap hits
+                  Legacy listing prompts
                   <p className="mt-1 text-2xl font-semibold text-ink">
                     {adminOverview.monetizationSummary.listingLimitHits}
                   </p>

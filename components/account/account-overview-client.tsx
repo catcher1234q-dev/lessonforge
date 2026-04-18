@@ -175,7 +175,7 @@ export function AccountOverviewClient() {
 
   if (isSessionLoading) {
     return (
-      <div className="rounded-[2rem] border border-ink/5 bg-white p-8 text-sm text-ink-soft shadow-soft-xl">
+      <div className="rounded-[2rem] border border-ink/5 bg-white p-6 text-sm text-ink-soft shadow-soft-xl sm:p-8">
         Checking your account access...
       </div>
     );
@@ -183,7 +183,7 @@ export function AccountOverviewClient() {
 
   if (!hasSupabaseEnv()) {
     return (
-      <div className="rounded-[2rem] border border-ink/5 bg-white p-8 shadow-soft-xl">
+      <div className="rounded-[2rem] border border-ink/5 bg-white p-6 shadow-soft-xl sm:p-8">
         <SectionIntro
           body="This account page will open after the site owner finishes the Supabase sign-in setup. Public browsing and product discovery still work while account access is being connected."
           eyebrow="Account access"
@@ -211,7 +211,7 @@ export function AccountOverviewClient() {
 
   if (!session) {
     return (
-      <div className="rounded-[2rem] border border-ink/5 bg-white p-8 shadow-soft-xl">
+      <div className="rounded-[2rem] border border-ink/5 bg-white p-6 shadow-soft-xl sm:p-8">
         <SectionIntro
           body="Your purchases, saved items, seller listings, and earnings live here, but this page is only for signed-in accounts."
           eyebrow="Account access"
@@ -229,7 +229,7 @@ export function AccountOverviewClient() {
 
   if (isOverviewLoading || !overview) {
     return (
-      <div className="rounded-[2rem] border border-ink/5 bg-white p-8 text-sm text-ink-soft shadow-soft-xl">
+      <div className="rounded-[2rem] border border-ink/5 bg-white p-6 text-sm text-ink-soft shadow-soft-xl sm:p-8">
         Loading your account overview...
       </div>
     );
@@ -237,34 +237,33 @@ export function AccountOverviewClient() {
 
   return (
     <div className="flex flex-col gap-8">
-      <section className="rounded-[36px] border border-black/5 bg-white p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
+      <section className="rounded-[36px] border border-black/5 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:p-8">
         <div className="flex flex-col gap-8 xl:flex-row xl:items-start xl:justify-between">
           <div className="max-w-3xl">
             <SectionIntro
-              body={`${overview.viewer.name} can track purchases, saved items, seller setup, listings, and earnings from one account overview.`}
+              body={`${overview.viewer.name} can reopen purchases, manage saved resources, finish seller setup, and track earnings without guessing where to go next.`}
               eyebrow="Account"
               level="h1"
-              title="One place for your buyer and seller activity."
-              titleClassName="text-5xl leading-tight"
+              title="Your LessonForgeHub activity, organized."
+              titleClassName="text-4xl leading-tight sm:text-5xl"
             />
             <p className="mt-3 text-sm leading-7 text-ink-soft">
-              Use this page as the fastest way back into the part of the website you need next,
-              whether that is buying, selling, or checking earnings.
+              Use this page as your home base after login: purchases stay tied to your library, saved items stay easy to compare, and support items stay visible.
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
               <Link
                 className="rounded-[1rem] border border-brand/10 bg-brand-soft/60 px-4 py-4 text-sm leading-6 text-ink-soft transition hover:border-brand/20"
                 href="/library"
               >
-                <p className="font-semibold text-ink">Resume buyer library</p>
-                <p className="mt-1">Open purchased files, updates, and support follow-up.</p>
+                <p className="font-semibold text-ink">Open buyer library</p>
+                <p className="mt-1">Download purchased files, check updates, and handle support.</p>
               </Link>
               <Link
                 className="rounded-[1rem] border border-sky-100 bg-sky-50/80 px-4 py-4 text-sm leading-6 text-ink-soft transition hover:border-sky-200"
                 href="/favorites"
               >
-                <p className="font-semibold text-ink">Check saved items</p>
-                <p className="mt-1">Reopen the shortlist and make your next buyer decision.</p>
+                <p className="font-semibold text-ink">Review saved items</p>
+                <p className="mt-1">Compare resources before buying and remove what no longer fits.</p>
               </Link>
               <Link
                 className="rounded-[1rem] border border-emerald-100 bg-emerald-50 px-4 py-4 text-sm leading-6 text-ink-soft transition hover:border-emerald-200"
@@ -273,10 +272,20 @@ export function AccountOverviewClient() {
                 <p className="font-semibold text-ink">Open seller workspace</p>
                 <p className="mt-1">
                   {overview.seller.onboardingCompleted
-                    ? "Check listings, sales, and next seller actions."
-                    : "Finish setup so listings and payouts are ready to go."}
+                    ? "Check listings, sales, payout status, and seller next steps."
+                    : "Finish seller setup so listings and payouts are ready."}
                 </p>
               </Link>
+            </div>
+            <div className="mt-6 rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-4 text-sm leading-6 text-ink-soft">
+              <p className="font-semibold text-ink">Best buyer next step</p>
+              <p className="mt-1">
+                {overview.buyer.purchaseCount > 0
+                  ? "Open your library first if you need files again. Browse marketplace when you are ready to add the next classroom resource."
+                  : overview.buyer.favoriteCount > 0
+                    ? "Review saved items first. They are already shortlisted, so checkout decisions should be faster."
+                    : "Browse the marketplace and open previews before your first purchase."}
+              </p>
             </div>
           </div>
 
@@ -287,7 +296,7 @@ export function AccountOverviewClient() {
               </p>
               <p className="mt-3 text-2xl font-semibold text-ink">Your fastest next stop</p>
               <p className="mt-2 text-sm leading-6 text-ink-soft">
-                Start here when you want one place to review buyer and seller progress without jumping across the site first.
+                Start here when you want the shortest path back to purchased files, saved resources, or seller work.
               </p>
             </article>
             <article className="rounded-[24px] border border-emerald-100 bg-emerald-50 px-5 py-4">
@@ -298,7 +307,7 @@ export function AccountOverviewClient() {
                 {formatCurrency(overview.seller.sellerEarningsCents)}
               </p>
               <p className="mt-2 text-sm leading-6 text-ink-soft">
-                Earnings recorded across your completed sales so far.
+                Seller share recorded from completed purchases so far.
               </p>
             </article>
           </div>
@@ -343,7 +352,7 @@ export function AccountOverviewClient() {
 
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <article className="rounded-[1.5rem] border border-ink/5 bg-white p-5 shadow-soft-xl">
-          <div className="flex items-end justify-between gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold text-ink">Buyer activity</h2>
               <p className="mt-1 text-sm leading-6 text-ink-soft">
@@ -375,7 +384,7 @@ export function AccountOverviewClient() {
               ))
             ) : (
               <div className="rounded-[1rem] border border-ink/5 bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft">
-                No purchases yet. Start in the marketplace when you are ready to buy.
+                No purchases yet. Browse the marketplace, preview a resource, and your first completed checkout will appear in the library automatically.
               </div>
             )}
           </div>
@@ -392,11 +401,19 @@ export function AccountOverviewClient() {
             >
               Open saved items
             </Link>
+            {overview.buyer.purchaseCount > 0 ? (
+              <Link
+                className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:border-slate-300"
+                href="/library"
+              >
+                Reopen library
+              </Link>
+            ) : null}
           </div>
         </article>
 
         <article className="rounded-[1.5rem] border border-ink/5 bg-white p-5 shadow-soft-xl">
-          <div className="flex items-end justify-between gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold text-ink">Seller activity</h2>
               <p className="mt-1 text-sm leading-6 text-ink-soft">
@@ -487,7 +504,7 @@ export function AccountOverviewClient() {
               ))
             ) : (
               <div className="rounded-[1rem] border border-ink/5 bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft">
-                No seller activity yet. Complete seller onboarding, then create your first listing.
+                No seller activity yet. Complete seller onboarding, connect payouts, then create your first listing so buyers have something real to browse.
               </div>
             )}
           </div>
@@ -510,7 +527,7 @@ export function AccountOverviewClient() {
 
       <section className="grid gap-6 xl:grid-cols-[0.42fr_0.58fr]">
         <article className="rounded-[1.5rem] border border-ink/5 bg-white p-5 shadow-soft-xl">
-          <div className="flex items-end justify-between gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold text-ink">Buyer support snapshot</h2>
               <p className="mt-1 text-sm leading-6 text-ink-soft">
@@ -556,7 +573,7 @@ export function AccountOverviewClient() {
         </article>
 
         <article className="rounded-[1.5rem] border border-ink/5 bg-white p-5 shadow-soft-xl">
-          <div className="flex items-end justify-between gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold text-ink">Buyer timeline</h2>
               <p className="mt-1 text-sm leading-6 text-ink-soft">
@@ -613,7 +630,7 @@ export function AccountOverviewClient() {
               ))
             ) : (
               <div className="rounded-[1rem] border border-ink/5 bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft">
-                No buyer account history yet. Start by saving a listing or completing a purchase.
+                No buyer account history yet. Save a listing, preview a resource, or complete a purchase to start building account history.
               </div>
             )}
           </div>

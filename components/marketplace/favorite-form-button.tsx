@@ -27,6 +27,8 @@ export function FavoriteFormButton({
             ? "border-rose-200 bg-rose-50 text-rose-700"
             : "border-slate-200 bg-white text-ink hover:border-slate-300"
         } ${compact ? "px-3 py-1.5 text-xs" : ""}`}
+        data-analytics-event={initialFavorited ? "favorite_removed" : "favorite_added"}
+        data-analytics-props={JSON.stringify({ productId, surface: compact ? "card" : "product_page" })}
         data-testid={testId}
         type="submit"
       >

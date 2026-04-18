@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { BadgeCheck, Download, Eye, FileText, ShieldCheck, Star } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -26,6 +27,7 @@ import {
   getRelatedListings,
 } from "@/lib/lessonforge/server-catalog";
 import { formatCurrency } from "@/lib/marketplace/config";
+import { buildNoIndexMetadata, buildPageMetadata } from "@/lib/seo/metadata";
 
 function getBestForLabel(listing: Awaited<ReturnType<typeof getMarketplaceListingBySlug>>) {
   if (!listing) {
@@ -82,6 +84,31 @@ function getRelatedSectionIntro(listing: Awaited<ReturnType<typeof getMarketplac
   }
 
   return `If you want one more option before buying, compare a few nearby ${listing.subject.toLowerCase()} picks from the marketplace.`;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const listing = await getMarketplaceListingBySlug(slug);
+
+  if (!listing) {
+    return buildNoIndexMetadata(
+      "Resource not found",
+      "This LessonForgeHub marketplace resource could not be found.",
+    );
+  }
+
+  const description = `${listing.title} is a ${listing.subject} ${listing.gradeBand} classroom resource from ${listing.sellerName}. Preview the listing, review details, and unlock files after verified checkout.`;
+
+  return buildPageMetadata({
+    title: listing.title,
+    description,
+    path: `/marketplace/${listing.slug}`,
+    image: listing.thumbnailUrl ?? listing.previewAssets[0]?.previewUrl ?? undefined,
+  });
 }
 
 export default async function ProductDetailPage({
@@ -182,14 +209,14 @@ export default async function ProductDetailPage({
 
           <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
             <section className="space-y-8">
-              <div className="rounded-[34px] border border-black/5 bg-white p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
+              <div className="rounded-[34px] border border-black/5 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:p-8">
                 <div className="flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-brand">
                   <span>{listing.subject}</span>
                   <span className="rounded-full bg-brand-soft px-3 py-1 tracking-[0.08em] text-brand">
                     {listing.gradeBand}
                   </span>
                 </div>
-                <h1 className="mt-5 font-[family-name:var(--font-display)] text-5xl leading-tight text-ink">
+                <h1 className="mt-5 font-[family-name:var(--font-display)] text-4xl leading-tight text-ink sm:text-5xl">
                   {listing.title}
                 </h1>
                 <p className="mt-5 max-w-3xl text-lg leading-8 text-ink-soft">
@@ -199,7 +226,7 @@ export default async function ProductDetailPage({
                 <div className="mt-6 rounded-[1.5rem] border border-sky-100 bg-sky-50/80 px-5 py-4 text-sm leading-6 text-ink-soft">
                   <p className="font-semibold text-ink">Quick path</p>
                   <p className="mt-1">
-                    Start with the cover and quick facts, check what is included, then preview or buy when it looks right.
+                    Start with the cover and quick facts, check what is included, then use the protected preview to decide before you buy.
                   </p>
                 </div>
 
@@ -230,7 +257,7 @@ export default async function ProductDetailPage({
                 </section>
               ) : null}
 
-              <section className="rounded-[28px] border border-black/5 bg-white p-7 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+              <section className="rounded-[28px] border border-black/5 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:p-7">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                   <div>
                     <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
@@ -337,12 +364,12 @@ export default async function ProductDetailPage({
                 </div>
               </details>
 
-              <section className="rounded-[28px] border border-black/5 bg-white p-7 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+              <section className="rounded-[28px] border border-black/5 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:p-7">
                 <div className="max-w-3xl">
                   <p className="text-sm font-semibold uppercase tracking-[0.22em] text-brand">
                     Product preview
                   </p>
-                  <h2 className="mt-3 text-3xl font-semibold text-ink">
+                  <h2 className="mt-3 text-2xl font-semibold text-ink sm:text-3xl">
                     See the product like a buyer would.
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-ink-soft">
@@ -355,7 +382,10 @@ export default async function ProductDetailPage({
                     {previewHeroImage ? (
                       <img
                         alt={`${listing.title} large preview`}
-                        className="h-full max-h-[680px] w-full object-cover object-top"
+                        className="h-full max-h-[680px] w-full bg-slate-100 object-contain object-top"
+                        decoding="async"
+                        loading="eager"
+                        sizes="(min-width: 1024px) 60vw, 100vw"
                         src={previewHeroImage}
                       />
                     ) : null}
@@ -372,7 +402,10 @@ export default async function ProductDetailPage({
                         <div className="overflow-hidden bg-slate-100">
                           <img
                             alt={asset.label}
-                            className="h-44 w-full object-cover object-top transition duration-300 group-hover:scale-[1.02]"
+                            className="h-44 w-full bg-slate-100 object-contain object-top transition duration-300 group-hover:scale-[1.02]"
+                            decoding="async"
+                            loading="lazy"
+                            sizes="(min-width: 1024px) 28vw, (min-width: 640px) 33vw, 100vw"
                             src={asset.previewUrl}
                           />
                         </div>
@@ -512,7 +545,7 @@ export default async function ProductDetailPage({
                     Seller preview
                   </p>
                   <p className="mt-2 text-sm leading-6 text-ink-soft">
-                    Start with the cover, then open the first preview page if you want a closer look.
+                    Start with the cover, then open the first preview page if you want a closer look before checkout.
                   </p>
                 </div>
 
@@ -521,7 +554,10 @@ export default async function ProductDetailPage({
                     {previewHeroImage ? (
                       <img
                         alt={`${listing.title} preview`}
-                        className="h-[400px] w-full object-cover object-top"
+                        className="h-[400px] w-full bg-slate-100 object-contain object-top"
+                        decoding="async"
+                        loading="lazy"
+                        sizes="(min-width: 1024px) 34vw, 100vw"
                         src={previewHeroImage}
                       />
                     ) : (
@@ -553,9 +589,9 @@ export default async function ProductDetailPage({
                     </span>
                   </div>
 
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                     <a
-                      className="inline-flex items-center justify-center rounded-full bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700"
+                      className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700"
                       data-testid="product-preview-jump"
                       href="#selected-preview"
                     >
@@ -564,7 +600,7 @@ export default async function ProductDetailPage({
                     </a>
                     {listing.previewAssets[0]?.previewUrl ? (
                       <Link
-                        className="inline-flex items-center justify-center rounded-full border border-slate-200 px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-brand/30 hover:text-brand"
+                        className="inline-flex min-h-11 items-center justify-center rounded-full border border-slate-200 px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-brand/30 hover:text-brand"
                         href={listing.previewAssets[0].previewUrl}
                         target="_blank"
                       >
@@ -575,7 +611,7 @@ export default async function ProductDetailPage({
                 </div>
               </section>
 
-              <section className="rounded-[32px] border border-black/5 bg-white p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
+              <section className="rounded-[32px] border border-black/5 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:p-8">
                 <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand">
                   Buy and unlock files
                 </p>
@@ -585,6 +621,28 @@ export default async function ProductDetailPage({
                 <p className="mt-2 text-sm leading-6 text-ink-soft">
                   {listing.licenseType} license. Buy now and open the full files from your library right after checkout.
                 </p>
+                <div className="mt-5 grid gap-3">
+                  <div className="rounded-[1rem] bg-slate-50 px-4 py-3 text-sm leading-6 text-ink-soft">
+                    Secure checkout is handled by Stripe.
+                  </div>
+                  <div className="rounded-[1rem] bg-slate-50 px-4 py-3 text-sm leading-6 text-ink-soft">
+                    Full files unlock after verified payment and stay in your library.
+                  </div>
+                  <div className="rounded-[1rem] bg-slate-50 px-4 py-3 text-sm leading-6 text-ink-soft">
+                    Protected previews let you check the resource before you commit.
+                  </div>
+                  <div className="rounded-[1rem] bg-slate-50 px-4 py-3 text-sm leading-6 text-ink-soft">
+                    Digital purchases are usually final after access is delivered, except for broken files, missing access, misleading listings, duplicate charges, or rights issues.
+                  </div>
+                  <Link
+                    className="rounded-[1rem] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold leading-6 text-ink transition hover:border-slate-300"
+                    data-analytics-event="support_link_clicked"
+                    data-analytics-props={JSON.stringify({ surface: "product_purchase_panel" })}
+                    href="/support"
+                  >
+                    Need help before buying? Review support and policies.
+                  </Link>
+                </div>
 
                 <div className="mt-7 space-y-3">
                   <CheckoutButton
@@ -596,6 +654,8 @@ export default async function ProductDetailPage({
                   {listing.previewAssets[0]?.previewUrl ? (
                     <Link
                       className="inline-flex w-full items-center justify-center rounded-full border border-slate-200 px-5 py-3.5 text-sm font-semibold text-ink transition hover:border-brand/30 hover:text-brand"
+                      data-analytics-event="product_preview_opened"
+                      data-analytics-props={JSON.stringify({ productId: listing.id, surface: "product_purchase_panel" })}
                       href={listing.previewAssets[0].previewUrl}
                       target="_blank"
                     >
@@ -604,6 +664,8 @@ export default async function ProductDetailPage({
                   ) : null}
                   <Link
                     className="inline-flex w-full items-center justify-center rounded-full border border-slate-200 px-5 py-3.5 text-sm font-semibold text-ink transition hover:border-brand/30 hover:text-brand"
+                    data-analytics-event="checkout_preview_opened"
+                    data-analytics-props={JSON.stringify({ productId: listing.id })}
                     href={checkoutHref}
                   >
                     Open checkout preview
@@ -803,7 +865,10 @@ export default async function ProductDetailPage({
                     {related.thumbnailUrl ?? related.previewAssets[0]?.previewUrl ? (
                       <img
                         alt={`${related.title} preview`}
-                        className="h-64 w-full object-cover object-top transition duration-300 group-hover:scale-[1.02]"
+                        className="h-64 w-full bg-slate-100 object-contain object-top transition duration-300 group-hover:scale-[1.02]"
+                        decoding="async"
+                        loading="lazy"
+                        sizes="(min-width: 1024px) 33vw, 100vw"
                         src={related.thumbnailUrl ?? related.previewAssets[0]?.previewUrl ?? undefined}
                       />
                     ) : null}
