@@ -27,6 +27,15 @@ const descriptionRewriteCost = getAiCreditCost("descriptionRewrite");
 
 type CreatorAiAction = "autofill" | "title" | "description" | "tags" | "standards";
 type ListingAssistAction = "autofill" | "title" | "description" | "tags";
+type AiFieldKey =
+  | "title"
+  | "shortDescription"
+  | "fullDescription"
+  | "subject"
+  | "gradeBand"
+  | "tags"
+  | "standards";
+type AiFieldStatus = "filled" | "suggested";
 type ListingAssistResponse = {
   provider: "openai" | "gemini";
   status: "success";
@@ -257,6 +266,32 @@ function getPublishFieldClassName(isMissing: boolean) {
     : "border-ink/10 bg-white focus:border-brand";
 }
 
+function getFieldClassName(input: { isMissing: boolean; isAiUpdated?: boolean }) {
+  if (input.isMissing) {
+    return "border-red-300 bg-red-50/40 focus:border-red-400";
+  }
+
+  if (input.isAiUpdated) {
+    return "border-brand/30 bg-brand-soft/25 focus:border-brand";
+  }
+
+  return "border-ink/10 bg-white focus:border-brand";
+}
+
+function isWeakTitleValue(value: string, uploadedTitle: string) {
+  const normalized = value.trim();
+
+  return !normalized || normalized === uploadedTitle || normalized.length < 12;
+}
+
+function isWeakShortDescriptionValue(value: string) {
+  return value.trim().length < 20;
+}
+
+function isWeakFullDescriptionValue(value: string) {
+  return value.trim().length < 60;
+}
+
 export function ProductCreator() {
   const [seller, setSeller] = useState<ConnectedSeller | null>(null);
   const [profile, setProfile] = useState<SellerProfileDraft | null>(null);
@@ -303,9 +338,13 @@ export function ProductCreator() {
   const [standardsResult, setStandardsResult] = useState<AIProviderResult | null>(null);
   const [aiFeedback, setAiFeedback] = useState<{
     state: "loading" | "success" | "error";
-    action: CreatorAiAction;
+    action: CreatorAiAction | "finish";
     message: string;
   } | null>(null);
+  const [aiUpdatedFields, setAiUpdatedFields] = useState<
+    Partial<Record<AiFieldKey, AiFieldStatus>>
+  >({});
+  const [showAiReviewNotice, setShowAiReviewNotice] = useState(false);
   const [lastAnalyzedUploadKey, setLastAnalyzedUploadKey] = useState<string | null>(null);
   const currentPlanKey = normalizePlanKey(profile?.sellerPlanKey);
   const currentPlan = planConfig[currentPlanKey];
@@ -409,6 +448,44 @@ export function ProductCreator() {
   const publishStepReady = missingPublishItems.length === 0;
   const currentAiAction = aiFeedback?.state === "loading" ? aiFeedback.action : null;
   const uploadSignature = files.map((file) => `${file.name}:${file.size}`).join("|");
+  const uploadedTitle = normalizeUploadedTitle(files[0]?.name);
+
+  function markAiUpdated(nextFields: Partial<Record<AiFieldKey, AiFieldStatus>>) {
+    if (Object.keys(nextFields).length === 0) {
+      return;
+    }
+
+    setAiUpdatedFields((current) => ({
+      ...current,
+      ...nextFields,
+    }));
+  }
+
+  function clearAiField(field: AiFieldKey) {
+    setAiUpdatedFields((current) => {
+      if (!(field in current)) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  }
+
+  function renderAiFieldNote(field: AiFieldKey) {
+    const status = aiUpdatedFields[field];
+
+    if (!status) {
+      return null;
+    }
+
+    return (
+      <span className="mt-2 inline-flex rounded-full bg-brand-soft px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-brand">
+        {status === "filled" ? "Filled by AI" : "Suggested by AI"}
+      </span>
+    );
+  }
 
   function scrollToPublishTarget(targetId: string) {
     const target = document.getElementById(targetId);
@@ -437,34 +514,43 @@ export function ProductCreator() {
     scrollToPublishTarget(firstMissing.targetId);
   }
 
-  async function runListingAssist(action: ListingAssistAction) {
+  async function runListingAssist(
+    action: ListingAssistAction,
+    options?: { quiet?: boolean },
+  ) {
     const sellerId = profile?.email || seller?.email;
     const sellerEmail = profile?.email || seller?.email;
 
     if (!sellerId || !sellerEmail) {
-      setAiFeedback({
-        state: "error",
-        action,
-        message: "Finish seller onboarding before using AI.",
-      });
+      if (!options?.quiet) {
+        setAiFeedback({
+          state: "error",
+          action,
+          message: "Finish seller onboarding before using AI.",
+        });
+      }
       return null;
     }
 
     if (files.length === 0) {
-      setAiFeedback({
-        state: "error",
-        action,
-        message: "Upload a resource before using AI.",
-      });
+      if (!options?.quiet) {
+        setAiFeedback({
+          state: "error",
+          action,
+          message: "Upload a resource before using AI.",
+        });
+      }
       return null;
     }
 
     if (aiKillSwitchEnabled) {
-      setAiFeedback({
-        state: "error",
-        action,
-        message: "AI is temporarily unavailable right now.",
-      });
+      if (!options?.quiet) {
+        setAiFeedback({
+          state: "error",
+          action,
+          message: "AI is temporarily unavailable right now.",
+        });
+      }
       return null;
     }
 
@@ -472,35 +558,41 @@ export function ProductCreator() {
       (action === "autofill" || action === "description") &&
       !canRunDescriptionRewrite
     ) {
-      setAiFeedback({
-        state: "error",
-        action,
-        message: getAiUpgradeMessage(),
-      });
+      if (!options?.quiet) {
+        setAiFeedback({
+          state: "error",
+          action,
+          message: getAiUpgradeMessage(),
+        });
+      }
       return null;
     }
 
     if ((action === "title" || action === "tags") && !canRunTitleSuggestion) {
-      setAiFeedback({
-        state: "error",
-        action,
-        message: getAiUpgradeMessage(),
-      });
+      if (!options?.quiet) {
+        setAiFeedback({
+          state: "error",
+          action,
+          message: getAiUpgradeMessage(),
+        });
+      }
       return null;
     }
 
-    setAiFeedback({
-      state: "loading",
-      action,
-      message:
-        action === "autofill"
-          ? "Analyzing your resource…"
-          : action === "title"
-            ? "AI is generating…"
-            : action === "description"
+    if (!options?.quiet) {
+      setAiFeedback({
+        state: "loading",
+        action,
+        message:
+          action === "autofill"
+            ? "Analyzing your resource…"
+            : action === "title"
               ? "AI is generating…"
-              : "AI is generating…",
-    });
+              : action === "description"
+                ? "AI is generating…"
+                : "AI is generating…",
+      });
+    }
 
     const response = await fetch("/api/lessonforge/ai/listing-assist", {
       method: "POST",
@@ -536,20 +628,24 @@ export function ProductCreator() {
     };
 
     if (!response.ok || !payload.suggestion) {
-      setAiFeedback({
-        state: "error",
-        action,
-        message: payload.error || "Could not generate this right now.",
-      });
+      if (!options?.quiet) {
+        setAiFeedback({
+          state: "error",
+          action,
+          message: payload.error || "Could not generate this right now.",
+        });
+      }
       return null;
     }
 
     setAvailableCredits(payload.availableCredits ?? null);
-    setAiFeedback({
-      state: "success",
-      action,
-      message: `Generated by AI · ${payload.suggestion.provider === "openai" ? "OpenAI" : "Gemini"}`,
-    });
+    if (!options?.quiet) {
+      setAiFeedback({
+        state: "success",
+        action,
+        message: `Generated by AI · ${payload.suggestion.provider === "openai" ? "OpenAI" : "Gemini"}`,
+      });
+    }
 
     return {
       suggestion: payload.suggestion,
@@ -557,51 +653,64 @@ export function ProductCreator() {
     };
   }
 
-  async function runStandardsScan(_mode: "auto" | "manual") {
+  async function runStandardsScan(
+    _mode: "auto" | "manual",
+    options?: { quiet?: boolean },
+  ) {
     const sellerId = profile?.email || seller?.email;
     const sellerEmail = profile?.email || seller?.email;
 
     if (!sellerId || !sellerEmail) {
-      setAiFeedback({
-        state: "error",
-        action: "standards",
-        message: "Finish seller onboarding before using AI.",
-      });
+      if (!options?.quiet) {
+        setAiFeedback({
+          state: "error",
+          action: "standards",
+          message: "Finish seller onboarding before using AI.",
+        });
+      }
       return null;
     }
 
     if (files.length === 0) {
-      setAiFeedback({
-        state: "error",
-        action: "standards",
-        message: "Upload a resource before scanning standards.",
-      });
+      if (!options?.quiet) {
+        setAiFeedback({
+          state: "error",
+          action: "standards",
+          message: "Upload a resource before scanning standards.",
+        });
+      }
       return null;
     }
 
     if (aiKillSwitchEnabled) {
-      setAiFeedback({
-        state: "error",
-        action: "standards",
-        message: "AI is temporarily unavailable right now.",
-      });
+      if (!options?.quiet) {
+        setAiFeedback({
+          state: "error",
+          action: "standards",
+          message: "AI is temporarily unavailable right now.",
+        });
+      }
       return null;
     }
 
     if (!canRunStandardsScan) {
-      setAiFeedback({
-        state: "error",
-        action: "standards",
-        message: getAiUpgradeMessage(),
-      });
+      if (!options?.quiet) {
+        setAiFeedback({
+          state: "error",
+          action: "standards",
+          message: getAiUpgradeMessage(),
+        });
+      }
       return null;
     }
 
-    setAiFeedback({
-      state: "loading",
-      action: "standards",
-      message: `Scanning with ${provider === "openai" ? "OpenAI" : "Gemini"}…`,
-    });
+    if (!options?.quiet) {
+      setAiFeedback({
+        state: "loading",
+        action: "standards",
+        message: `Scanning with ${provider === "openai" ? "OpenAI" : "Gemini"}…`,
+      });
+    }
 
     const response = await fetch("/api/lessonforge/ai/standards-scan", {
       method: "POST",
@@ -631,11 +740,13 @@ export function ProductCreator() {
     };
 
     if (!response.ok || !payload.mapping) {
-      setAiFeedback({
-        state: "error",
-        action: "standards",
-        message: payload.error || "Standards scan failed. Try again.",
-      });
+      if (!options?.quiet) {
+        setAiFeedback({
+          state: "error",
+          action: "standards",
+          message: payload.error || "Standards scan failed. Try again.",
+        });
+      }
       return null;
     }
 
@@ -644,11 +755,13 @@ export function ProductCreator() {
     setSubject((current) =>
       current === "Math" || !current.trim() ? payload.mapping?.subject || current : current,
     );
-    setAiFeedback({
-      state: "success",
-      action: "standards",
-      message: `Scanned with ${payload.mapping.provider === "openai" ? "OpenAI" : "Gemini"}`,
-    });
+    if (!options?.quiet) {
+      setAiFeedback({
+        state: "success",
+        action: "standards",
+        message: `Scanned with ${payload.mapping.provider === "openai" ? "OpenAI" : "Gemini"}`,
+      });
+    }
 
     return payload.mapping;
   }
@@ -656,41 +769,129 @@ export function ProductCreator() {
   function applyListingAssistSuggestion(
     suggestion: ListingAssistResponse,
     action: ListingAssistAction,
+    options?: { mode?: "upload" | "helper" | "manual" },
   ) {
-    const uploadedTitle = normalizeUploadedTitle(files[0]?.name);
+    const mode = options?.mode ?? "upload";
+    const nextUpdatedFields: Partial<Record<AiFieldKey, AiFieldStatus>> = {};
+    const shouldHelpTitle =
+      mode === "helper"
+        ? isWeakTitleValue(title, uploadedTitle)
+        : !title.trim() || title.trim() === uploadedTitle;
+    const shouldHelpShortDescription =
+      mode === "helper"
+        ? isWeakShortDescriptionValue(shortDescription)
+        : !shortDescription.trim();
+    const shouldHelpFullDescription =
+      mode === "helper"
+        ? isWeakFullDescriptionValue(fullDescription)
+        : !fullDescription.trim();
 
-    if (
-      action === "autofill" &&
-      (!title.trim() || title.trim() === uploadedTitle)
-    ) {
+    if (action === "autofill" && shouldHelpTitle) {
       setTitle(suggestion.title);
+      nextUpdatedFields.title = "filled";
     }
 
     if (action === "title") {
       setTitle(suggestion.title);
+      nextUpdatedFields.title = "filled";
     }
 
-    if ((action === "autofill" || action === "description") && !shortDescription.trim()) {
+    if ((action === "autofill" || action === "description") && shouldHelpShortDescription) {
       setShortDescription(suggestion.shortDescription);
+      nextUpdatedFields.shortDescription = "filled";
     }
 
     if (action === "description") {
-      setShortDescription(suggestion.shortDescription);
+      if (shortDescription.trim() !== suggestion.shortDescription.trim()) {
+        setShortDescription(suggestion.shortDescription);
+        nextUpdatedFields.shortDescription = "filled";
+      }
       setFullDescription(suggestion.fullDescription);
+      nextUpdatedFields.fullDescription = "filled";
     }
 
-    if (action === "autofill" && !fullDescription.trim()) {
+    if (action === "autofill" && shouldHelpFullDescription) {
       setFullDescription(suggestion.fullDescription);
+      nextUpdatedFields.fullDescription = "filled";
     }
 
     if (action === "autofill") {
-      setSubject((current) => (current === "Math" ? suggestion.subject : current));
-      setGradeBand((current) => (current === "K-12" ? suggestion.gradeBand : current));
+      if (subject === "Math" && suggestion.subject !== subject) {
+        setSubject(suggestion.subject);
+        nextUpdatedFields.subject = "filled";
+      }
+
+      if (gradeBand === "K-12" && suggestion.gradeBand !== gradeBand) {
+        setGradeBand(suggestion.gradeBand);
+        nextUpdatedFields.gradeBand = "filled";
+      }
     }
 
-    if (action === "autofill" || action === "tags") {
+    if ((action === "autofill" || action === "tags") && suggestedTags.length === 0) {
       setSuggestedTags(suggestion.tags);
+      nextUpdatedFields.tags = "suggested";
+    } else if (action === "tags") {
+      setSuggestedTags(suggestion.tags);
+      nextUpdatedFields.tags = "suggested";
     }
+
+    markAiUpdated(nextUpdatedFields);
+    return nextUpdatedFields;
+  }
+
+  async function handleAiFinishListing() {
+    setAiFeedback({
+      state: "loading",
+      action: "finish",
+      message: "AI is helping finish your listing…",
+    });
+
+    const summary: string[] = [];
+    const assistResult = await runListingAssist("autofill", { quiet: true });
+
+    if (!assistResult?.suggestion) {
+      setAiFeedback({
+        state: "error",
+        action: "finish",
+        message: "Could not generate this right now.",
+      });
+      return;
+    }
+
+    const updatedFields = applyListingAssistSuggestion(assistResult.suggestion, "autofill", {
+      mode: "helper",
+    });
+
+    if (updatedFields.title) {
+      summary.push("Title filled");
+    }
+
+    if (updatedFields.shortDescription || updatedFields.fullDescription) {
+      summary.push("Description filled");
+    }
+
+    if (updatedFields.tags) {
+      summary.push("Tags suggested");
+    }
+
+    if (!standardsResult) {
+      const standardsMapping = await runStandardsScan("manual", { quiet: true });
+
+      if (standardsMapping) {
+        markAiUpdated({ standards: "suggested" });
+        summary.push("Standards scanned");
+      }
+    }
+
+    setShowAiReviewNotice(summary.length > 0);
+    setAiFeedback({
+      state: "success",
+      action: "finish",
+      message:
+        summary.length > 0
+          ? summary.join(" • ")
+          : "AI checked your listing. No missing content fields needed updates.",
+    });
   }
 
   useEffect(() => {
@@ -844,6 +1045,8 @@ export function ProductCreator() {
     setFiles(nextFiles);
     setStandardsResult(null);
     setSuggestedTags([]);
+    setAiUpdatedFields({});
+    setShowAiReviewNotice(false);
 
     if (!title && nextFiles[0]) {
       setTitle(normalizeUploadedTitle(nextFiles[0].name));
@@ -1140,6 +1343,12 @@ export function ProductCreator() {
               </div>
             ) : null}
 
+            {showAiReviewNotice ? (
+              <div className="mt-3 rounded-[0.95rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+                AI can make mistakes. Review before publishing.
+              </div>
+            ) : null}
+
             {(title || shortDescription || fullDescription || suggestedTags.length > 0 || standardsResult) ? (
               <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.14em]">
                 {title ? (
@@ -1234,7 +1443,10 @@ export function ProductCreator() {
                     onClick={async () => {
                       const assistResult = await runListingAssist("title");
                       if (assistResult?.suggestion) {
-                        applyListingAssistSuggestion(assistResult.suggestion, "title");
+                        applyListingAssistSuggestion(assistResult.suggestion, "title", {
+                          mode: "manual",
+                        });
+                        setShowAiReviewNotice(true);
                       }
                     }}
                     type="button"
@@ -1243,12 +1455,16 @@ export function ProductCreator() {
                   </button>
                 </span>
                 <input
-                  className={`mt-2 w-full rounded-[1rem] border px-4 py-3 text-sm text-ink outline-none transition ${getPublishFieldClassName(
-                    missingPublishKeys.has("title"),
-                  )}`}
+                  className={`mt-2 w-full rounded-[1rem] border px-4 py-3 text-sm text-ink outline-none transition ${getFieldClassName({
+                    isMissing: missingPublishKeys.has("title"),
+                    isAiUpdated: Boolean(aiUpdatedFields.title),
+                  })}`}
                   data-testid="seller-creator-title"
                   id="publish-target-title"
-                  onChange={(event) => setTitle(event.target.value)}
+                  onChange={(event) => {
+                    setTitle(event.target.value);
+                    clearAiField("title");
+                  }}
                   placeholder="5th Grade Fraction Exit Ticket Pack"
                   value={title}
                 />
@@ -1257,6 +1473,7 @@ export function ProductCreator() {
                     Required to publish
                   </span>
                 ) : null}
+                {renderAiFieldNote("title")}
               </label>
 
               {similarTitleWarning ? (
@@ -1270,9 +1487,15 @@ export function ProductCreator() {
                 <label className="block">
                   <span className="text-sm font-semibold text-ink">Subject</span>
                   <select
-                    className="mt-2 w-full rounded-[1rem] border border-ink/10 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
+                    className={`mt-2 w-full rounded-[1rem] border px-4 py-3 text-sm text-ink outline-none transition ${getFieldClassName({
+                      isMissing: false,
+                      isAiUpdated: Boolean(aiUpdatedFields.subject),
+                    })}`}
                     data-testid="seller-creator-subject"
-                    onChange={(event) => setSubject(event.target.value)}
+                    onChange={(event) => {
+                      setSubject(event.target.value);
+                      clearAiField("subject");
+                    }}
                     value={subject}
                   >
                     <option>Math</option>
@@ -1280,14 +1503,21 @@ export function ProductCreator() {
                     <option>Science</option>
                     <option>Social Studies</option>
                   </select>
+                  {renderAiFieldNote("subject")}
                 </label>
 
                 <label className="block">
                   <span className="text-sm font-semibold text-ink">Grade band</span>
                   <select
-                    className="mt-2 w-full rounded-[1rem] border border-ink/10 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
+                    className={`mt-2 w-full rounded-[1rem] border px-4 py-3 text-sm text-ink outline-none transition ${getFieldClassName({
+                      isMissing: false,
+                      isAiUpdated: Boolean(aiUpdatedFields.gradeBand),
+                    })}`}
                     data-testid="seller-creator-grade-band"
-                    onChange={(event) => setGradeBand(event.target.value)}
+                    onChange={(event) => {
+                      setGradeBand(event.target.value);
+                      clearAiField("gradeBand");
+                    }}
                     value={gradeBand}
                   >
                     <option>K-12</option>
@@ -1295,6 +1525,7 @@ export function ProductCreator() {
                     <option>6-8</option>
                     <option>9-12</option>
                   </select>
+                  {renderAiFieldNote("gradeBand")}
                 </label>
               </div>
             </div>
@@ -1311,9 +1542,18 @@ export function ProductCreator() {
                   Keep this part short and useful. AI can help sharpen it later.
                 </p>
               </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-soft text-brand">
+              <button
+                className="inline-flex items-center gap-2 rounded-full bg-brand px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
+                disabled={currentAiAction !== null || aiKillSwitchEnabled || files.length === 0}
+                onClick={() => {
+                  void handleAiFinishListing();
+                }}
+                title="AI help"
+                type="button"
+              >
                 <WandSparkles className="h-4 w-4" />
-              </div>
+                AI help
+              </button>
             </div>
 
             <div className="mt-4 grid gap-4">
@@ -1370,7 +1610,10 @@ export function ProductCreator() {
                     onClick={async () => {
                       const assistResult = await runListingAssist("description");
                       if (assistResult?.suggestion) {
-                        applyListingAssistSuggestion(assistResult.suggestion, "description");
+                        applyListingAssistSuggestion(assistResult.suggestion, "description", {
+                          mode: "manual",
+                        });
+                        setShowAiReviewNotice(true);
                       }
                     }}
                     type="button"
@@ -1379,24 +1622,33 @@ export function ProductCreator() {
                   </button>
                 </span>
                 <textarea
-                  className={`mt-2 min-h-24 w-full rounded-[1rem] border px-4 py-3 text-sm text-ink outline-none transition ${getPublishFieldClassName(
-                    missingPublishKeys.has("description"),
-                  )}`}
+                  className={`mt-2 min-h-24 w-full rounded-[1rem] border px-4 py-3 text-sm text-ink outline-none transition ${getFieldClassName({
+                    isMissing: missingPublishKeys.has("description"),
+                    isAiUpdated: Boolean(aiUpdatedFields.shortDescription),
+                  })}`}
                   data-testid="seller-creator-short-description"
-                  onChange={(event) => setShortDescription(event.target.value)}
+                  onChange={(event) => {
+                    setShortDescription(event.target.value);
+                    clearAiField("shortDescription");
+                  }}
                   placeholder="One quick summary buyers can scan."
                   value={shortDescription}
                 />
+                {renderAiFieldNote("shortDescription")}
               </label>
 
               <label className="block">
                 <span className="text-sm font-semibold text-ink">Full description</span>
                 <textarea
-                  className={`mt-2 min-h-28 w-full rounded-[1rem] border px-4 py-3 text-sm text-ink outline-none transition ${getPublishFieldClassName(
-                    missingPublishKeys.has("description"),
-                  )}`}
+                  className={`mt-2 min-h-28 w-full rounded-[1rem] border px-4 py-3 text-sm text-ink outline-none transition ${getFieldClassName({
+                    isMissing: missingPublishKeys.has("description"),
+                    isAiUpdated: Boolean(aiUpdatedFields.fullDescription),
+                  })}`}
                   data-testid="seller-creator-full-description"
-                  onChange={(event) => setFullDescription(event.target.value)}
+                  onChange={(event) => {
+                    setFullDescription(event.target.value);
+                    clearAiField("fullDescription");
+                  }}
                   placeholder="Explain what is included, how teachers use it, and why it is useful."
                   value={fullDescription}
                 />
@@ -1405,10 +1657,17 @@ export function ProductCreator() {
                     Required to publish
                   </span>
                 ) : null}
+                {renderAiFieldNote("fullDescription")}
               </label>
 
               <div className="grid gap-4 lg:grid-cols-2">
-                <section className="rounded-[1rem] border border-black/5 bg-white p-4">
+                <section
+                  className={`rounded-[1rem] border p-4 ${
+                    aiUpdatedFields.tags
+                      ? "border-brand/20 bg-brand-soft/20"
+                      : "border-black/5 bg-white"
+                  }`}
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-ink">Suggested tags</p>
@@ -1422,7 +1681,10 @@ export function ProductCreator() {
                     onClick={async () => {
                       const assistResult = await runListingAssist("tags");
                       if (assistResult?.suggestion) {
-                        applyListingAssistSuggestion(assistResult.suggestion, "tags");
+                        applyListingAssistSuggestion(assistResult.suggestion, "tags", {
+                          mode: "manual",
+                        });
+                        setShowAiReviewNotice(true);
                       }
                     }}
                       type="button"
@@ -1444,9 +1706,16 @@ export function ProductCreator() {
                       <p className="text-sm leading-6 text-ink-soft">No tags generated yet.</p>
                     )}
                   </div>
+                  {renderAiFieldNote("tags")}
                 </section>
 
-                <section className="rounded-[1rem] border border-black/5 bg-white p-4">
+                <section
+                  className={`rounded-[1rem] border p-4 ${
+                    aiUpdatedFields.standards
+                      ? "border-brand/20 bg-brand-soft/20"
+                      : "border-black/5 bg-white"
+                  }`}
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-ink">Standards</p>
@@ -1460,7 +1729,13 @@ export function ProductCreator() {
                       className="text-xs font-semibold uppercase tracking-[0.14em] text-brand disabled:text-ink-soft"
                       disabled={currentAiAction !== null || aiKillSwitchEnabled || !canRunStandardsScan || files.length === 0}
                       onClick={() => {
-                        void runStandardsScan("manual");
+                        void (async () => {
+                          const mapping = await runStandardsScan("manual");
+                          if (mapping) {
+                            markAiUpdated({ standards: "suggested" });
+                            setShowAiReviewNotice(true);
+                          }
+                        })();
                       }}
                       type="button"
                     >
@@ -1481,6 +1756,7 @@ export function ProductCreator() {
                       {standardsResult?.rationale || "AI will explain the match here."}
                     </p>
                   </div>
+                  {renderAiFieldNote("standards")}
                 </section>
               </div>
             </div>
