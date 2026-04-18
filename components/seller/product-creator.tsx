@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ChangeEvent } from "react";
-import { ArrowRight, FileUp, Lock, WandSparkles } from "lucide-react";
+import { AlertCircle, ArrowRight, CheckCircle2, FileUp, Lock, WandSparkles } from "lucide-react";
 import Link from "next/link";
 
 import { trackFunnelEvent } from "@/lib/analytics/events";
@@ -192,6 +192,21 @@ function getSimilarTitleWarning(title: string, existingTitles: string[]) {
   return null;
 }
 
+type PublishReadinessKey =
+  | "title"
+  | "description"
+  | "price"
+  | "file"
+  | "preview"
+  | "thumbnail"
+  | "rights";
+
+function getPublishFieldClassName(isMissing: boolean) {
+  return isMissing
+    ? "border-red-300 bg-red-50/40 focus:border-red-400"
+    : "border-ink/10 bg-white focus:border-brand";
+}
+
 export function ProductCreator() {
   const [seller, setSeller] = useState<ConnectedSeller | null>(null);
   const [profile, setProfile] = useState<SellerProfileDraft | null>(null);
@@ -249,44 +264,59 @@ export function ProductCreator() {
   const priceCentsPreview = Math.round(Number(price) * 100);
   const publishReadinessItems = [
     {
-      label: "Title added",
+      key: "title" as PublishReadinessKey,
+      label: "Add title",
       complete: title.trim().length > 0,
       help: "Add a title that names the grade, topic, and resource type.",
+      targetId: "publish-target-title",
     },
     {
-      label: "Useful description",
+      key: "description" as PublishReadinessKey,
+      label: "Add description",
       complete:
         fullDescription.trim().length >= 40 ||
         shortDescription.trim().length >= 20,
       help: "Write enough detail for another teacher to know if it fits their class.",
+      targetId: "publish-target-description",
     },
     {
-      label: "Price set",
+      key: "price" as PublishReadinessKey,
+      label: "Set price",
       complete: Number.isFinite(priceCentsPreview) && priceCentsPreview >= 100,
       help: "Set a valid price before publishing.",
+      targetId: "publish-target-price",
     },
     {
-      label: "File attached",
+      key: "file" as PublishReadinessKey,
+      label: "Attach file",
       complete: files.length > 0,
       help: "Make sure the buyer will receive the resource file.",
+      targetId: "publish-target-file",
     },
     {
-      label: "Preview added",
+      key: "preview" as PublishReadinessKey,
+      label: "Add preview",
       complete: previewIncluded,
       help: "Add a preview so buyers know what they are getting.",
+      targetId: "publish-target-preview",
     },
     {
-      label: "Thumbnail added",
+      key: "thumbnail" as PublishReadinessKey,
+      label: "Add thumbnail",
       complete: thumbnailIncluded,
       help: "Add a cover image so the listing looks ready in browse pages.",
+      targetId: "publish-target-thumbnail",
     },
     {
-      label: "Rights confirmed",
+      key: "rights" as PublishReadinessKey,
+      label: "Confirm rights",
       complete: rightsConfirmed,
       help: "Confirm you own or have rights to sell this content.",
+      targetId: "publish-target-rights",
     },
   ];
   const missingPublishItems = publishReadinessItems.filter((item) => !item.complete);
+  const missingPublishKeys = new Set(missingPublishItems.map((item) => item.key));
   const similarTitleWarning = getSimilarTitleWarning(title, existingSellerTitles);
   const optimizationPreview = buildOptimizationPreview({
     title,
@@ -315,6 +345,33 @@ export function ProductCreator() {
     gradeBand.trim().length > 0 &&
     (shortDescription.trim().length > 0 || fullDescription.trim().length > 0);
   const publishStepReady = missingPublishItems.length === 0;
+
+  function scrollToPublishTarget(targetId: string) {
+    const target = document.getElementById(targetId);
+
+    if (!target) {
+      return;
+    }
+
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    window.setTimeout(() => {
+      const focusTarget = target.querySelector<HTMLElement>(
+        "input, textarea, select, button",
+      );
+      focusTarget?.focus();
+    }, 180);
+  }
+
+  function focusFirstMissingPublishItem() {
+    const firstMissing = missingPublishItems[0];
+
+    if (!firstMissing) {
+      return;
+    }
+
+    scrollToPublishTarget(firstMissing.targetId);
+  }
 
   useEffect(() => {
     void (async () => {
@@ -437,7 +494,9 @@ export function ProductCreator() {
     }
   }
 
-  async function handleSave() {
+  async function handleSave(nextStatusOverride?: NonNullable<ProductRecord["productStatus"]>) {
+    const effectiveStatus = nextStatusOverride ?? status;
+
     if (!title.trim()) {
       setMessage("Add a title before saving the product.");
       return;
@@ -449,7 +508,7 @@ export function ProductCreator() {
       return;
     }
 
-    if (status === "Published" && missingPublishItems.length > 0) {
+    if (effectiveStatus === "Published" && missingPublishItems.length > 0) {
       setMessage(
         `Finish these publish checks first: ${missingPublishItems
           .map((item) => item.label.toLowerCase())
@@ -553,8 +612,8 @@ export function ProductCreator() {
       sellerId: profile?.email || seller?.email || `seller-${Date.now()}`,
       sellerStripeAccountId: connectedAccountId ?? undefined,
       priceCents,
-      isPurchasable: Boolean(connectedAccountId) && status !== "Draft",
-      productStatus: status,
+      isPurchasable: Boolean(connectedAccountId) && effectiveStatus !== "Draft",
+      productStatus: effectiveStatus,
       createdPath,
       licenseType,
       previewIncluded,
@@ -711,13 +770,27 @@ export function ProductCreator() {
             <div className="mt-4 grid gap-4">
               <label className="block">
                 <span className="text-sm font-semibold text-ink">Resource files</span>
-                <input
-                  className="mt-2 block w-full text-sm text-ink-soft"
-                  data-testid="seller-creator-files"
-                  multiple
-                  onChange={handleFileChange}
-                  type="file"
-                />
+                <div
+                  className={`mt-2 rounded-[1rem] border px-4 py-3 ${
+                    missingPublishKeys.has("file")
+                      ? "border-red-300 bg-red-50/40"
+                      : "border-ink/10 bg-white"
+                  }`}
+                  id="publish-target-file"
+                >
+                  <input
+                    className="block w-full text-sm text-ink-soft"
+                    data-testid="seller-creator-files"
+                    multiple
+                    onChange={handleFileChange}
+                    type="file"
+                  />
+                </div>
+                {missingPublishKeys.has("file") ? (
+                  <span className="mt-2 block text-xs font-semibold text-red-600">
+                    Required to publish
+                  </span>
+                ) : null}
                 <span className="mt-2 block text-xs leading-5 text-ink-soft">
                   Upload a worksheet, slide deck, assessment, lesson page, or pack that already works in class.
                 </span>
@@ -726,12 +799,20 @@ export function ProductCreator() {
               <label className="block">
                 <span className="text-sm font-semibold text-ink">Title</span>
                 <input
-                  className="mt-2 w-full rounded-[1rem] border border-ink/10 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
+                  className={`mt-2 w-full rounded-[1rem] border px-4 py-3 text-sm text-ink outline-none transition ${getPublishFieldClassName(
+                    missingPublishKeys.has("title"),
+                  )}`}
                   data-testid="seller-creator-title"
+                  id="publish-target-title"
                   onChange={(event) => setTitle(event.target.value)}
                   placeholder="5th Grade Fraction Exit Ticket Pack"
                   value={title}
                 />
+                {missingPublishKeys.has("title") ? (
+                  <span className="mt-2 block text-xs font-semibold text-red-600">
+                    Required to publish
+                  </span>
+                ) : null}
               </label>
 
               {similarTitleWarning ? (
@@ -819,19 +900,29 @@ export function ProductCreator() {
                 <label className="block">
                   <span className="text-sm font-semibold text-ink">Price</span>
                   <input
-                    className="mt-2 w-full rounded-[1rem] border border-ink/10 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
+                    className={`mt-2 w-full rounded-[1rem] border px-4 py-3 text-sm text-ink outline-none transition ${getPublishFieldClassName(
+                      missingPublishKeys.has("price"),
+                    )}`}
                     data-testid="seller-creator-price"
+                    id="publish-target-price"
                     onChange={(event) => setPrice(event.target.value)}
                     type="number"
                     value={price}
                   />
+                  {missingPublishKeys.has("price") ? (
+                    <span className="mt-2 block text-xs font-semibold text-red-600">
+                      Required to publish
+                    </span>
+                  ) : null}
                 </label>
               </div>
 
-              <label className="block">
+              <label className="block" id="publish-target-description">
                 <span className="text-sm font-semibold text-ink">Short description</span>
                 <textarea
-                  className="mt-2 min-h-24 w-full rounded-[1rem] border border-ink/10 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
+                  className={`mt-2 min-h-24 w-full rounded-[1rem] border px-4 py-3 text-sm text-ink outline-none transition ${getPublishFieldClassName(
+                    missingPublishKeys.has("description"),
+                  )}`}
                   data-testid="seller-creator-short-description"
                   onChange={(event) => setShortDescription(event.target.value)}
                   placeholder="One quick summary buyers can scan."
@@ -842,12 +933,19 @@ export function ProductCreator() {
               <label className="block">
                 <span className="text-sm font-semibold text-ink">Full description</span>
                 <textarea
-                  className="mt-2 min-h-28 w-full rounded-[1rem] border border-ink/10 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
+                  className={`mt-2 min-h-28 w-full rounded-[1rem] border px-4 py-3 text-sm text-ink outline-none transition ${getPublishFieldClassName(
+                    missingPublishKeys.has("description"),
+                  )}`}
                   data-testid="seller-creator-full-description"
                   onChange={(event) => setFullDescription(event.target.value)}
                   placeholder="Explain what is included, how teachers use it, and why it is useful."
                   value={fullDescription}
                 />
+                {missingPublishKeys.has("description") ? (
+                  <span className="mt-2 block text-xs font-semibold text-red-600">
+                    Required to publish
+                  </span>
+                ) : null}
               </label>
             </div>
           </section>
@@ -859,66 +957,67 @@ export function ProductCreator() {
                   Step 3
                 </p>
                 <h2 className="mt-1 text-xl font-semibold text-ink">Review and publish</h2>
-                <p className="mt-1 text-sm leading-6 text-ink-soft">
-                  Drafts can stay unfinished. Publish only when the buyer-facing basics are ready.
-                </p>
+                <p className="mt-1 text-sm leading-6 text-ink-soft">Finish the missing items to publish.</p>
               </div>
               <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-brand">
-                {publishReadinessItems.length - missingPublishItems.length}/{publishReadinessItems.length} ready
+                Completed {publishReadinessItems.length - missingPublishItems.length} of {publishReadinessItems.length}
               </span>
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {publishReadinessItems.map((item) => (
-                <div
-                  key={item.label}
-                  className={`rounded-[1rem] border px-4 py-3 text-sm leading-6 ${
-                    item.complete
-                      ? "border-emerald-100 bg-white text-emerald-950"
-                      : "border-amber-100 bg-amber-50/80 text-amber-950"
-                  }`}
-                >
-                  <p className="font-semibold">{item.complete ? "Done: " : "Missing: "}{item.label}</p>
-                  <p className="mt-1 text-ink-soft">{item.help}</p>
+            {missingPublishItems.length > 0 ? (
+              <div className="mt-4 rounded-[1rem] border border-red-200 bg-white p-4">
+                <p className="text-lg font-semibold text-ink">You still need to finish</p>
+                <div className="mt-3 space-y-2">
+                  {missingPublishItems.map((item) => (
+                    <button
+                      key={item.key}
+                      className="flex w-full items-start gap-3 rounded-[0.95rem] border border-red-200 bg-red-50/70 px-3 py-3 text-left transition hover:border-red-300"
+                      onClick={() => scrollToPublishTarget(item.targetId)}
+                      type="button"
+                    >
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+                      <span>
+                        <span className="block text-sm font-semibold text-ink">{item.label}</span>
+                        <span className="mt-0.5 block text-sm leading-6 text-ink-soft">
+                          {item.help}
+                        </span>
+                      </span>
+                    </button>
+                  ))}
                 </div>
-              ))}
-            </div>
-
-            <div className="mt-4 rounded-[1rem] border border-amber-100 bg-amber-50/80 p-4">
-              <p className="text-sm font-semibold text-ink">Buyer-ready checks</p>
-              <div className="mt-3 space-y-3 text-sm text-ink-soft">
-                <label className="flex items-start gap-3">
-                  <input
-                    checked={previewIncluded}
-                    className="mt-1 h-4 w-4 accent-brand"
-                    data-testid="seller-creator-preview-included"
-                    onChange={(event) => setPreviewIncluded(event.target.checked)}
-                    type="checkbox"
-                  />
-                  <span>I added a preview for buyers. No preview, no publish.</span>
-                </label>
-                <label className="flex items-start gap-3">
-                  <input
-                    checked={thumbnailIncluded}
-                    className="mt-1 h-4 w-4 accent-brand"
-                    data-testid="seller-creator-thumbnail-included"
-                    onChange={(event) => setThumbnailIncluded(event.target.checked)}
-                    type="checkbox"
-                  />
-                  <span>I added a thumbnail for the product card and detail page.</span>
-                </label>
-                <label className="flex items-start gap-3">
-                  <input
-                    checked={rightsConfirmed}
-                    className="mt-1 h-4 w-4 accent-brand"
-                    data-testid="seller-creator-rights-confirmed"
-                    onChange={(event) => setRightsConfirmed(event.target.checked)}
-                    type="checkbox"
-                  />
-                  <span>I confirm I own or have rights to sell this content.</span>
-                </label>
+                <button
+                  className="mt-4 inline-flex items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+                  onClick={focusFirstMissingPublishItem}
+                  type="button"
+                >
+                  Finish listing
+                  <ArrowRight className="h-4 w-4" />
+                </button>
               </div>
-            </div>
+            ) : (
+              <div className="mt-4 rounded-[1rem] border border-emerald-200 bg-white p-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-600" />
+                  <div>
+                    <p className="text-lg font-semibold text-ink">Ready to publish</p>
+                    <p className="mt-1 text-sm leading-6 text-ink-soft">
+                      Your listing is ready for buyers.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  className="mt-4 inline-flex items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+                  onClick={() => {
+                    setStatus("Published");
+                    void handleSave("Published");
+                  }}
+                  type="button"
+                >
+                  Publish
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
 
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <label className="block">
@@ -946,6 +1045,77 @@ export function ProductCreator() {
                   <option>Pending review</option>
                   <option>Published</option>
                 </select>
+              </label>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <label
+                className={`rounded-[1rem] border p-4 text-sm leading-6 ${
+                  missingPublishKeys.has("preview")
+                    ? "border-red-300 bg-red-50/40"
+                    : "border-black/5 bg-white"
+                }`}
+                id="publish-target-preview"
+              >
+                <span className="flex items-start gap-3">
+                  <input
+                    checked={previewIncluded}
+                    className="mt-1 h-4 w-4 accent-brand"
+                    data-testid="seller-creator-preview-included"
+                    onChange={(event) => setPreviewIncluded(event.target.checked)}
+                    type="checkbox"
+                  />
+                  <span>
+                    <span className="block font-semibold text-ink">Preview added</span>
+                    <span className="mt-1 block text-ink-soft">Required to publish</span>
+                  </span>
+                </span>
+              </label>
+
+              <label
+                className={`rounded-[1rem] border p-4 text-sm leading-6 ${
+                  missingPublishKeys.has("thumbnail")
+                    ? "border-red-300 bg-red-50/40"
+                    : "border-black/5 bg-white"
+                }`}
+                id="publish-target-thumbnail"
+              >
+                <span className="flex items-start gap-3">
+                  <input
+                    checked={thumbnailIncluded}
+                    className="mt-1 h-4 w-4 accent-brand"
+                    data-testid="seller-creator-thumbnail-included"
+                    onChange={(event) => setThumbnailIncluded(event.target.checked)}
+                    type="checkbox"
+                  />
+                  <span>
+                    <span className="block font-semibold text-ink">Thumbnail added</span>
+                    <span className="mt-1 block text-ink-soft">Required to publish</span>
+                  </span>
+                </span>
+              </label>
+
+              <label
+                className={`rounded-[1rem] border p-4 text-sm leading-6 ${
+                  missingPublishKeys.has("rights")
+                    ? "border-red-300 bg-red-50/40"
+                    : "border-black/5 bg-white"
+                }`}
+                id="publish-target-rights"
+              >
+                <span className="flex items-start gap-3">
+                  <input
+                    checked={rightsConfirmed}
+                    className="mt-1 h-4 w-4 accent-brand"
+                    data-testid="seller-creator-rights-confirmed"
+                    onChange={(event) => setRightsConfirmed(event.target.checked)}
+                    type="checkbox"
+                  />
+                  <span>
+                    <span className="block font-semibold text-ink">Rights confirmed</span>
+                    <span className="mt-1 block text-ink-soft">Required to publish</span>
+                  </span>
+                </span>
               </label>
             </div>
           </section>
@@ -1139,8 +1309,15 @@ export function ProductCreator() {
           <button
             className="inline-flex items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
             data-testid="seller-creator-save"
-            disabled={isSaving || saveBlocked || !isCreatorReady}
-            onClick={() => void handleSave()}
+            disabled={isSaving || saveBlocked || !isCreatorReady || (status === "Published" && missingPublishItems.length > 0)}
+            onClick={() => {
+              if (status === "Published" && missingPublishItems.length > 0) {
+                focusFirstMissingPublishItem();
+                return;
+              }
+
+              void handleSave();
+            }}
             type="button"
           >
             {isSaving
@@ -1149,6 +1326,8 @@ export function ProductCreator() {
                 ? "AI temporarily disabled"
               : saveBlockedByAi && !canRunStandardsScan
                 ? "Insufficient AI credits"
+                : status === "Published" && missingPublishItems.length > 0
+                  ? "Finish listing"
                 : status === "Published"
                   ? "Publish listing"
                   : "Save listing draft"}
