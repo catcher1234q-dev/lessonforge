@@ -49,6 +49,96 @@ type ListingAssistResponse = {
   tags: string[];
 };
 
+type SellerAiUploadPayload = {
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  textContent?: string;
+  base64Data?: string;
+};
+
+const AI_BINARY_UPLOAD_LIMIT_BYTES = 4_500_000;
+const AI_TEXT_UPLOAD_LIMIT_BYTES = 1_000_000;
+const AI_TEXT_CONTENT_LIMIT = 16_000;
+
+function canUseTextExtraction(file: File) {
+  return (
+    file.type.startsWith("text/") ||
+    [
+      "application/json",
+      "application/ld+json",
+      "text/csv",
+      "application/csv",
+      "application/xml",
+      "text/xml",
+    ].includes(file.type) ||
+    /\.(txt|md|csv|json|xml)$/i.test(file.name)
+  );
+}
+
+function canUseBinaryUpload(file: File) {
+  return (
+    file.type === "application/pdf" ||
+    file.type.startsWith("image/") ||
+    /\.(pdf|png|jpg|jpeg|webp)$/i.test(file.name)
+  );
+}
+
+function encodeBase64(bytes: Uint8Array) {
+  let binary = "";
+
+  for (let index = 0; index < bytes.length; index += 0x8000) {
+    const chunk = bytes.subarray(index, index + 0x8000);
+    binary += String.fromCharCode(...chunk);
+  }
+
+  return btoa(binary);
+}
+
+async function buildSellerAiUploadPayload(file?: File): Promise<SellerAiUploadPayload | null> {
+  if (!file) {
+    return null;
+  }
+
+  if (canUseTextExtraction(file)) {
+    if (file.size > AI_TEXT_UPLOAD_LIMIT_BYTES) {
+      return null;
+    }
+
+    const textContent = (await file.text()).trim().slice(0, AI_TEXT_CONTENT_LIMIT);
+
+    if (!textContent) {
+      return null;
+    }
+
+    return {
+      fileName: file.name,
+      mimeType: file.type || "text/plain",
+      sizeBytes: file.size,
+      textContent,
+    };
+  }
+
+  if (canUseBinaryUpload(file)) {
+    if (file.size > AI_BINARY_UPLOAD_LIMIT_BYTES) {
+      return null;
+    }
+
+    const bytes = new Uint8Array(await file.arrayBuffer());
+
+    return {
+      fileName: file.name,
+      mimeType:
+        file.type ||
+        (file.name.toLowerCase().endsWith(".pdf") ? "application/pdf" : "image/jpeg"),
+      sizeBytes: file.size,
+      base64Data: encodeBase64(bytes),
+    };
+  }
+
+  return null;
+}
+
 function formatPlanLabel(planKey: NonNullable<SellerProfileDraft["sellerPlanKey"]>) {
   return planConfig[normalizePlanKey(planKey)].label;
 }
@@ -108,12 +198,14 @@ function buildStandardsScanCacheKey(input: {
   provider: "openai" | "gemini";
   title: string;
   excerpt: string;
+  uploadSignature?: string;
 }) {
   const normalized = [
     input.sellerId,
     input.provider,
     input.title.trim().toLowerCase(),
     input.excerpt.trim().toLowerCase().replace(/\s+/g, " "),
+    input.uploadSignature?.trim().toLowerCase() || "",
   ].join("::");
 
   return `standards-scan-${normalized.slice(0, 180)}`;
@@ -126,6 +218,7 @@ function buildListingAssistCacheKey(input: {
   fileNames: string[];
   title: string;
   excerpt: string;
+  uploadSignature?: string;
 }) {
   const normalized = [
     input.sellerId,
@@ -134,6 +227,7 @@ function buildListingAssistCacheKey(input: {
     input.fileNames.join("|").toLowerCase(),
     input.title.trim().toLowerCase(),
     input.excerpt.trim().toLowerCase().replace(/\s+/g, " "),
+    input.uploadSignature?.trim().toLowerCase() || "",
   ].join("::");
 
   return `listing-assist-${normalized.slice(0, 180)}`;
@@ -541,6 +635,20 @@ export function ProductCreator() {
       return null;
     }
 
+    const upload = await buildSellerAiUploadPayload(files[0]);
+    const uploadSignature = upload ? `${upload.fileName}:${upload.sizeBytes}:${upload.mimeType}` : "";
+
+    if (!upload) {
+      if (!options?.quiet) {
+        setAiFeedback({
+          state: "error",
+          action,
+          message: "AI could not finish this right now. Try again.",
+        });
+      }
+      return null;
+    }
+
     if (aiKillSwitchEnabled) {
       if (!options?.quiet) {
         setAiFeedback({
@@ -604,6 +712,7 @@ export function ProductCreator() {
         provider: SELLER_FLOW_AI_PROVIDER,
         action,
         fileNames: files.map((file) => file.name),
+        upload,
         title,
         excerpt: `${shortDescription} ${fullDescription} ${notes}`.trim(),
         subject,
@@ -615,6 +724,7 @@ export function ProductCreator() {
           fileNames: files.map((file) => file.name),
           title,
           excerpt: `${shortDescription} ${fullDescription} ${notes}`.trim(),
+          uploadSignature,
         }),
       }),
     });
@@ -680,6 +790,20 @@ export function ProductCreator() {
       return null;
     }
 
+    const upload = await buildSellerAiUploadPayload(files[0]);
+    const uploadSignature = upload ? `${upload.fileName}:${upload.sizeBytes}:${upload.mimeType}` : "";
+
+    if (!upload) {
+      if (!options?.quiet) {
+        setAiFeedback({
+          state: "error",
+          action: "standards",
+          message: "AI could not finish this right now. Try again.",
+        });
+      }
+      return null;
+    }
+
     if (aiKillSwitchEnabled) {
       if (!options?.quiet) {
         setAiFeedback({
@@ -720,6 +844,7 @@ export function ProductCreator() {
         sellerEmail,
         sellerPlanKey: currentPlanKey,
         title: title || normalizeUploadedTitle(files[0]?.name),
+        upload,
         excerpt: `${shortDescription} ${fullDescription} ${notes} ${files.map((file) => file.name).join(" ")}`.trim(),
         provider: SELLER_FLOW_AI_PROVIDER,
         idempotencyKey: buildStandardsScanCacheKey({
@@ -727,6 +852,7 @@ export function ProductCreator() {
           provider: SELLER_FLOW_AI_PROVIDER,
           title: title || normalizeUploadedTitle(files[0]?.name),
           excerpt: `${shortDescription} ${fullDescription} ${notes} ${files.map((file) => file.name).join(" ")}`.trim(),
+          uploadSignature,
         }),
       }),
     });
@@ -1095,6 +1221,8 @@ export function ProductCreator() {
       standardsResult?.status === "success" && standardsResult.suggestedStandard
         ? standardsResult.suggestedStandard
         : "Standards pending seller review";
+    const upload = await buildSellerAiUploadPayload(files[0]);
+    const uploadSignature = upload ? `${upload.fileName}:${upload.sizeBytes}:${upload.mimeType}` : "";
 
     if ((!standardsResult || standardsResult.status !== "success") && !aiKillSwitchEnabled && canRunStandardsScan) {
       const mappingResponse = await fetch("/api/lessonforge/ai/standards-scan", {
@@ -1107,6 +1235,7 @@ export function ProductCreator() {
           sellerEmail,
           sellerPlanKey: normalizePlanKey(profile?.sellerPlanKey),
           title,
+          upload: upload ?? undefined,
           excerpt,
           provider: SELLER_FLOW_AI_PROVIDER,
           idempotencyKey: buildStandardsScanCacheKey({
@@ -1114,6 +1243,7 @@ export function ProductCreator() {
             provider: SELLER_FLOW_AI_PROVIDER,
             title,
             excerpt,
+            uploadSignature,
           }),
         }),
       });

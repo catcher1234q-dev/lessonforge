@@ -2,9 +2,18 @@ import type { AIProviderResult } from "@/types";
 
 type ProviderId = "gemini" | "openai";
 
+export type UploadedAiSource = {
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  textContent?: string;
+  base64Data?: string;
+};
+
 type MappingInput = {
   title?: string;
   excerpt: string;
+  upload?: UploadedAiSource | null;
 };
 
 type ListingAssistInput = {
@@ -13,6 +22,7 @@ type ListingAssistInput = {
   fileNames?: string[];
   subject?: string;
   gradeBand?: string;
+  upload?: UploadedAiSource | null;
 };
 
 export type ListingAssistResult = {
@@ -258,7 +268,8 @@ function buildFallbackListingAssistResult(
     input.title?.trim() ||
     humanizeFileName(input.fileNames?.[0] || "") ||
     "Classroom resource";
-  const textSample = `${sourceTitle} ${input.excerpt || ""} ${input.fileNames?.join(" ") || ""}`.trim();
+  const uploadSummary = `${input.upload?.textContent || ""} ${input.upload?.fileName || ""}`.trim();
+  const textSample = `${sourceTitle} ${input.excerpt || ""} ${uploadSummary} ${input.fileNames?.join(" ") || ""}`.trim();
   const subject = input.subject?.trim() || inferSubjectFromText(textSample);
   const gradeBand =
     input.gradeBand?.trim() && input.gradeBand !== "K-12"
@@ -412,7 +423,31 @@ async function callOpenAIJson<T>(prompt: string): Promise<T> {
 }
 
 async function callGeminiJson<T>(prompt: string): Promise<T> {
+  return callGeminiJsonWithUpload<T>(prompt);
+}
+
+async function callGeminiJsonWithUpload<T>(
+  prompt: string,
+  upload?: UploadedAiSource | null,
+): Promise<T> {
   const apiKey = assertServerKey("gemini");
+  const parts: Array<Record<string, unknown>> = [{ text: prompt }];
+
+  if (upload?.textContent?.trim()) {
+    parts.push({
+      text: `Uploaded file text from ${upload.fileName}:\n${limitText(upload.textContent)}`,
+    });
+  }
+
+  if (upload?.base64Data && upload.mimeType) {
+    parts.push({
+      inline_data: {
+        mime_type: upload.mimeType,
+        data: upload.base64Data,
+      },
+    });
+  }
+
   const response = await fetchWithTimeout(
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`,
     {
@@ -424,7 +459,7 @@ async function callGeminiJson<T>(prompt: string): Promise<T> {
       body: JSON.stringify({
         contents: [
           {
-            parts: [{ text: prompt }],
+            parts,
           },
         ],
       }),
@@ -454,7 +489,11 @@ async function callGeminiJson<T>(prompt: string): Promise<T> {
   return extractJsonObject<T>(content);
 }
 
-async function callProviderJson<T>(provider: ProviderId, prompt: string): Promise<T> {
+async function callProviderJson<T>(
+  provider: ProviderId,
+  prompt: string,
+  upload?: UploadedAiSource | null,
+): Promise<T> {
   if (provider === "openai") {
     try {
       return await callOpenAIJson<T>(prompt);
@@ -464,7 +503,7 @@ async function callProviderJson<T>(provider: ProviderId, prompt: string): Promis
   }
 
   try {
-    return await callGeminiJson<T>(prompt);
+    return await callGeminiJsonWithUpload<T>(prompt, upload);
   } catch (error) {
     throw cleanProviderError(provider, error);
   }
@@ -477,11 +516,12 @@ function buildStandardsPrompt(input: MappingInput) {
     "subject, suggestedStandard, rationale, confidence",
     'subject must be one of: "Math", "ELA", "Science", "Social Studies".',
     "confidence should look like a percentage, for example 88%.",
-    "Use the uploaded file details and visible listing content only.",
+    "Use the uploaded file itself and visible listing content only.",
     "If you cannot confidently match a standard, return an empty suggestedStandard and explain briefly why.",
     "If confidence is below 80%, prefer returning no standard instead of a weak guess.",
     `Title: ${limitText(input.title || "Untitled resource")}`,
     `Excerpt: ${limitText(input.excerpt)}`,
+    `Uploaded file: ${input.upload ? `${input.upload.fileName} (${input.upload.mimeType})` : "No uploaded file payload provided"}`,
   ].join("\n");
 }
 
@@ -494,9 +534,11 @@ function buildListingAssistPrompt(input: ListingAssistInput) {
     'gradeBand must be one of: "K-12", "K-5", "6-8", "9-12".',
     "tags must be an array of 3 to 6 short strings.",
     "Keep descriptions clear and practical for teachers.",
+    "Base the listing on the uploaded file itself whenever file content is attached.",
     `Existing title: ${limitText(input.title || "Untitled resource")}`,
     `Excerpt: ${limitText(input.excerpt || "")}`,
     `Uploaded files: ${limitText((input.fileNames || []).join(", "))}`,
+    `Uploaded file payload: ${input.upload ? `${input.upload.fileName} (${input.upload.mimeType})` : "No uploaded file payload provided"}`,
     `Current subject: ${limitText(input.subject || "")}`,
     `Current grade band: ${limitText(input.gradeBand || "")}`,
   ].join("\n");
@@ -570,8 +612,12 @@ function normalizeListingAssistResult(
 export async function mapStandardsWithOpenAI({
   title,
   excerpt,
+  upload,
 }: MappingInput): Promise<AIProviderResult> {
-  const fallback = inferStandards({ title, excerpt });
+  const fallback = inferStandards({
+    title,
+    excerpt: `${excerpt} ${upload?.textContent || ""}`.trim(),
+  });
 
   if (typeof window !== "undefined") {
     if (!fallback) {
@@ -588,7 +634,7 @@ export async function mapStandardsWithOpenAI({
 
   const result = await callProviderJson<Record<string, unknown>>(
     "openai",
-    buildStandardsPrompt({ title, excerpt }),
+    buildStandardsPrompt({ title, excerpt, upload }),
   );
 
   return normalizeStandardsResult("openai", result, fallback);
@@ -597,8 +643,12 @@ export async function mapStandardsWithOpenAI({
 export async function mapStandardsWithGemini({
   title,
   excerpt,
+  upload,
 }: MappingInput): Promise<AIProviderResult> {
-  const fallback = inferStandards({ title, excerpt });
+  const fallback = inferStandards({
+    title,
+    excerpt: `${excerpt} ${upload?.textContent || ""}`.trim(),
+  });
 
   if (typeof window !== "undefined") {
     if (!fallback) {
@@ -615,7 +665,8 @@ export async function mapStandardsWithGemini({
 
   const result = await callProviderJson<Record<string, unknown>>(
     "gemini",
-    buildStandardsPrompt({ title, excerpt }),
+    buildStandardsPrompt({ title, excerpt, upload }),
+    upload,
   );
 
   return normalizeStandardsResult("gemini", result, fallback);
@@ -650,6 +701,7 @@ export async function suggestListingWithGemini(
   const result = await callProviderJson<Record<string, unknown>>(
     "gemini",
     buildListingAssistPrompt(input),
+    input.upload,
   );
 
   return normalizeListingAssistResult("gemini", result, fallback);

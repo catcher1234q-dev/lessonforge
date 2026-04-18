@@ -13,6 +13,7 @@ import type {
   PersistenceReadinessError,
 } from "@/lib/lessonforge/persistence-readiness-contract";
 import { getAiCreditCost } from "@/lib/services/ai/credits";
+import type { UploadedAiSource } from "@/lib/ai/providers";
 import type {
   AdminAiSettings,
   AIProviderResult,
@@ -30,6 +31,7 @@ type StandardsScanBody = {
   sellerPlanKey?: PlanKey;
   title?: string;
   excerpt?: string;
+  upload?: UploadedAiSource;
   provider?: "openai" | "gemini";
   idempotencyKey?: string;
 };
@@ -121,10 +123,12 @@ type StandardsScanDeps = {
   mapStandardsWithOpenAI: (input: {
     title: string;
     excerpt: string;
+    upload?: UploadedAiSource;
   }) => Promise<AIProviderResult>;
   mapStandardsWithGemini: (input: {
     title: string;
     excerpt: string;
+    upload?: UploadedAiSource;
   }) => Promise<AIProviderResult>;
 };
 
@@ -194,6 +198,25 @@ export async function handleStandardsScanRequest(
     };
   }
 
+  if (body.upload) {
+    const isUploadValid =
+      typeof body.upload.fileName === "string" &&
+      body.upload.fileName.trim().length > 0 &&
+      typeof body.upload.mimeType === "string" &&
+      body.upload.mimeType.trim().length > 0 &&
+      Number.isFinite(body.upload.sizeBytes) &&
+      body.upload.sizeBytes > 0 &&
+      ((typeof body.upload.textContent === "string" && body.upload.textContent.trim().length > 0) ||
+        (typeof body.upload.base64Data === "string" && body.upload.base64Data.trim().length > 0));
+
+    if (!isUploadValid) {
+      return {
+        status: 400,
+        body: { error: "Uploaded file analysis details are incomplete." },
+      };
+    }
+  }
+
   const plan = planConfig[body.sellerPlanKey];
   const cost = getAiCreditCost("standardsScan");
   const aiSettings = await deps.getAdminAiSettings();
@@ -254,10 +277,12 @@ export async function handleStandardsScanRequest(
         ? await deps.mapStandardsWithOpenAI({
             title: body.title,
             excerpt: body.excerpt || "",
+            upload: body.upload,
           })
         : await deps.mapStandardsWithGemini({
             title: body.title,
             excerpt: body.excerpt || "",
+            upload: body.upload,
           });
 
     if (deps.saveAiActionCacheEntry) {

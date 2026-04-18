@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { mapStandardsWithGemini, mapStandardsWithOpenAI } from "@/lib/ai/providers";
+import type { UploadedAiSource } from "@/lib/ai/providers";
 import type { PlanKey } from "@/lib/config/plans";
 import { handleStandardsScanRequest } from "@/lib/lessonforge/api-handlers";
 import {
@@ -18,6 +19,7 @@ export async function POST(request: Request) {
     sellerPlanKey?: PlanKey;
     title?: string;
     excerpt?: string;
+    upload?: UploadedAiSource;
     provider?: "openai" | "gemini";
     idempotencyKey?: string;
   };

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import {
   suggestListingWithGemini,
   suggestListingWithOpenAI,
+  type UploadedAiSource,
 } from "@/lib/ai/providers";
 import { hasAppSessionForEmail } from "@/lib/auth/app-session";
 import { getCurrentViewer } from "@/lib/auth/viewer";
@@ -44,6 +45,7 @@ export async function POST(request: Request) {
     subject?: string;
     gradeBand?: string;
     fileNames?: string[];
+    upload?: UploadedAiSource;
     idempotencyKey?: string;
   };
 
@@ -89,6 +91,25 @@ export async function POST(request: Request) {
     );
   }
 
+  if (body.upload) {
+    const isUploadValid =
+      typeof body.upload.fileName === "string" &&
+      body.upload.fileName.trim().length > 0 &&
+      typeof body.upload.mimeType === "string" &&
+      body.upload.mimeType.trim().length > 0 &&
+      Number.isFinite(body.upload.sizeBytes) &&
+      body.upload.sizeBytes > 0 &&
+      ((typeof body.upload.textContent === "string" && body.upload.textContent.trim().length > 0) ||
+        (typeof body.upload.base64Data === "string" && body.upload.base64Data.trim().length > 0));
+
+    if (!isUploadValid) {
+      return NextResponse.json(
+        { error: "Uploaded file analysis details are incomplete." },
+        { status: 400 },
+      );
+    }
+  }
+
   const aiSettings = await getAdminAiSettings();
 
   if (aiSettings.aiKillSwitchEnabled) {
@@ -121,6 +142,7 @@ export async function POST(request: Request) {
             fileNames: trimmedFileNames,
             subject: body.subject,
             gradeBand: body.gradeBand,
+            upload: body.upload,
           })
         : await suggestListingWithGemini({
             title: body.title,
@@ -128,6 +150,7 @@ export async function POST(request: Request) {
             fileNames: trimmedFileNames,
             subject: body.subject,
             gradeBand: body.gradeBand,
+            upload: body.upload,
           });
 
     return NextResponse.json({
