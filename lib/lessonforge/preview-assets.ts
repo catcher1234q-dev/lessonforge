@@ -256,8 +256,10 @@ function renderSubjectThumbnailMotif(subject: string, seed: string, family: stri
           <rect x="850" y="520" width="176" height="92" rx="18" fill="#dbeafe" />
           <text x="670" y="476" fill="#1e3a8a" font-size="26" font-family="Arial, sans-serif" font-weight="800">Area model</text>
           <text x="670" y="520" fill="#1e3a8a" font-size="42" font-family="Arial, sans-serif" font-weight="800">24 ÷ 6</text>
-          <text x="884" y="460" fill="#1e3a8a" font-size="22" font-family="Arial, sans-serif" font-weight="800">fraction strips</text>
-          <text x="884" y="576" fill="#1e3a8a" font-size="22" font-family="Arial, sans-serif" font-weight="800">number talk</text>
+          <text x="886" y="456" fill="#1e3a8a" font-size="18" font-family="Arial, sans-serif" font-weight="800">Fractions</text>
+          <text x="886" y="478" fill="#1e3a8a" font-size="18" font-family="Arial, sans-serif" font-weight="800">strips</text>
+          <text x="886" y="572" fill="#1e3a8a" font-size="18" font-family="Arial, sans-serif" font-weight="800">Number</text>
+          <text x="886" y="594" fill="#1e3a8a" font-size="18" font-family="Arial, sans-serif" font-weight="800">talk</text>
         `;
       }
 
@@ -691,36 +693,36 @@ function getCoverCopy(input: {
       case "Math":
         return [
           {
-            badge: "Skill practice",
-            subhead: "Mini lessons, guided pages, and quick checks",
-            callout: "Teacher-tested routines",
+            badge: "Practice pack",
+            subhead: "Mini lessons and quick checks",
+            callout: "Classroom ready",
           },
           {
-            badge: "Intervention support",
-            subhead: "Visual models, reteach pages, and independent practice",
+            badge: "Intervention",
+            subhead: "Visual models and reteach pages",
             callout: "Built for small groups",
           },
           {
             badge: "Problem solving",
-            subhead: "Clear steps, worked examples, and student tasks",
+            subhead: "Worked examples and student tasks",
             callout: "Ready for centers",
           },
           {
             badge: "Fluency builder",
-            subhead: "Warm-ups, checks, and printable practice pages",
-            callout: "Easy to print and teach",
+            subhead: "Warm-ups and printable practice",
+            callout: "Easy to print",
           },
         ];
       case "ELA":
         return [
           {
             badge: "Reading workshop",
-            subhead: "Mini lessons, text evidence, and response pages",
+            subhead: "Mini lessons and response pages",
             callout: "Great for literacy block",
           },
           {
             badge: "Writing support",
-            subhead: "Discussion stems, writing frames, and response tools",
+            subhead: "Writing frames and response tools",
             callout: "Teacher-friendly routines",
           },
           {
@@ -738,22 +740,22 @@ function getCoverCopy(input: {
         return [
           {
             badge: "Inquiry ready",
-            subhead: "Observation pages, notes, and discussion prompts",
+            subhead: "Observation pages and discussion prompts",
             callout: "Lab-friendly setup",
           },
           {
             badge: "Hands-on science",
-            subhead: "Student recording sheets, charts, and CER support",
+            subhead: "Recording sheets and CER support",
             callout: "Easy to facilitate",
           },
           {
             badge: "Lab pack",
-            subhead: "Prediction, evidence, and reflection pages",
+            subhead: "Prediction, evidence, and reflection",
             callout: "Made for active learning",
           },
           {
             badge: "STEM practice",
-            subhead: "Structured science talk and notebook pages",
+            subhead: "Science talk and notebook pages",
             callout: "Clear classroom flow",
           },
         ];
@@ -761,8 +763,8 @@ function getCoverCopy(input: {
         return [
           {
             badge: "Inquiry pack",
-            subhead: "Primary sources, map work, and discussion tasks",
-            callout: "Built for social studies",
+            subhead: "Primary sources and discussion tasks",
+            callout: "Social studies ready",
           },
           {
             badge: "Classroom history",
@@ -878,10 +880,10 @@ export function renderManagedPreviewSvg(input: {
   const titleLineGap = 10;
   const titleStartY = 212;
   const titleEndY = titleStartY + (titleLines.length - 1) * (titleFontSize + titleLineGap);
-  const subheadLines = splitTextLines(coverCopy.subhead, 48, 1);
-  const subheadY = Math.min(326, titleEndY + 42);
-  const sellerY = subheadY + 36;
-  const summaryLines = splitTextLines(input.summary, 46, 3);
+  const subheadLines = splitTextLines(coverCopy.subhead, 34, 2);
+  const subheadY = Math.min(320, titleEndY + 36);
+  const sellerY = subheadY + (subheadLines.length - 1) * 32 + 34;
+  const summaryLines = splitTextLines(input.summary, 36, 2);
   const previewSeed = `${input.title}:${input.gradeBand}:${input.pageNumber}`;
   const family = getProductFamily(input);
   const pageLabel =
@@ -898,43 +900,42 @@ export function renderManagedPreviewSvg(input: {
   <rect x="96" y="96" width="1008" height="282" rx="34" fill="url(#heroFade)" opacity="0.28" />
   <circle cx="972" cy="174" r="94" fill="rgba(255,255,255,0.1)" />
   <circle cx="904" cy="270" r="42" fill="rgba(255,255,255,0.16)" />
-  <rect x="126" y="124" width="244" height="44" rx="22" fill="#fff4d6" />
-  <text x="154" y="153" fill="${theme.ink}" font-size="16" font-family="Arial, sans-serif" font-weight="800" letter-spacing="2">${subject}</text>
-  <rect x="392" y="124" width="228" height="44" rx="22" fill="rgba(255,255,255,0.16)" />
-  <text x="426" y="153" fill="#ffffff" font-size="18" font-family="Arial, sans-serif" font-weight="700">${escapeXml(coverCopy.badge)}</text>
+  <rect x="126" y="124" width="270" height="44" rx="22" fill="#fff4d6" />
+  <text x="152" y="152" fill="${theme.ink}" font-size="15" font-family="Arial, sans-serif" font-weight="800" letter-spacing="1.2">${subject}</text>
+  <rect x="412" y="124" width="208" height="44" rx="22" fill="rgba(255,255,255,0.16)" />
+  <text x="444" y="152" fill="#ffffff" font-size="17" font-family="Arial, sans-serif" font-weight="700">${escapeXml(coverCopy.badge)}</text>
   <rect x="888" y="124" width="176" height="44" rx="22" fill="#ffffff" />
-  <text x="920" y="153" fill="${theme.ink}" font-size="18" font-family="Arial, sans-serif" font-weight="800">${gradeBand}</text>
+  <text x="920" y="152" fill="${theme.ink}" font-size="17" font-family="Arial, sans-serif" font-weight="800">${gradeBand}</text>
   ${renderTextLines(titleLines, 136, titleStartY, titleFontSize, "#ffffff", { fontWeight: 800, lineGap: titleLineGap })}
-  ${renderTextLines(subheadLines, 136, subheadY, 24, "rgba(255,255,255,0.86)", { fontWeight: 400, lineGap: 8 })}
-  <text x="136" y="${sellerY}" fill="rgba(255,255,255,0.72)" font-size="18" font-family="Arial, sans-serif">Created by ${sellerName}</text>
+  ${renderTextLines(subheadLines, 136, subheadY, 22, "rgba(255,255,255,0.88)", { fontWeight: 500, lineGap: 10 })}
+  <text x="136" y="${sellerY}" fill="rgba(255,255,255,0.74)" font-size="16" font-family="Arial, sans-serif">Created by ${sellerName}</text>
   <rect x="126" y="404" width="948" height="1062" rx="34" fill="#f8fafc" stroke="#e2e8f0" />
   <rect x="156" y="434" width="410" height="972" rx="28" fill="${theme.tertiary}" stroke="${theme.secondary}" />
   <rect x="192" y="468" width="338" height="40" rx="20" fill="${theme.badge}" />
-  <text x="222" y="494" fill="${theme.ink}" font-size="18" font-family="Arial, sans-serif" font-weight="800">${escapeXml(pageLabel)}</text>
+  <text x="222" y="494" fill="${theme.ink}" font-size="17" font-family="Arial, sans-serif" font-weight="800">${escapeXml(pageLabel)}</text>
   ${renderFormatBadgeMotif(input.format ?? "resource", theme)}
   ${renderSubjectPreviewMotif(input.subject, previewSeed, family)}
-  <rect x="612" y="448" width="426" height="284" rx="28" fill="#ffffff" stroke="#dbe4f0" />
-  <rect x="644" y="480" width="194" height="196" rx="22" fill="${theme.badge}" />
-  <rect x="866" y="480" width="140" height="34" rx="17" fill="${theme.badge}" />
-  <rect x="866" y="536" width="126" height="34" rx="17" fill="${theme.badge}" />
-  <rect x="866" y="592" width="112" height="34" rx="17" fill="${theme.badge}" />
-  <text x="894" y="502" fill="${theme.ink}" font-size="18" font-family="Arial, sans-serif" font-weight="700">Visible sample</text>
-  <text x="894" y="558" fill="${theme.ink}" font-size="18" font-family="Arial, sans-serif" font-weight="700">Real layout</text>
-  <text x="894" y="614" fill="${theme.ink}" font-size="18" font-family="Arial, sans-serif" font-weight="700">Buyer preview</text>
-  <rect x="612" y="770" width="426" height="300" rx="28" fill="#ffffff" stroke="#dbe4f0" />
-  <rect x="648" y="806" width="350" height="24" rx="12" fill="#e2e8f0" />
-  <rect x="648" y="852" width="286" height="24" rx="12" fill="#e2e8f0" />
-  <rect x="648" y="898" width="326" height="24" rx="12" fill="#e2e8f0" />
-  <rect x="648" y="958" width="156" height="120" rx="22" fill="${theme.badge}" />
-  <rect x="828" y="958" width="170" height="120" rx="22" fill="${theme.badge}" />
-  <text x="678" y="1018" fill="${theme.ink}" font-size="20" font-family="Arial, sans-serif" font-weight="800">Preview</text>
-  <text x="858" y="1018" fill="${theme.ink}" font-size="20" font-family="Arial, sans-serif" font-weight="800">Teacher notes</text>
-  <rect x="612" y="1108" width="426" height="298" rx="28" fill="#ffffff" stroke="#dbe4f0" />
-  <rect x="648" y="1146" width="390" height="98" rx="22" fill="${theme.primary}" opacity="0.12" />
-  <text x="680" y="1202" fill="${theme.ink}" font-size="30" font-family="Arial, sans-serif" font-weight="800">${escapeXml(coverCopy.callout)}</text>
-  ${renderTextLines(summaryLines, 648, 1292, 20, "#475569", { fontWeight: 400, lineGap: 8 })}
-  <text x="72" y="876" transform="rotate(-26 72 876)" fill="rgba(147,197,253,0.44)" font-size="42" font-family="Arial, sans-serif" font-weight="800" letter-spacing="8">LESSONFORGE PREVIEW · SAMPLE ONLY · LESSONFORGE PREVIEW</text>
-  <text x="46" y="1252" transform="rotate(-26 46 1252)" fill="rgba(226,232,240,0.9)" font-size="42" font-family="Arial, sans-serif" font-weight="800" letter-spacing="8">SAMPLE ONLY · LESSONFORGE PREVIEW · SAMPLE ONLY</text>
+  <rect x="612" y="448" width="426" height="232" rx="28" fill="#ffffff" stroke="#dbe4f0" />
+  <rect x="644" y="480" width="168" height="164" rx="22" fill="${theme.badge}" />
+  <rect x="840" y="488" width="164" height="36" rx="18" fill="${theme.badge}" />
+  <rect x="840" y="542" width="144" height="36" rx="18" fill="${theme.badge}" />
+  <rect x="840" y="596" width="124" height="36" rx="18" fill="${theme.badge}" />
+  <text x="868" y="511" fill="${theme.ink}" font-size="17" font-family="Arial, sans-serif" font-weight="700">Sample page</text>
+  <text x="868" y="565" fill="${theme.ink}" font-size="17" font-family="Arial, sans-serif" font-weight="700">Real layout</text>
+  <text x="868" y="619" fill="${theme.ink}" font-size="17" font-family="Arial, sans-serif" font-weight="700">Preview</text>
+  <rect x="612" y="718" width="426" height="230" rx="28" fill="#ffffff" stroke="#dbe4f0" />
+  <rect x="648" y="754" width="350" height="20" rx="10" fill="#e2e8f0" />
+  <rect x="648" y="792" width="286" height="20" rx="10" fill="#e2e8f0" />
+  <rect x="648" y="830" width="326" height="20" rx="10" fill="#e2e8f0" />
+  <rect x="648" y="878" width="154" height="48" rx="18" fill="${theme.badge}" />
+  <rect x="826" y="878" width="172" height="48" rx="18" fill="${theme.badge}" />
+  <text x="684" y="907" fill="${theme.ink}" font-size="18" font-family="Arial, sans-serif" font-weight="800">Preview pages</text>
+  <text x="858" y="907" fill="${theme.ink}" font-size="18" font-family="Arial, sans-serif" font-weight="800">Teacher notes</text>
+  <rect x="612" y="986" width="426" height="208" rx="28" fill="#ffffff" stroke="#dbe4f0" />
+  <rect x="648" y="1022" width="390" height="86" rx="22" fill="${theme.primary}" opacity="0.12" />
+  <text x="680" y="1072" fill="${theme.ink}" font-size="28" font-family="Arial, sans-serif" font-weight="800">${escapeXml(coverCopy.callout)}</text>
+  ${renderTextLines(summaryLines, 648, 1148, 19, "#475569", { fontWeight: 400, lineGap: 8 })}
+  <text x="188" y="1324" transform="rotate(-24 188 1324)" fill="rgba(147,197,253,0.2)" font-size="30" font-family="Arial, sans-serif" font-weight="800" letter-spacing="6">LESSONFORGE PREVIEW · SAMPLE ONLY</text>
   <defs>
     <linearGradient id="heroFade" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#ffffff" />
@@ -963,9 +964,9 @@ export function renderManagedThumbnailSvg(input: {
   const titleLineGap = 8;
   const titleStartY = 230;
   const titleEndY = titleStartY + (titleLines.length - 1) * (titleFontSize + titleLineGap);
-  const subheadLines = splitTextLines(coverCopy.subhead, 50, 1);
-  const subheadY = Math.min(342, titleEndY + 40);
-  const sellerY = subheadY + 34;
+  const subheadLines = splitTextLines(coverCopy.subhead, 34, 2);
+  const subheadY = Math.min(336, titleEndY + 34);
+  const sellerY = subheadY + (subheadLines.length - 1) * 30 + 30;
   const family = getProductFamily(input);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900" role="img" aria-label="${escapeXml(input.title)} thumbnail">
@@ -975,30 +976,28 @@ export function renderManagedThumbnailSvg(input: {
   <rect x="86" y="86" width="1028" height="728" rx="34" fill="url(#thumbFade)" opacity="0.3" />
   <circle cx="994" cy="182" r="94" fill="rgba(255,255,255,0.1)" />
   <circle cx="922" cy="286" r="40" fill="rgba(255,255,255,0.15)" />
-  <rect x="124" y="124" width="260" height="44" rx="22" fill="#fff4d6" />
-  <text x="152" y="153" fill="${theme.ink}" font-size="16" font-family="Arial, sans-serif" font-weight="800" letter-spacing="2">${subject}</text>
-  <rect x="408" y="124" width="216" height="44" rx="22" fill="rgba(255,255,255,0.16)" />
-  <text x="440" y="153" fill="#ffffff" font-size="18" font-family="Arial, sans-serif" font-weight="700">${escapeXml(coverCopy.badge)}</text>
+  <rect x="124" y="124" width="282" height="44" rx="22" fill="#fff4d6" />
+  <text x="150" y="152" fill="${theme.ink}" font-size="15" font-family="Arial, sans-serif" font-weight="800" letter-spacing="1.2">${subject}</text>
+  <rect x="424" y="124" width="198" height="44" rx="22" fill="rgba(255,255,255,0.16)" />
+  <text x="452" y="152" fill="#ffffff" font-size="17" font-family="Arial, sans-serif" font-weight="700">${escapeXml(coverCopy.badge)}</text>
   <rect x="922" y="124" width="156" height="44" rx="22" fill="#ffffff" />
-  <text x="952" y="153" fill="${theme.ink}" font-size="18" font-family="Arial, sans-serif" font-weight="800">${gradeBand}</text>
+  <text x="952" y="152" fill="${theme.ink}" font-size="17" font-family="Arial, sans-serif" font-weight="800">${gradeBand}</text>
   ${renderTextLines(titleLines, 124, titleStartY, titleFontSize, "#ffffff", { fontWeight: 800, lineGap: titleLineGap })}
-  ${renderTextLines(subheadLines, 124, subheadY, 23, "rgba(255,255,255,0.88)", { fontWeight: 400, lineGap: 8 })}
-  <text x="124" y="${sellerY}" fill="rgba(255,255,255,0.76)" font-size="18" font-family="Arial, sans-serif">Created by ${sellerName}</text>
+  ${renderTextLines(subheadLines, 124, subheadY, 22, "rgba(255,255,255,0.88)", { fontWeight: 500, lineGap: 8 })}
+  <text x="124" y="${sellerY}" fill="rgba(255,255,255,0.76)" font-size="16" font-family="Arial, sans-serif">Created by ${sellerName}</text>
   <rect x="124" y="408" width="444" height="346" rx="28" fill="#ffffff" opacity="0.96" />
   <rect x="600" y="408" width="474" height="346" rx="28" fill="rgba(255,255,255,0.16)" stroke="rgba(255,255,255,0.32)" />
   ${renderFormatThumbnailMotif(input.format, theme)}
   ${renderSubjectThumbnailMotif(input.subject, thumbnailSeed, family)}
-  <text x="160" y="474" fill="${theme.ink}" font-size="21" font-family="Arial, sans-serif" font-weight="800">${escapeXml(coverCopy.callout)}</text>
+  <text x="160" y="472" fill="${theme.ink}" font-size="20" font-family="Arial, sans-serif" font-weight="800">${escapeXml(coverCopy.callout)}</text>
   <rect x="160" y="518" width="162" height="38" rx="19" fill="${theme.badge}" />
   <text x="188" y="543" fill="${theme.ink}" font-size="17" font-family="Arial, sans-serif" font-weight="800">${format}</text>
   <rect x="160" y="582" width="190" height="96" rx="22" fill="${theme.badge}" />
   <rect x="374" y="582" width="158" height="96" rx="22" fill="${theme.badge}" />
   <text x="192" y="636" fill="${theme.ink}" font-size="20" font-family="Arial, sans-serif" font-weight="800">Printable pages</text>
   <text x="404" y="636" fill="${theme.ink}" font-size="20" font-family="Arial, sans-serif" font-weight="800">Preview included</text>
-  <text x="650" y="462" fill="${theme.ink}" font-size="18" font-family="Arial, sans-serif" font-weight="700">Colorful cover</text>
-  <text x="860" y="462" fill="${theme.ink}" font-size="18" font-family="Arial, sans-serif" font-weight="700">Real preview pages</text>
-  <text x="804" y="710" fill="${theme.ink}" font-size="18" font-family="Arial, sans-serif" font-weight="700">Made to feel like a real classroom product</text>
-  <text x="38" y="794" transform="rotate(-24 38 794)" fill="rgba(255,255,255,0.26)" font-size="44" font-family="Arial, sans-serif" font-weight="800" letter-spacing="8">LESSONFORGE PREVIEW · SAMPLE ONLY · LESSONFORGE PREVIEW</text>
+  <text x="820" y="710" fill="${theme.ink}" font-size="17" font-family="Arial, sans-serif" font-weight="700">Clean, classroom-ready layout</text>
+  <text x="170" y="784" transform="rotate(-24 170 784)" fill="rgba(255,255,255,0.18)" font-size="30" font-family="Arial, sans-serif" font-weight="800" letter-spacing="6">LESSONFORGE PREVIEW · SAMPLE ONLY</text>
   <defs>
     <linearGradient id="thumbFade" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#ffffff" />

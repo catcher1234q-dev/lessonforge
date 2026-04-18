@@ -309,6 +309,12 @@ export function ProductCreator() {
         ].filter(Boolean).length + 1,
       ),
   );
+  const uploadStepReady = files.length > 0 && title.trim().length > 0;
+  const detailsStepReady =
+    subject.trim().length > 0 &&
+    gradeBand.trim().length > 0 &&
+    (shortDescription.trim().length > 0 || fullDescription.trim().length > 0);
+  const publishStepReady = missingPublishItems.length === 0;
 
   useEffect(() => {
     void (async () => {
@@ -617,478 +623,251 @@ export function ProductCreator() {
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
-      <section className="rounded-[32px] border border-black/5 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand">
-          First listing
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)]">
+      <section className="rounded-[28px] border border-black/5 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-6">
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-brand">
+          Create listing
         </p>
-        <h1 className="mt-4 font-[family-name:var(--font-display)] text-4xl leading-tight text-ink sm:text-5xl">
-          Create one clear resource buyers can trust.
+        <h1 className="mt-3 font-[family-name:var(--font-display)] text-3xl leading-tight text-ink sm:text-4xl">
+          Upload your resource, review the details, and publish when it looks ready.
         </h1>
-        <p className="mt-5 max-w-3xl text-lg leading-8 text-ink-soft">
-          Start with a classroom resource you already understand well. Save it
-          as a draft first, then add the preview, thumbnail, and rights check
-          when you are ready to publish.
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-ink-soft sm:text-base">
+          Keep the first pass simple. Start with the file and core details, then add the buyer-facing preview checks when you are ready to go live.
         </p>
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
           {[
             {
-              title: "Upload",
-              body: "Choose one file or resource set that is ready for another teacher to open.",
+              title: "1. Upload resource",
+              body: "Pick the file and add the title.",
+              ready: uploadStepReady,
             },
             {
-              title: "Explain",
-              body: "Add the title, grade, subject, price, and a buyer-facing summary.",
+              title: "2. Review details",
+              body: "Check the subject, grade, and description.",
+              ready: detailsStepReady,
             },
             {
-              title: "Publish",
-              body: "Add preview, thumbnail, and rights confirmation before going live.",
+              title: "3. Publish listing",
+              body: "Finish preview, thumbnail, and rights checks.",
+              ready: publishStepReady,
             },
           ].map((step) => (
             <div
               key={step.title}
-              className="rounded-[1.35rem] border border-ink/5 bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft"
+              className={`rounded-[1.2rem] border px-4 py-4 text-sm leading-6 ${
+                step.ready
+                  ? "border-emerald-100 bg-emerald-50/70 text-emerald-950"
+                  : "border-black/5 bg-surface-subtle text-ink-soft"
+              }`}
             >
               <p className="font-semibold text-ink">{step.title}</p>
               <p className="mt-1">{step.body}</p>
             </div>
           ))}
         </div>
-        <div className="mt-6 rounded-[1.35rem] border border-sky-100 bg-sky-50/80 p-4">
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-sky-800">
-            Start here
-          </p>
-          <p className="mt-2 text-base font-semibold text-ink">
-            A draft is safe. It does not need to be perfect.
-          </p>
-          <p className="mt-2 text-sm leading-6 text-ink-soft">
-            Upload the file, add the title, subject, grade band, and price, then save. Come back for buyer-ready checks only when the listing is close to going live.
-          </p>
+
+        <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.14em]">
+          <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-800">
+            Unlimited uploads
+          </span>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-ink-soft">
+            AI tools limited by plan
+          </span>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-ink-soft">
+            Drafts are safe
+          </span>
         </div>
-        <div className="mt-5 rounded-[1.5rem] border border-emerald-100 bg-emerald-50/80 p-5">
-          <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800">
-              <FileUp className="h-5 w-5" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-800">
-                Unlimited uploads
-              </p>
-              <p className="mt-2 text-base font-semibold text-ink">
-                You can keep uploading products. AI tools are limited by your plan.
-              </p>
-              <p className="mt-2 text-sm leading-6 text-ink-soft">
-                Quality still matters: clear previews, accurate descriptions, and original or properly licensed files help buyers trust your listings.
-              </p>
-            </div>
-          </div>
-        </div>
+
         {isCreatorReady ? (
           <p className="sr-only" data-testid="seller-creator-ready">
             Creator ready
           </p>
         ) : null}
-        <p className="mt-3 text-sm text-ink-soft">
-          {availableCredits !== null
-            ? `${availableCredits} AI credits remaining in the current cycle.`
-            : "AI credits will appear here after the first server-side scan."}
-        </p>
-        <p className="mt-2 text-sm text-ink-soft">
-          Current AI plan: {formatPlanLabel(currentPlanKey)}
-        </p>
-        <p className="mt-2 text-sm text-ink-soft">
-          Uploads are unlimited. {listingUsage ? `${listingUsage.current} listing${listingUsage.current === 1 ? "" : "s"} tracked for this seller.` : "AI credits are the plan-based limit."}
-        </p>
+
         {aiKillSwitchEnabled ? (
-          <div className="mt-4 rounded-[1.25rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
-            AI is currently paused by admin controls. You can still finish the listing details, but the standards scan is disabled until AI is turned back on.
+          <div className="mt-4 rounded-[1rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+            AI is temporarily paused. You can still finish the listing details and save a draft.
           </div>
         ) : null}
-        <details className="mt-5 rounded-[1.25rem] border border-ink/5 bg-surface-subtle p-4">
-          <summary className="cursor-pointer text-sm font-semibold text-ink">
-            Open AI readiness
-          </summary>
-          <div className="mt-3">
-          <p className="text-sm font-semibold text-ink">AI readiness for this listing</p>
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-[1rem] bg-white px-4 py-3 text-sm text-ink-soft">
-              Scan cost
-              <p className="mt-1 text-lg font-semibold text-ink">
-                {standardsScanCost} credits
-              </p>
-            </div>
-            <div className="rounded-[1rem] bg-white px-4 py-3 text-sm text-ink-soft">
-              Plan allowance
-              <p className="mt-1 text-lg font-semibold text-ink">
-                {currentPlan.availableCredits} available
-              </p>
-            </div>
-            <div className="rounded-[1rem] bg-white px-4 py-3 text-sm text-ink-soft">
-              After this scan
-              <p className="mt-1 text-lg font-semibold text-ink">
-                {estimatedRemainingCredits !== null ? estimatedRemainingCredits : "Pending"}
-              </p>
-            </div>
-          </div>
-          <p className="mt-3 text-sm leading-6 text-ink-soft">
-            {availableCredits === null
-              ? "We will create the seller subscription balance from the current plan on the first AI action."
-              : aiKillSwitchEnabled
-                ? "AI is disabled globally right now, so the standards scan cannot run even if this seller still has credits remaining."
-                : canRunStandardsScan
-                ? estimatedRemainingCredits !== null && estimatedRemainingCredits <= standardsScanCost
-                  ? "This scan will work, but the balance is getting tight. Consider upgrading if you plan to run more AI actions right away."
-                  : "This plan has enough room for the standards scan and more listing optimization work afterward."
-                : "This seller has run out of credits for another standards scan on the current plan. Upgrade to continue optimizing this listing."}
-          </p>
-          {!aiKillSwitchEnabled && !canRunStandardsScan ? (
-            <Link
-              className="mt-4 inline-flex items-center justify-center rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
-              href={buildSellerPlanCheckoutHref({
-                planKey: "basic",
-                returnTo: "/sell/dashboard?focus=plan",
-              })}
-              onClick={() =>
-                void trackMonetizationEvent({
-                  eventType: "upgrade_click",
-                  source: "seller_creator",
-                  planKey: currentPlanKey,
-                  metadata: {
-                    reason: "ai_credits",
-                    targetPlan: "basic",
-                  },
-                })
-              }
-            >
-              Upgrade Plan
-            </Link>
-          ) : null}
-          </div>
-        </details>
 
-        <div className="mt-6 grid gap-4">
-          <label className="block">
-            <span className="text-sm font-semibold text-ink">Resource files</span>
-            <span className="mt-1 block text-sm leading-6 text-ink-soft">
-              Pick a resource that is already useful on its own: a worksheet, slide deck, assessment, warm up, exit ticket, or lesson pack.
-            </span>
-            <input
-              className="mt-2 block w-full text-sm text-ink-soft"
-              data-testid="seller-creator-files"
-              multiple
-              onChange={handleFileChange}
-              type="file"
-            />
-          </label>
-
-          <label className="block">
-            <span className="text-sm font-semibold text-ink">Title</span>
-            <span className="mt-1 block text-sm leading-6 text-ink-soft">
-              A strong title names the grade, topic, and resource type so teachers can scan it quickly.
-            </span>
-            <input
-              className="mt-2 w-full rounded-[1.25rem] border border-ink/10 bg-surface-subtle px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
-              data-testid="seller-creator-title"
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="5th Grade Fraction Exit Ticket Pack"
-              value={title}
-            />
-            {similarTitleWarning ? (
-              <div className="mt-3 rounded-[1rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
-                <p className="font-semibold">Possible duplicate title</p>
-                <p className="mt-1">{similarTitleWarning}</p>
-                <p className="mt-1 text-amber-900">
-                  Avoid duplicate listings. Clear, distinct resources are easier for buyers to trust.
-                </p>
-              </div>
-            ) : null}
-          </label>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block">
-              <span className="text-sm font-semibold text-ink">Subject</span>
-              <select
-                className="mt-2 w-full rounded-[1.25rem] border border-ink/10 bg-surface-subtle px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
-                data-testid="seller-creator-subject"
-                onChange={(event) => setSubject(event.target.value)}
-                value={subject}
-              >
-                <option>Math</option>
-                <option>ELA</option>
-                <option>Science</option>
-                <option>Social Studies</option>
-              </select>
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-semibold text-ink">Grade band</span>
-              <select
-                className="mt-2 w-full rounded-[1.25rem] border border-ink/10 bg-surface-subtle px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
-                data-testid="seller-creator-grade-band"
-                onChange={(event) => setGradeBand(event.target.value)}
-              value={gradeBand}
-            >
-              <option>K-12</option>
-              <option>K-5</option>
-              <option>6-8</option>
-              <option>9-12</option>
-            </select>
-          </label>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block">
-              <span className="text-sm font-semibold text-ink">Price</span>
-              <input
-                className="mt-2 w-full rounded-[1.25rem] border border-ink/10 bg-surface-subtle px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
-                data-testid="seller-creator-price"
-                onChange={(event) => setPrice(event.target.value)}
-                type="number"
-                value={price}
-              />
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-semibold text-ink">License</span>
-              <select
-                className="mt-2 w-full rounded-[1.25rem] border border-ink/10 bg-surface-subtle px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
-                data-testid="seller-creator-license"
-                onChange={(event) => setLicenseType(event.target.value)}
-                value={licenseType}
-              >
-                <option>Single classroom</option>
-                <option>Multiple classroom</option>
-              </select>
-            </label>
-          </div>
-
-          <div className="rounded-[1.35rem] border border-black/5 bg-surface-subtle p-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-700">
-              Buyer-facing detail
-            </p>
-            <p className="mt-2 text-base font-semibold text-ink">
-              Explain what the buyer gets and why it is worth opening.
-            </p>
-            <p className="mt-2 text-sm leading-6 text-ink-soft">
-              Keep this practical: what is included, when a teacher should use it, and what problem it solves in class.
-            </p>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block">
-              <span className="text-sm font-semibold text-ink">Resource type</span>
-              <select
-                className="mt-2 w-full rounded-[1.25rem] border border-ink/10 bg-surface-subtle px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
-                data-testid="seller-creator-resource-type"
-                onChange={(event) => setResourceType(event.target.value)}
-                value={resourceType}
-              >
-                <option>Lesson plan</option>
-                <option>Worksheet</option>
-                <option>Assessment</option>
-                <option>Quiz</option>
-                <option>Project</option>
-                <option>Slide deck</option>
-                <option>Warm up</option>
-                <option>Exit ticket</option>
-                <option>Study guide</option>
-                <option>Unit plan</option>
-                <option>Lab</option>
-                <option>Graphic organizer</option>
-              </select>
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-semibold text-ink">Creation path</span>
-              <select
-                className="mt-2 w-full rounded-[1.25rem] border border-ink/10 bg-surface-subtle px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
-                data-testid="seller-creator-created-path"
-                onChange={(event) => setCreatedPath(event.target.value as ProductRecord["createdPath"])}
-                value={createdPath}
-              >
-                <option>Manual upload</option>
-                <option>Manual from scratch</option>
-                <option>AI assisted</option>
-              </select>
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-semibold text-ink">Product status</span>
-              <select
-                className="mt-2 w-full rounded-[1.25rem] border border-ink/10 bg-surface-subtle px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
-                data-testid="seller-creator-status"
-                onChange={(event) => setStatus(event.target.value as NonNullable<ProductRecord["productStatus"]>)}
-                value={status}
-              >
-                <option>Draft</option>
-                <option>Pending review</option>
-                <option>Published</option>
-              </select>
-            </label>
-          </div>
-
-          <label className="block">
-            <span className="text-sm font-semibold text-ink">Short description</span>
-            <textarea
-              className="mt-2 min-h-24 w-full rounded-[1.25rem] border border-ink/10 bg-surface-subtle px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
-              data-testid="seller-creator-short-description"
-              onChange={(event) => setShortDescription(event.target.value)}
-              placeholder="One quick summary buyers can scan in search and on the product page."
-              value={shortDescription}
-            />
-          </label>
-
-          <label className="block">
-            <span className="text-sm font-semibold text-ink">Full description</span>
-            <textarea
-              className="mt-2 min-h-32 w-full rounded-[1.25rem] border border-ink/10 bg-surface-subtle px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
-              data-testid="seller-creator-full-description"
-              onChange={(event) => setFullDescription(event.target.value)}
-              placeholder="Explain what is included, how teachers should use it, and what makes the listing trustworthy. This is required before publishing."
-              value={fullDescription}
-            />
-          </label>
-
-          <label className="block">
-            <span className="text-sm font-semibold text-ink">Notes for the listing</span>
-            <textarea
-              className="mt-2 min-h-32 w-full rounded-[1.25rem] border border-ink/10 bg-surface-subtle px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
-              data-testid="seller-creator-notes"
-              onChange={(event) => setNotes(event.target.value)}
-              placeholder="Summarize what is included, classroom use, and what makes the resource trustworthy."
-              value={notes}
-            />
-          </label>
-
-          <div className="rounded-[1.35rem] border border-black/5 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
-            <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="mt-6 space-y-4">
+          <section className="rounded-[22px] border border-black/5 bg-surface-subtle p-4 sm:p-5">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-700">
-                  Full listing optimization
+                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand">
+                  Step 1
                 </p>
-                <p className="mt-2 text-base font-semibold text-ink">
-                  Title rewrite, description rewrite, and keyword suggestions in one premium workflow.
-                </p>
-                <p className="mt-2 text-sm leading-6 text-ink-soft">
-                  {premiumAccess?.fullListingOptimization.unlocked
-                    ? "This plan unlocks the full optimization view so you can sharpen the listing before buyers ever open it."
-                    : getLockedFeatureMessage()}
+                <h2 className="mt-1 text-xl font-semibold text-ink">Upload resource</h2>
+                <p className="mt-1 text-sm leading-6 text-ink-soft">
+                  Start with one classroom-ready file and a clear title.
                 </p>
               </div>
-              {premiumAccess?.fullListingOptimization.unlocked ? (
-                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">
-                  Included in your plan
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-amber-700">
-                  <Lock className="h-3.5 w-3.5" />
-                  Basic and Pro
-                </span>
-              )}
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-soft text-brand">
+                <FileUp className="h-4 w-4" />
+              </div>
             </div>
 
-            <div className={`mt-4 grid gap-3 ${premiumAccess?.fullListingOptimization.unlocked ? "sm:grid-cols-3" : ""}`}>
-              <div className={`rounded-[1rem] border border-slate-200 bg-slate-50 p-4 ${premiumAccess?.fullListingOptimization.unlocked ? "" : "blur-[2px]"}`}>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
-                  Title rewrite
-                </p>
-                <p className="mt-2 text-sm font-semibold text-ink">
-                  {optimizationPreview.titleRewrite}
-                </p>
-              </div>
-              <div className={`rounded-[1rem] border border-slate-200 bg-slate-50 p-4 ${premiumAccess?.fullListingOptimization.unlocked ? "" : "blur-[2px]"}`}>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
-                  Description rewrite
-                </p>
-                <p className="mt-2 text-sm leading-6 text-ink-soft">
-                  {optimizationPreview.descriptionRewrite}
-                </p>
-              </div>
-              <div className={`rounded-[1rem] border border-slate-200 bg-slate-50 p-4 ${premiumAccess?.fullListingOptimization.unlocked ? "" : "blur-[2px]"}`}>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
-                  Keyword suggestions
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {optimizationPreview.keywords.map((keyword) => (
-                    <span
-                      key={keyword}
-                      className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-ink-soft"
-                    >
-                      {keyword}
-                    </span>
-                  ))}
+            <div className="mt-4 grid gap-4">
+              <label className="block">
+                <span className="text-sm font-semibold text-ink">Resource files</span>
+                <input
+                  className="mt-2 block w-full text-sm text-ink-soft"
+                  data-testid="seller-creator-files"
+                  multiple
+                  onChange={handleFileChange}
+                  type="file"
+                />
+                <span className="mt-2 block text-xs leading-5 text-ink-soft">
+                  Upload a worksheet, slide deck, assessment, lesson page, or pack that already works in class.
+                </span>
+              </label>
+
+              <label className="block">
+                <span className="text-sm font-semibold text-ink">Title</span>
+                <input
+                  className="mt-2 w-full rounded-[1rem] border border-ink/10 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
+                  data-testid="seller-creator-title"
+                  onChange={(event) => setTitle(event.target.value)}
+                  placeholder="5th Grade Fraction Exit Ticket Pack"
+                  value={title}
+                />
+              </label>
+
+              {similarTitleWarning ? (
+                <div className="rounded-[1rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
+                  <p className="font-semibold">Possible duplicate title</p>
+                  <p className="mt-1">{similarTitleWarning}</p>
                 </div>
+              ) : null}
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="text-sm font-semibold text-ink">Subject</span>
+                  <select
+                    className="mt-2 w-full rounded-[1rem] border border-ink/10 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
+                    data-testid="seller-creator-subject"
+                    onChange={(event) => setSubject(event.target.value)}
+                    value={subject}
+                  >
+                    <option>Math</option>
+                    <option>ELA</option>
+                    <option>Science</option>
+                    <option>Social Studies</option>
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="text-sm font-semibold text-ink">Grade band</span>
+                  <select
+                    className="mt-2 w-full rounded-[1rem] border border-ink/10 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
+                    data-testid="seller-creator-grade-band"
+                    onChange={(event) => setGradeBand(event.target.value)}
+                    value={gradeBand}
+                  >
+                    <option>K-12</option>
+                    <option>K-5</option>
+                    <option>6-8</option>
+                    <option>9-12</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-[22px] border border-black/5 bg-surface-subtle p-4 sm:p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand">
+                  Step 2
+                </p>
+                <h2 className="mt-1 text-xl font-semibold text-ink">Review details</h2>
+                <p className="mt-1 text-sm leading-6 text-ink-soft">
+                  Keep this part short and useful. AI can help sharpen it later.
+                </p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-soft text-brand">
+                <WandSparkles className="h-4 w-4" />
               </div>
             </div>
 
-            {!premiumAccess?.fullListingOptimization.unlocked ? (
-              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                <Link
-                  className="inline-flex items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
-                  href={buildSellerPlanCheckoutHref({
-                    planKey: "basic",
-                    returnTo: "/sell/dashboard?focus=plan",
-                  })}
-                  onClick={() =>
-                    void trackMonetizationEvent({
-                      eventType: "upgrade_click",
-                      source: "seller_creator",
-                      planKey: currentPlanKey,
-                      metadata: {
-                        reason: "full_listing_optimization",
-                        targetPlan: "basic",
-                      },
-                    })
-                  }
-                >
-                  Upgrade to Basic
-                </Link>
-                <button
-                  className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
-                  onClick={() =>
-                    void (async () => {
-                      setMessage(getLockedFeatureMessage());
-                      await trackMonetizationEvent({
-                        eventType: "locked_feature_clicked",
-                        source: "seller_creator",
-                        planKey: currentPlanKey,
-                        metadata: {
-                          feature: "full_listing_optimization",
-                        },
-                      });
-                    })()
-                  }
-                  type="button"
-                >
-                  See why this is locked
-                </button>
-              </div>
-            ) : (
-              <p className="mt-4 text-sm leading-6 text-ink-soft">
-                Optimization guidance is available for this plan. Use it after the draft has enough buyer-facing detail to improve.
-              </p>
-            )}
-          </div>
+            <div className="mt-4 grid gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="text-sm font-semibold text-ink">Resource type</span>
+                  <select
+                    className="mt-2 w-full rounded-[1rem] border border-ink/10 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
+                    data-testid="seller-creator-resource-type"
+                    onChange={(event) => setResourceType(event.target.value)}
+                    value={resourceType}
+                  >
+                    <option>Lesson plan</option>
+                    <option>Worksheet</option>
+                    <option>Assessment</option>
+                    <option>Quiz</option>
+                    <option>Project</option>
+                    <option>Slide deck</option>
+                    <option>Warm up</option>
+                    <option>Exit ticket</option>
+                    <option>Study guide</option>
+                    <option>Unit plan</option>
+                    <option>Lab</option>
+                    <option>Graphic organizer</option>
+                  </select>
+                </label>
 
-          <div className="rounded-[1.35rem] border border-brand/10 bg-brand-soft/30 p-5">
+                <label className="block">
+                  <span className="text-sm font-semibold text-ink">Price</span>
+                  <input
+                    className="mt-2 w-full rounded-[1rem] border border-ink/10 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
+                    data-testid="seller-creator-price"
+                    onChange={(event) => setPrice(event.target.value)}
+                    type="number"
+                    value={price}
+                  />
+                </label>
+              </div>
+
+              <label className="block">
+                <span className="text-sm font-semibold text-ink">Short description</span>
+                <textarea
+                  className="mt-2 min-h-24 w-full rounded-[1rem] border border-ink/10 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
+                  data-testid="seller-creator-short-description"
+                  onChange={(event) => setShortDescription(event.target.value)}
+                  placeholder="One quick summary buyers can scan."
+                  value={shortDescription}
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-sm font-semibold text-ink">Full description</span>
+                <textarea
+                  className="mt-2 min-h-28 w-full rounded-[1rem] border border-ink/10 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
+                  data-testid="seller-creator-full-description"
+                  onChange={(event) => setFullDescription(event.target.value)}
+                  placeholder="Explain what is included, how teachers use it, and why it is useful."
+                  value={fullDescription}
+                />
+              </label>
+            </div>
+          </section>
+
+          <section className="rounded-[22px] border border-brand/10 bg-brand-soft/30 p-4 sm:p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand">
-                  Listing readiness
+                  Step 3
                 </p>
-                <p className="mt-2 text-base font-semibold text-ink">
-                  {missingPublishItems.length === 0
-                    ? "This listing has the basics needed to publish."
-                    : "Finish these checks before publishing."}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-ink-soft">
-                  Drafts can stay unfinished. Published listings need enough detail for buyers to know what they are getting.
+                <h2 className="mt-1 text-xl font-semibold text-ink">Review and publish</h2>
+                <p className="mt-1 text-sm leading-6 text-ink-soft">
+                  Drafts can stay unfinished. Publish only when the buyer-facing basics are ready.
                 </p>
               </div>
               <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-brand">
                 {publishReadinessItems.length - missingPublishItems.length}/{publishReadinessItems.length} ready
               </span>
             </div>
+
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {publishReadinessItems.map((item) => (
                 <div
@@ -1099,86 +878,264 @@ export function ProductCreator() {
                       : "border-amber-100 bg-amber-50/80 text-amber-950"
                   }`}
                 >
-                  <p className="font-semibold">
-                    {item.complete ? "Done: " : "Missing: "}
-                    {item.label}
-                  </p>
+                  <p className="font-semibold">{item.complete ? "Done: " : "Missing: "}{item.label}</p>
                   <p className="mt-1 text-ink-soft">{item.help}</p>
                 </div>
               ))}
             </div>
-            <div className="mt-4 rounded-[1rem] border border-ink/5 bg-white px-4 py-3 text-sm leading-6 text-ink-soft">
-              Low-effort or repeated listings may be reviewed and may perform worse in discovery. Start with one strong resource before uploading many at once.
-            </div>
-          </div>
 
-          <div className="rounded-[1.25rem] border border-amber-100 bg-amber-50/80 p-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-800">
-              Buyer-ready check
-            </p>
-            <p className="mt-2 text-base font-semibold text-ink">
-              Use these checks when the listing is getting close to publish.
-            </p>
-            <p className="mt-2 text-sm leading-6 text-ink-soft">
-              Published listings need a preview, a thumbnail, and a rights-to-sell confirmation so buyers know what they are getting.
-            </p>
-            <div className="mt-3 space-y-3 text-sm text-ink-soft">
-              <label className="flex items-start gap-3">
-                <input
-                  checked={previewIncluded}
-                  className="mt-1 h-4 w-4 accent-brand"
-                  data-testid="seller-creator-preview-included"
-                  onChange={(event) => setPreviewIncluded(event.target.checked)}
-                  type="checkbox"
-                />
-                <span>I added a preview for buyers. No preview, no publish.</span>
-              </label>
-              <label className="flex items-start gap-3">
-                <input
-                  checked={thumbnailIncluded}
-                  className="mt-1 h-4 w-4 accent-brand"
-                  data-testid="seller-creator-thumbnail-included"
-                  onChange={(event) => setThumbnailIncluded(event.target.checked)}
-                  type="checkbox"
-                />
-                <span>I added a thumbnail for the product card and detail page.</span>
-              </label>
-              <label className="flex items-start gap-3">
-                <input
-                  checked={rightsConfirmed}
-                  className="mt-1 h-4 w-4 accent-brand"
-                  data-testid="seller-creator-rights-confirmed"
-                  onChange={(event) => setRightsConfirmed(event.target.checked)}
-                  type="checkbox"
-                />
-                <span>I confirm I own or have rights to sell this content.</span>
-              </label>
+            <div className="mt-4 rounded-[1rem] border border-amber-100 bg-amber-50/80 p-4">
+              <p className="text-sm font-semibold text-ink">Buyer-ready checks</p>
+              <div className="mt-3 space-y-3 text-sm text-ink-soft">
+                <label className="flex items-start gap-3">
+                  <input
+                    checked={previewIncluded}
+                    className="mt-1 h-4 w-4 accent-brand"
+                    data-testid="seller-creator-preview-included"
+                    onChange={(event) => setPreviewIncluded(event.target.checked)}
+                    type="checkbox"
+                  />
+                  <span>I added a preview for buyers. No preview, no publish.</span>
+                </label>
+                <label className="flex items-start gap-3">
+                  <input
+                    checked={thumbnailIncluded}
+                    className="mt-1 h-4 w-4 accent-brand"
+                    data-testid="seller-creator-thumbnail-included"
+                    onChange={(event) => setThumbnailIncluded(event.target.checked)}
+                    type="checkbox"
+                  />
+                  <span>I added a thumbnail for the product card and detail page.</span>
+                </label>
+                <label className="flex items-start gap-3">
+                  <input
+                    checked={rightsConfirmed}
+                    className="mt-1 h-4 w-4 accent-brand"
+                    data-testid="seller-creator-rights-confirmed"
+                    onChange={(event) => setRightsConfirmed(event.target.checked)}
+                    type="checkbox"
+                  />
+                  <span>I confirm I own or have rights to sell this content.</span>
+                </label>
+              </div>
             </div>
-          </div>
 
-          <div>
-            <span className="text-sm font-semibold text-ink">Standards scan provider</span>
-            <div className="mt-2 flex gap-3">
-              {(["openai", "gemini"] as const).map((option) => (
-                <button
-                  key={option}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                    provider === option
-                      ? "bg-brand text-white"
-                      : "bg-surface-subtle text-ink-soft"
-                  }`}
-                  data-testid={`seller-creator-provider-${option}`}
-                  onClick={() => setProvider(option)}
-                  type="button"
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="text-sm font-semibold text-ink">License</span>
+                <select
+                  className="mt-2 w-full rounded-[1rem] border border-ink/10 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
+                  data-testid="seller-creator-license"
+                  onChange={(event) => setLicenseType(event.target.value)}
+                  value={licenseType}
                 >
-                  {option === "openai" ? "OpenAI" : "Gemini"}
-                </button>
-              ))}
+                  <option>Single classroom</option>
+                  <option>Multiple classroom</option>
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="text-sm font-semibold text-ink">Product status</span>
+                <select
+                  className="mt-2 w-full rounded-[1rem] border border-ink/10 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
+                  data-testid="seller-creator-status"
+                  onChange={(event) => setStatus(event.target.value as NonNullable<ProductRecord["productStatus"]>)}
+                  value={status}
+                >
+                  <option>Draft</option>
+                  <option>Pending review</option>
+                  <option>Published</option>
+                </select>
+              </label>
             </div>
-          </div>
+          </section>
+
+          <details className="rounded-[22px] border border-black/5 bg-white p-4">
+            <summary className="cursor-pointer text-sm font-semibold text-ink">
+              Optional settings
+            </summary>
+            <div className="mt-4 grid gap-4">
+              <label className="block">
+                <span className="text-sm font-semibold text-ink">Notes</span>
+                <textarea
+                  className="mt-2 min-h-24 w-full rounded-[1rem] border border-ink/10 bg-surface-subtle px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
+                  data-testid="seller-creator-notes"
+                  onChange={(event) => setNotes(event.target.value)}
+                  placeholder="Optional notes about what is included or how you use it."
+                  value={notes}
+                />
+              </label>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="text-sm font-semibold text-ink">Creation path</span>
+                  <select
+                    className="mt-2 w-full rounded-[1rem] border border-ink/10 bg-surface-subtle px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
+                    data-testid="seller-creator-created-path"
+                    onChange={(event) => setCreatedPath(event.target.value as ProductRecord["createdPath"])}
+                    value={createdPath}
+                  >
+                    <option>Manual upload</option>
+                    <option>Manual from scratch</option>
+                    <option>AI assisted</option>
+                  </select>
+                </label>
+
+                <div>
+                  <span className="text-sm font-semibold text-ink">Standards scan provider</span>
+                  <div className="mt-2 flex gap-3">
+                    {(["openai", "gemini"] as const).map((option) => (
+                      <button
+                        key={option}
+                        className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                          provider === option ? "bg-brand text-white" : "bg-surface-subtle text-ink-soft"
+                        }`}
+                        data-testid={`seller-creator-provider-${option}`}
+                        onClick={() => setProvider(option)}
+                        type="button"
+                      >
+                        {option === "openai" ? "OpenAI" : "Gemini"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <details className="rounded-[18px] border border-black/5 bg-surface-subtle p-4">
+                <summary className="cursor-pointer text-sm font-semibold text-ink">
+                  AI and plan details
+                </summary>
+                <div className="mt-4 space-y-4">
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-[1rem] bg-white px-4 py-3 text-sm text-ink-soft">
+                      Scan cost
+                      <p className="mt-1 text-lg font-semibold text-ink">{standardsScanCost} credits</p>
+                    </div>
+                    <div className="rounded-[1rem] bg-white px-4 py-3 text-sm text-ink-soft">
+                      Current plan
+                      <p className="mt-1 text-lg font-semibold text-ink">{formatPlanLabel(currentPlanKey)}</p>
+                    </div>
+                    <div className="rounded-[1rem] bg-white px-4 py-3 text-sm text-ink-soft">
+                      Credits left
+                      <p className="mt-1 text-lg font-semibold text-ink">
+                        {availableCredits ?? "Pending"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[1rem] border border-black/5 bg-white p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-ink">AI filled details for you</p>
+                        <p className="mt-1 text-sm leading-6 text-ink-soft">
+                          Premium plans can use the stronger optimization view before publishing.
+                        </p>
+                      </div>
+                      {premiumAccess?.fullListingOptimization.unlocked ? (
+                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">
+                          Included in your plan
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-amber-700">
+                          <Lock className="h-3.5 w-3.5" />
+                          Basic and Pro
+                        </span>
+                      )}
+                    </div>
+
+                    <div className={`mt-4 grid gap-3 ${premiumAccess?.fullListingOptimization.unlocked ? "sm:grid-cols-3" : ""}`}>
+                      <div className={`rounded-[1rem] border border-slate-200 bg-slate-50 p-4 ${premiumAccess?.fullListingOptimization.unlocked ? "" : "blur-[2px]"}`}>
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">Title rewrite</p>
+                        <p className="mt-2 text-sm font-semibold text-ink">{optimizationPreview.titleRewrite}</p>
+                      </div>
+                      <div className={`rounded-[1rem] border border-slate-200 bg-slate-50 p-4 ${premiumAccess?.fullListingOptimization.unlocked ? "" : "blur-[2px]"}`}>
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">Description rewrite</p>
+                        <p className="mt-2 text-sm leading-6 text-ink-soft">{optimizationPreview.descriptionRewrite}</p>
+                      </div>
+                      <div className={`rounded-[1rem] border border-slate-200 bg-slate-50 p-4 ${premiumAccess?.fullListingOptimization.unlocked ? "" : "blur-[2px]"}`}>
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">Keyword suggestions</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {optimizationPreview.keywords.map((keyword) => (
+                            <span key={keyword} className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-ink-soft">
+                              {keyword}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {!premiumAccess?.fullListingOptimization.unlocked ? (
+                      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                        <Link
+                          className="inline-flex items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+                          href={buildSellerPlanCheckoutHref({
+                            planKey: "basic",
+                            returnTo: "/sell/dashboard?focus=plan",
+                          })}
+                          onClick={() =>
+                            void trackMonetizationEvent({
+                              eventType: "upgrade_click",
+                              source: "seller_creator",
+                              planKey: currentPlanKey,
+                              metadata: {
+                                reason: "full_listing_optimization",
+                                targetPlan: "basic",
+                              },
+                            })
+                          }
+                        >
+                          Upgrade to Basic
+                        </Link>
+                        <button
+                          className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
+                          onClick={() =>
+                            void (async () => {
+                              setMessage(getLockedFeatureMessage());
+                              await trackMonetizationEvent({
+                                eventType: "locked_feature_clicked",
+                                source: "seller_creator",
+                                planKey: currentPlanKey,
+                                metadata: {
+                                  feature: "full_listing_optimization",
+                                },
+                              });
+                            })()
+                          }
+                          type="button"
+                        >
+                          See why this is locked
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </details>
+
+              <details className="rounded-[18px] border border-black/5 bg-surface-subtle p-4">
+                <summary className="cursor-pointer text-sm font-semibold text-ink">
+                  Revenue insight
+                </summary>
+                <div className="mt-4">
+                  <div className="rounded-[1.2rem] border border-slate-200 bg-white p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
+                      Estimated monthly revenue
+                    </p>
+                    <p className={`mt-2 text-3xl font-semibold text-ink ${premiumAccess?.revenueInsights.unlocked ? "" : "blur-[4px]"}`}>
+                      {formatUsd(estimatedMonthlyRevenueCents)}
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-ink-soft">
+                      {premiumAccess?.revenueInsights.unlocked
+                        ? "Use this as a rough planning target while you improve the listing."
+                        : "Upgrade to see performance insights and improve results."}
+                    </p>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </details>
         </div>
 
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <button
             className="inline-flex items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
             data-testid="seller-creator-save"
@@ -1192,7 +1149,9 @@ export function ProductCreator() {
                 ? "AI temporarily disabled"
               : saveBlockedByAi && !canRunStandardsScan
                 ? "Insufficient AI credits"
-              : "Save listing draft"}
+                : status === "Published"
+                  ? "Publish listing"
+                  : "Save listing draft"}
             <ArrowRight className="h-4 w-4" />
           </button>
           <Link
@@ -1205,60 +1164,26 @@ export function ProductCreator() {
         </div>
 
         {savedProduct ? (
-          <div className="mt-6 rounded-[1.5rem] border border-emerald-100 bg-emerald-50/80 p-5">
+          <div className="mt-5 rounded-[1.35rem] border border-emerald-100 bg-emerald-50/80 p-4">
             <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-800">
               Listing saved
             </p>
             <p className="mt-2 text-base font-semibold text-ink">
-              {savedProduct.title} is saved.{" "}
-              {savedProduct.productStatus === "Draft"
-                ? "The next step is finishing the buyer-facing details and preview checks."
-                : savedProduct.productStatus === "Pending review"
-                  ? "The next step is watching review status from the seller dashboard."
-                  : savedProduct.isPurchasable
-                    ? "The next step is watching the dashboard for buyer activity and earnings."
-                    : "The listing is published, but payouts still need to be connected before it can sell."}
+              {savedProduct.title} is saved.
             </p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              {(savedProduct.productStatus === "Draft"
-                ? [
-                    "Add stronger descriptions, preview pages, and a cover image if you want to move beyond draft.",
-                    "Use the seller dashboard to find the listing again and keep improving it.",
-                    "You can also create another listing right away if you are batching uploads.",
-                  ]
+            <p className="mt-2 text-sm leading-6 text-ink-soft">
+              {savedProduct.productStatus === "Draft"
+                ? "Next, tighten the description and finish the preview checks."
                 : savedProduct.productStatus === "Pending review"
-                  ? [
-                      "The listing is now in the review queue.",
-                      "Use the seller dashboard to check status and respond if changes are requested.",
-                      "You can create another listing while this one is waiting.",
-                    ]
+                  ? "Next, watch the seller dashboard for review status."
                   : savedProduct.isPurchasable
-                    ? [
-                        "The listing is live and ready for buyers.",
-                        "Use the seller dashboard to watch sales, earnings, and listing health.",
-                        "Create another listing if you want to keep building the store.",
-                      ]
-                    : [
-                        "The listing is published, but payouts still need to be connected.",
-                        "Finish Stripe setup before this listing can move into buyer checkout.",
-                        "After payouts are connected, use the seller dashboard to track sales and earnings.",
-                      ]).map((detail) => (
-                <div
-                  key={detail}
-                  className="rounded-[1rem] border border-white/70 bg-white/80 px-4 py-3 text-sm leading-6 text-ink-soft"
-                >
-                  {detail}
-                </div>
-              ))}
-            </div>
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                    ? "Next, watch the seller dashboard for buyer activity and earnings."
+                    : "Next, finish Stripe setup before this listing can sell."}
+            </p>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
               <Link
                 className="inline-flex items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
-                href={
-                  savedProduct.productStatus === "Draft"
-                    ? "/sell/dashboard?view=needs-action"
-                    : "/sell/dashboard"
-                }
+                href={savedProduct.productStatus === "Draft" ? "/sell/dashboard?view=needs-action" : "/sell/dashboard"}
               >
                 Open seller dashboard
               </Link>
@@ -1273,122 +1198,26 @@ export function ProductCreator() {
         ) : null}
 
         {message ? (
-          <p className="mt-5 text-sm leading-6 text-ink-soft" data-testid="seller-creator-message">
+          <p className="mt-4 text-sm leading-6 text-ink-soft" data-testid="seller-creator-message">
             {message}
           </p>
         ) : null}
       </section>
 
-      <aside className="space-y-6">
-        <section className="rounded-[24px] bg-slate-950 p-5 text-white shadow-[0_24px_80px_rgba(15,23,42,0.15)]">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-white">
-            <FileUp className="h-5 w-5" />
-          </div>
-          <h2 className="mt-4 text-lg font-semibold">Listing flow</h2>
+      <aside className="space-y-4">
+        <section className="rounded-[24px] bg-slate-950 p-5 text-white shadow-[0_20px_60px_rgba(15,23,42,0.15)]">
+          <h2 className="text-lg font-semibold">Quick guide</h2>
           <div className="mt-3 space-y-2 text-sm leading-6 text-white/75">
-            <p>Draft first so you can work safely.</p>
-            <p>Move to review after preview, thumbnail, and rights checks are done.</p>
-            <p>Published buyer-ready products can appear in browse, storefront, and checkout.</p>
+            <p>Upload your file first.</p>
+            <p>Review the title, description, and price.</p>
+            <p>Publish only after preview, thumbnail, and rights checks are done.</p>
           </div>
-        </section>
-
-        <section className="rounded-[24px] border border-black/5 bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-          <h2 className="text-lg font-semibold text-ink">Good first product</h2>
-          <div className="mt-3 space-y-3 text-sm leading-6 text-ink-soft">
-            <p>
-              Choose a resource with a clear classroom use, not your biggest bundle. A focused first listing is easier to finish and easier for buyers to understand.
-            </p>
-            <p>
-              If you are not ready to publish, save a draft and return from the seller dashboard.
-            </p>
-          </div>
-        </section>
-
-        <section className="rounded-[24px] border border-black/5 bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-soft text-brand">
-            <WandSparkles className="h-5 w-5" />
-          </div>
-          <h2 className="mt-4 text-lg font-semibold text-ink">Payout status</h2>
-          <p className="mt-2 text-sm leading-6 text-ink-soft">
-            {seller
-              ? `Payouts connected for ${seller.displayName || profile?.displayName || seller.email || "this seller"}. Published products can become sellable.`
-              : "No connected Stripe account yet. Products can still be drafted or sent to review."}
+          <p className="mt-4 text-xs uppercase tracking-[0.14em] text-white/55">
+            {availableCredits !== null
+              ? `${availableCredits} AI credits left`
+              : "AI credits appear after the first scan"}{" "}
+            · {formatPlanLabel(currentPlanKey)}
           </p>
-        </section>
-
-        <section className="rounded-[24px] border border-black/5 bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-700">
-                Earnings motivation
-              </p>
-              <h2 className="mt-2 text-lg font-semibold text-ink">
-                Better optimization can increase visibility and sales
-              </h2>
-            </div>
-            {!premiumAccess?.revenueInsights.unlocked ? (
-              <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-amber-700">
-                <Lock className="h-3.5 w-3.5" />
-                Locked on Starter
-              </span>
-            ) : null}
-          </div>
-          <div className="mt-4 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
-              Estimated monthly revenue
-            </p>
-            <p className={`mt-2 text-3xl font-semibold text-ink ${premiumAccess?.revenueInsights.unlocked ? "" : "blur-[4px]"}`}>
-              {formatUsd(estimatedMonthlyRevenueCents)}
-            </p>
-            <p className="mt-2 text-sm leading-6 text-ink-soft">
-              {premiumAccess?.revenueInsights.unlocked
-                ? "Use this estimate as a simple planning target while you tighten the listing and move toward publish-ready quality."
-                : "Upgrade to see performance insights and improve results."}
-            </p>
-          </div>
-          {!premiumAccess?.revenueInsights.unlocked ? (
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-              <Link
-                className="inline-flex items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
-                href={buildSellerPlanCheckoutHref({
-                  planKey: "basic",
-                  returnTo: "/sell/dashboard?focus=plan",
-                })}
-                onClick={() =>
-                  void trackMonetizationEvent({
-                    eventType: "upgrade_click",
-                    source: "seller_creator",
-                    planKey: currentPlanKey,
-                    metadata: {
-                      reason: "revenue_insights",
-                      targetPlan: "basic",
-                    },
-                  })
-                }
-              >
-                Upgrade Plan
-              </Link>
-              <button
-                className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
-                onClick={() =>
-                  void (async () => {
-                    setMessage("Upgrade to see performance insights and improve results.");
-                    await trackMonetizationEvent({
-                      eventType: "locked_feature_clicked",
-                      source: "seller_creator",
-                      planKey: currentPlanKey,
-                      metadata: {
-                        feature: "revenue_insights",
-                      },
-                    });
-                  })()
-                }
-                type="button"
-              >
-                Why this is locked
-              </button>
-            </div>
-          ) : null}
         </section>
 
         <ProductAssetPanel
@@ -1402,6 +1231,25 @@ export function ProductCreator() {
           thumbnailIncluded={thumbnailIncluded}
           title={title || "Untitled resource"}
         />
+
+        <details className="rounded-[22px] border border-black/5 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+          <summary className="cursor-pointer text-sm font-semibold text-ink">
+            Seller guidance
+          </summary>
+          <div className="mt-4 space-y-4">
+            <div className="rounded-[1rem] bg-slate-50 px-4 py-3 text-sm leading-6 text-ink-soft">
+              Choose a focused first product instead of your biggest bundle.
+            </div>
+            <div className="rounded-[1rem] bg-slate-50 px-4 py-3 text-sm leading-6 text-ink-soft">
+              {seller
+                ? `Payouts connected for ${seller.displayName || profile?.displayName || seller.email || "this seller"}.`
+                : "No connected Stripe account yet. Products can still be drafted or sent to review."}
+            </div>
+            <div className="rounded-[1rem] bg-slate-50 px-4 py-3 text-sm leading-6 text-ink-soft">
+              Low-effort or repeated listings may be reviewed and may perform worse in discovery.
+            </div>
+          </div>
+        </details>
       </aside>
     </div>
   );

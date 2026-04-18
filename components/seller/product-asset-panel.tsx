@@ -59,17 +59,17 @@ export function ProductAssetPanel({
 
   return (
     <section
-      className={`rounded-[28px] border border-black/5 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] ${className ?? ""}`}
+      className={`rounded-[24px] border border-black/5 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ${className ?? ""}`}
     >
       <p className="text-sm font-semibold uppercase tracking-[0.22em] text-brand">
-        Buyer preview check
+        Preview check
       </p>
-      <h2 className="mt-3 text-2xl font-semibold text-ink">What buyers will see first</h2>
-      <p className="mt-3 text-sm leading-7 text-ink-soft">
-        Check the preview pages, cover image, and delivery summary before you publish.
+      <h2 className="mt-2 text-xl font-semibold text-ink">What buyers will see first</h2>
+      <p className="mt-2 text-sm leading-6 text-ink-soft">
+        Check the cover, sample pages, and delivery details before you publish.
       </p>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-3">
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
         <article className="rounded-[1.4rem] bg-slate-50 p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-soft">
             Preview set
@@ -105,12 +105,12 @@ export function ProductAssetPanel({
         </article>
       </div>
 
-      <div className="mt-5 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
+      <div className="mt-4 rounded-[1.35rem] border border-slate-200 bg-slate-50 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-ink">Preview pages</p>
             <p className="mt-1 text-sm leading-6 text-ink-soft">
-              These are the public pages buyers can open before purchase.
+              Public sample pages buyers can open before purchase.
             </p>
           </div>
           <p className="text-xs uppercase tracking-[0.18em] text-ink-soft">{format}</p>
@@ -138,7 +138,7 @@ export function ProductAssetPanel({
         </div>
       </div>
 
-      <div className="mt-5 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
+      <div className="mt-4 rounded-[1.35rem] border border-slate-200 bg-slate-50 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-ink">Thumbnail preview</p>
@@ -155,10 +155,10 @@ export function ProductAssetPanel({
             Open thumbnail
           </a>
         </div>
-        <div className="mt-4 rounded-[24px] border border-slate-200 bg-white p-3">
+        <div className="mt-4 rounded-[22px] border border-slate-200 bg-white p-3">
           <img
             alt={`${title} thumbnail preview`}
-            className="h-auto w-full rounded-[18px] border border-slate-100 object-cover"
+            className="h-auto w-full rounded-[18px] border border-slate-100 object-contain"
             decoding="async"
             loading="lazy"
             sizes="(min-width: 768px) 560px, 100vw"
@@ -170,12 +170,12 @@ export function ProductAssetPanel({
         </p>
       </div>
 
-      <div className="mt-5 rounded-[1.5rem] border border-slate-200 bg-white px-5 py-4 text-sm leading-6 text-ink-soft">
+      <div className="mt-4 rounded-[1.35rem] border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-ink-soft">
         <span className="font-semibold text-ink">After purchase:</span> buyers receive the full file from{" "}
         <span className="break-all">{protectedOriginalUrl}</span>.
       </div>
 
-      <div className="mt-5 rounded-[1.5rem] bg-slate-950 px-5 py-4 text-sm leading-6 text-white/80">
+      <div className="mt-4 rounded-[1.35rem] bg-slate-950 px-4 py-3 text-sm leading-6 text-white/80">
         <span className="font-semibold text-white">Current buyer summary:</span>{" "}
         {summary || "Add a stronger description so buyers understand what is included and why it is worth opening."}
       </div>
