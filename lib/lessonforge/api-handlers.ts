@@ -184,6 +184,15 @@ export async function handleStandardsScanRequest(
     | { mapping: AIProviderResult; availableCredits: number; cost: number }
   >
 > {
+  console.info("[lessonforge.ai] standards-scan request received", {
+    sellerId: body.sellerId || null,
+    provider: body.provider || null,
+    hasUpload: Boolean(body.upload),
+    uploadMimeType: body.upload?.mimeType || null,
+    uploadSizeBytes: body.upload?.sizeBytes || 0,
+    hasTitle: Boolean(body.title),
+  });
+
   if (
     !body.sellerId ||
     !body.sellerEmail ||
@@ -285,6 +294,13 @@ export async function handleStandardsScanRequest(
             upload: body.upload,
           });
 
+    console.info("[lessonforge.ai] standards-scan completed", {
+      provider: body.provider,
+      status: mapping.status,
+      suggestedStandard: mapping.suggestedStandard || null,
+      confidence: mapping.confidence || null,
+    });
+
     if (deps.saveAiActionCacheEntry) {
       await deps.saveAiActionCacheEntry({
         sellerId: body.sellerId,
@@ -305,6 +321,11 @@ export async function handleStandardsScanRequest(
     };
   } catch (error) {
     await deps.refundCredits(body.idempotencyKey);
+
+    console.error("[lessonforge.ai] standards-scan failed", {
+      provider: body.provider,
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
 
     return {
       status: 500,

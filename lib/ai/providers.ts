@@ -40,6 +40,7 @@ export type ListingAssistResult = {
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 const AI_TIMEOUT_MS = Number(process.env.AI_DEFAULT_TIMEOUT_MS || "30000");
+const GEMINI_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS || "55000");
 const AI_MAX_INPUT_CHARACTERS = Number(process.env.AI_MAX_INPUT_CHARACTERS || "12000");
 
 const patterns = [
@@ -285,7 +286,7 @@ function buildFallbackListingAssistResult(
   );
 
   const shortDescription = `${gradeBand} ${subject.toLowerCase()} resource that helps teachers open, teach, and reuse this lesson faster.`;
-  const fullDescription = `This ${subject.toLowerCase()} resource is designed for ${gradeBand} classrooms and gives teachers a ready-to-use lesson they can review quickly, teach with confidence, and adapt for daily instruction.`;
+  const fullDescription = `This ${subject.toLowerCase()} resource is designed for ${gradeBand} classrooms and gives teachers a ready-to-use set of lesson materials they can open quickly, use in class, and adapt for practice, review, or independent work.`;
   const tags = [
     subject,
     gradeBand,
@@ -354,6 +355,11 @@ async function fetchWithTimeout(
 
 function cleanProviderError(provider: ProviderId, error: unknown) {
   const message = error instanceof Error ? error.message : "";
+
+  console.error("[lessonforge.ai] Provider error", {
+    provider,
+    message,
+  });
 
   if (
     /aborted|timeout|timed out/i.test(message)
@@ -448,6 +454,14 @@ async function callGeminiJsonWithUpload<T>(
     });
   }
 
+  console.info("[lessonforge.ai] Gemini request prepared", {
+    hasUpload: Boolean(upload),
+    uploadMimeType: upload?.mimeType || null,
+    uploadSizeBytes: upload?.sizeBytes || 0,
+    hasTextContent: Boolean(upload?.textContent),
+    hasInlineData: Boolean(upload?.base64Data),
+  });
+
   const response = await fetchWithTimeout(
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`,
     {
@@ -462,12 +476,21 @@ async function callGeminiJsonWithUpload<T>(
             parts,
           },
         ],
+        generation_config: {
+          media_resolution: "MEDIA_RESOLUTION_LOW",
+          temperature: 0.2,
+        },
       }),
     },
+    GEMINI_TIMEOUT_MS,
   );
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error("[lessonforge.ai] Gemini request failed", {
+      status: response.status,
+      bodyPreview: errorText.slice(0, 280),
+    });
     throw new Error(errorText || "Gemini request failed.");
   }
 
@@ -483,8 +506,13 @@ async function callGeminiJsonWithUpload<T>(
   const content = payload.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("\n");
 
   if (!content) {
+    console.error("[lessonforge.ai] Gemini response missing usable content");
     throw new Error("Gemini did not return usable content.");
   }
+
+  console.info("[lessonforge.ai] Gemini response received", {
+    contentLength: content.length,
+  });
 
   return extractJsonObject<T>(content);
 }
@@ -533,7 +561,10 @@ function buildListingAssistPrompt(input: ListingAssistInput) {
     'subject must be one of: "Math", "ELA", "Science", "Social Studies".',
     'gradeBand must be one of: "K-12", "K-5", "6-8", "9-12".',
     "tags must be an array of 3 to 6 short strings.",
-    "Keep descriptions clear and practical for teachers.",
+    "Keep descriptions clear, practical, teacher-friendly, and easy to edit.",
+    "The shortDescription should be a strong one- or two-sentence seller summary.",
+    "The fullDescription should explain what the resource is, who it helps, what is included, and why it is useful in class.",
+    "Do not use hype language, fake claims, or generic filler.",
     "Base the listing on the uploaded file itself whenever file content is attached.",
     `Existing title: ${limitText(input.title || "Untitled resource")}`,
     `Excerpt: ${limitText(input.excerpt || "")}`,

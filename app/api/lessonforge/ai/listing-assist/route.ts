@@ -49,6 +49,16 @@ export async function POST(request: Request) {
     idempotencyKey?: string;
   };
 
+  console.info("[lessonforge.ai] listing-assist request received", {
+    sellerId: body.sellerId || null,
+    action: body.action || null,
+    provider: body.provider || null,
+    hasUpload: Boolean(body.upload),
+    uploadMimeType: body.upload?.mimeType || null,
+    uploadSizeBytes: body.upload?.sizeBytes || 0,
+    fileCount: body.fileNames?.length || 0,
+  });
+
   if (!(await hasAppSessionForEmail(viewer.email))) {
     return NextResponse.json({ error: "Signed-in seller access required." }, { status: 401 });
   }
@@ -153,6 +163,14 @@ export async function POST(request: Request) {
             upload: body.upload,
           });
 
+    console.info("[lessonforge.ai] listing-assist completed", {
+      provider: body.provider,
+      titleLength: suggestion.title.length,
+      shortDescriptionLength: suggestion.shortDescription.length,
+      fullDescriptionLength: suggestion.fullDescription.length,
+      tagsCount: suggestion.tags.length,
+    });
+
     return NextResponse.json({
       suggestion,
       availableCredits: usage.subscription.availableCredits,
@@ -160,6 +178,12 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     await refundCredits(body.idempotencyKey);
+
+    console.error("[lessonforge.ai] listing-assist failed", {
+      provider: body.provider,
+      action: body.action,
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
 
     return NextResponse.json(
       {
