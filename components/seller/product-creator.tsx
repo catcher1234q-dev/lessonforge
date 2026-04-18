@@ -15,12 +15,29 @@ import { buildSellerPlanCheckoutHref } from "@/lib/stripe/seller-plan-billing";
 import { canAffordAiAction, getAiCreditCost } from "@/lib/services/ai/credits";
 import type {
   AdminAiSettings,
+  AIProviderResult,
   ConnectedSeller,
   ProductRecord,
   SellerProfileDraft,
 } from "@/types";
 
 const standardsScanCost = getAiCreditCost("standardsScan");
+const titleSuggestionCost = getAiCreditCost("titleSuggestion");
+const descriptionRewriteCost = getAiCreditCost("descriptionRewrite");
+
+type CreatorAiAction = "autofill" | "title" | "description" | "tags" | "standards";
+type ListingAssistAction = "autofill" | "title" | "description" | "tags";
+type ListingAssistResponse = {
+  provider: "openai" | "gemini";
+  status: "success";
+  message: string;
+  title: string;
+  shortDescription: string;
+  fullDescription: string;
+  subject: string;
+  gradeBand: string;
+  tags: string[];
+};
 
 function formatPlanLabel(planKey: NonNullable<SellerProfileDraft["sellerPlanKey"]>) {
   return planConfig[normalizePlanKey(planKey)].label;
@@ -90,6 +107,39 @@ function buildStandardsScanCacheKey(input: {
   ].join("::");
 
   return `standards-scan-${normalized.slice(0, 180)}`;
+}
+
+function buildListingAssistCacheKey(input: {
+  sellerId: string;
+  provider: "openai" | "gemini";
+  action: ListingAssistAction;
+  fileNames: string[];
+  title: string;
+  excerpt: string;
+}) {
+  const normalized = [
+    input.sellerId,
+    input.provider,
+    input.action,
+    input.fileNames.join("|").toLowerCase(),
+    input.title.trim().toLowerCase(),
+    input.excerpt.trim().toLowerCase().replace(/\s+/g, " "),
+  ].join("::");
+
+  return `listing-assist-${normalized.slice(0, 180)}`;
+}
+
+function normalizeUploadedTitle(fileName?: string) {
+  if (!fileName) {
+    return "";
+  }
+
+  return fileName
+    .replace(/\.[^/.]+$/, "")
+    .replace(/[-_]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 function buildOptimizationPreview(input: {
@@ -249,10 +299,22 @@ export function ProductCreator() {
     revenueInsights: { unlocked: boolean; upgradePlanKey: "starter" | "basic" | "pro" };
   } | null>(null);
   const [existingSellerTitles, setExistingSellerTitles] = useState<string[]>([]);
+  const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
+  const [standardsResult, setStandardsResult] = useState<AIProviderResult | null>(null);
+  const [aiFeedback, setAiFeedback] = useState<{
+    state: "loading" | "success" | "error";
+    action: CreatorAiAction;
+    message: string;
+  } | null>(null);
+  const [lastAnalyzedUploadKey, setLastAnalyzedUploadKey] = useState<string | null>(null);
   const currentPlanKey = normalizePlanKey(profile?.sellerPlanKey);
   const currentPlan = planConfig[currentPlanKey];
   const canRunStandardsScan =
     availableCredits === null ? true : canAffordAiAction(availableCredits, "standardsScan");
+  const canRunTitleSuggestion =
+    availableCredits === null ? true : canAffordAiAction(availableCredits, "titleSuggestion");
+  const canRunDescriptionRewrite =
+    availableCredits === null ? true : canAffordAiAction(availableCredits, "descriptionRewrite");
   const aiKillSwitchEnabled = aiSettings?.aiKillSwitchEnabled ?? false;
   const connectedAccountId = seller?.accountId || profile?.stripeAccountId || null;
   const estimatedRemainingCredits =
@@ -345,6 +407,8 @@ export function ProductCreator() {
     gradeBand.trim().length > 0 &&
     (shortDescription.trim().length > 0 || fullDescription.trim().length > 0);
   const publishStepReady = missingPublishItems.length === 0;
+  const currentAiAction = aiFeedback?.state === "loading" ? aiFeedback.action : null;
+  const uploadSignature = files.map((file) => `${file.name}:${file.size}`).join("|");
 
   function scrollToPublishTarget(targetId: string) {
     const target = document.getElementById(targetId);
@@ -371,6 +435,262 @@ export function ProductCreator() {
     }
 
     scrollToPublishTarget(firstMissing.targetId);
+  }
+
+  async function runListingAssist(action: ListingAssistAction) {
+    const sellerId = profile?.email || seller?.email;
+    const sellerEmail = profile?.email || seller?.email;
+
+    if (!sellerId || !sellerEmail) {
+      setAiFeedback({
+        state: "error",
+        action,
+        message: "Finish seller onboarding before using AI.",
+      });
+      return null;
+    }
+
+    if (files.length === 0) {
+      setAiFeedback({
+        state: "error",
+        action,
+        message: "Upload a resource before using AI.",
+      });
+      return null;
+    }
+
+    if (aiKillSwitchEnabled) {
+      setAiFeedback({
+        state: "error",
+        action,
+        message: "AI is temporarily unavailable right now.",
+      });
+      return null;
+    }
+
+    if (
+      (action === "autofill" || action === "description") &&
+      !canRunDescriptionRewrite
+    ) {
+      setAiFeedback({
+        state: "error",
+        action,
+        message: getAiUpgradeMessage(),
+      });
+      return null;
+    }
+
+    if ((action === "title" || action === "tags") && !canRunTitleSuggestion) {
+      setAiFeedback({
+        state: "error",
+        action,
+        message: getAiUpgradeMessage(),
+      });
+      return null;
+    }
+
+    setAiFeedback({
+      state: "loading",
+      action,
+      message:
+        action === "autofill"
+          ? "Analyzing your resource…"
+          : action === "title"
+            ? "AI is generating…"
+            : action === "description"
+              ? "AI is generating…"
+              : "AI is generating…",
+    });
+
+    const response = await fetch("/api/lessonforge/ai/listing-assist", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        sellerId,
+        sellerEmail,
+        sellerPlanKey: currentPlanKey,
+        provider,
+        action,
+        fileNames: files.map((file) => file.name),
+        title,
+        excerpt: `${shortDescription} ${fullDescription} ${notes}`.trim(),
+        subject,
+        gradeBand,
+        idempotencyKey: buildListingAssistCacheKey({
+          sellerId,
+          provider,
+          action,
+          fileNames: files.map((file) => file.name),
+          title,
+          excerpt: `${shortDescription} ${fullDescription} ${notes}`.trim(),
+        }),
+      }),
+    });
+
+    const payload = (await response.json()) as {
+      suggestion?: ListingAssistResponse;
+      availableCredits?: number;
+      error?: string;
+    };
+
+    if (!response.ok || !payload.suggestion) {
+      setAiFeedback({
+        state: "error",
+        action,
+        message: payload.error || "Could not generate this right now.",
+      });
+      return null;
+    }
+
+    setAvailableCredits(payload.availableCredits ?? null);
+    setAiFeedback({
+      state: "success",
+      action,
+      message: `Generated by AI · ${payload.suggestion.provider === "openai" ? "OpenAI" : "Gemini"}`,
+    });
+
+    return {
+      suggestion: payload.suggestion,
+      availableCredits: payload.availableCredits ?? null,
+    };
+  }
+
+  async function runStandardsScan(_mode: "auto" | "manual") {
+    const sellerId = profile?.email || seller?.email;
+    const sellerEmail = profile?.email || seller?.email;
+
+    if (!sellerId || !sellerEmail) {
+      setAiFeedback({
+        state: "error",
+        action: "standards",
+        message: "Finish seller onboarding before using AI.",
+      });
+      return null;
+    }
+
+    if (files.length === 0) {
+      setAiFeedback({
+        state: "error",
+        action: "standards",
+        message: "Upload a resource before scanning standards.",
+      });
+      return null;
+    }
+
+    if (aiKillSwitchEnabled) {
+      setAiFeedback({
+        state: "error",
+        action: "standards",
+        message: "AI is temporarily unavailable right now.",
+      });
+      return null;
+    }
+
+    if (!canRunStandardsScan) {
+      setAiFeedback({
+        state: "error",
+        action: "standards",
+        message: getAiUpgradeMessage(),
+      });
+      return null;
+    }
+
+    setAiFeedback({
+      state: "loading",
+      action: "standards",
+      message: `Scanning with ${provider === "openai" ? "OpenAI" : "Gemini"}…`,
+    });
+
+    const response = await fetch("/api/lessonforge/ai/standards-scan", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        sellerId,
+        sellerEmail,
+        sellerPlanKey: currentPlanKey,
+        title: title || normalizeUploadedTitle(files[0]?.name),
+        excerpt: `${shortDescription} ${fullDescription} ${notes} ${files.map((file) => file.name).join(" ")}`.trim(),
+        provider,
+        idempotencyKey: buildStandardsScanCacheKey({
+          sellerId,
+          provider,
+          title: title || normalizeUploadedTitle(files[0]?.name),
+          excerpt: `${shortDescription} ${fullDescription} ${notes} ${files.map((file) => file.name).join(" ")}`.trim(),
+        }),
+      }),
+    });
+
+    const payload = (await response.json()) as {
+      mapping?: AIProviderResult;
+      availableCredits?: number;
+      error?: string;
+    };
+
+    if (!response.ok || !payload.mapping) {
+      setAiFeedback({
+        state: "error",
+        action: "standards",
+        message: payload.error || "Standards scan failed. Try again.",
+      });
+      return null;
+    }
+
+    setStandardsResult(payload.mapping);
+    setAvailableCredits(payload.availableCredits ?? null);
+    setSubject((current) =>
+      current === "Math" || !current.trim() ? payload.mapping?.subject || current : current,
+    );
+    setAiFeedback({
+      state: "success",
+      action: "standards",
+      message: `Scanned with ${payload.mapping.provider === "openai" ? "OpenAI" : "Gemini"}`,
+    });
+
+    return payload.mapping;
+  }
+
+  function applyListingAssistSuggestion(
+    suggestion: ListingAssistResponse,
+    action: ListingAssistAction,
+  ) {
+    const uploadedTitle = normalizeUploadedTitle(files[0]?.name);
+
+    if (
+      action === "autofill" &&
+      (!title.trim() || title.trim() === uploadedTitle)
+    ) {
+      setTitle(suggestion.title);
+    }
+
+    if (action === "title") {
+      setTitle(suggestion.title);
+    }
+
+    if ((action === "autofill" || action === "description") && !shortDescription.trim()) {
+      setShortDescription(suggestion.shortDescription);
+    }
+
+    if (action === "description") {
+      setShortDescription(suggestion.shortDescription);
+      setFullDescription(suggestion.fullDescription);
+    }
+
+    if (action === "autofill" && !fullDescription.trim()) {
+      setFullDescription(suggestion.fullDescription);
+    }
+
+    if (action === "autofill") {
+      setSubject((current) => (current === "Math" ? suggestion.subject : current));
+      setGradeBand((current) => (current === "K-12" ? suggestion.gradeBand : current));
+    }
+
+    if (action === "autofill" || action === "tags") {
+      setSuggestedTags(suggestion.tags);
+    }
   }
 
   useEffect(() => {
@@ -482,15 +802,51 @@ export function ProductCreator() {
     })();
   }, [profile?.email, seller?.email]);
 
+  useEffect(() => {
+    if (!uploadSignature || uploadSignature === lastAnalyzedUploadKey) {
+      return;
+    }
+
+    if (!profile?.email && !seller?.email) {
+      return;
+    }
+
+    setLastAnalyzedUploadKey(uploadSignature);
+
+    void (async () => {
+      const assistResult = await runListingAssist("autofill");
+
+      if (assistResult?.suggestion) {
+        applyListingAssistSuggestion(assistResult.suggestion, "autofill");
+      }
+
+      if (
+        assistResult?.suggestion &&
+        !aiKillSwitchEnabled &&
+        (assistResult?.availableCredits === null ||
+          assistResult?.availableCredits === undefined ||
+          canAffordAiAction(assistResult.availableCredits, "standardsScan"))
+      ) {
+        await runStandardsScan("auto");
+      }
+    })();
+  }, [
+    uploadSignature,
+    lastAnalyzedUploadKey,
+    profile?.email,
+    seller?.email,
+    canRunStandardsScan,
+    aiKillSwitchEnabled,
+  ]);
+
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const nextFiles = Array.from(event.target.files ?? []);
     setFiles(nextFiles);
+    setStandardsResult(null);
+    setSuggestedTags([]);
 
     if (!title && nextFiles[0]) {
-      const normalized = nextFiles[0].name
-        .replace(/\.[^/.]+$/, "")
-        .replace(/[-_]/g, " ");
-      setTitle(normalized.replace(/\b\w/g, (character) => character.toUpperCase()));
+      setTitle(normalizeUploadedTitle(nextFiles[0].name));
     }
   }
 
@@ -550,9 +906,10 @@ export function ProductCreator() {
       setIsSaving(false);
       return;
     }
-    let suggestedStandard = "Standards pending seller review";
+    let suggestedStandard =
+      standardsResult?.suggestedStandard || "Standards pending seller review";
 
-    if (!aiKillSwitchEnabled && canRunStandardsScan) {
+    if (!standardsResult && !aiKillSwitchEnabled && canRunStandardsScan) {
       const mappingResponse = await fetch("/api/lessonforge/ai/standards-scan", {
         method: "POST",
         headers: {
@@ -575,7 +932,7 @@ export function ProductCreator() {
       });
 
       const mappingPayload = (await mappingResponse.json()) as {
-        mapping?: { suggestedStandard: string };
+        mapping?: AIProviderResult;
         availableCredits?: number;
         error?: string;
       };
@@ -588,6 +945,7 @@ export function ProductCreator() {
         }
       } else {
         suggestedStandard = mappingPayload.mapping.suggestedStandard;
+        setStandardsResult(mappingPayload.mapping);
         setAvailableCredits(mappingPayload.availableCredits ?? null);
       }
     }
@@ -738,6 +1096,77 @@ export function ProductCreator() {
           </span>
         </div>
 
+        {files.length > 0 || aiFeedback ? (
+          <div className="mt-5 rounded-[1rem] border border-brand/10 bg-brand-soft/30 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand">
+                  AI assist
+                </p>
+                <p className="mt-1 text-sm leading-6 text-ink-soft">
+                  Upload file, AI helps fill the listing, then you review.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                {(["openai", "gemini"] as const).map((option) => (
+                  <button
+                    key={option}
+                    className={`rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition ${
+                      provider === option
+                        ? "bg-brand text-white"
+                        : "bg-white text-ink-soft"
+                    }`}
+                    data-testid={`seller-creator-provider-${option}`}
+                    onClick={() => setProvider(option)}
+                    type="button"
+                  >
+                    {option === "openai" ? "OpenAI" : "Gemini"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {aiFeedback ? (
+              <div
+                className={`mt-3 rounded-[0.95rem] px-4 py-3 text-sm leading-6 ${
+                  aiFeedback.state === "loading"
+                    ? "bg-white text-ink"
+                    : aiFeedback.state === "success"
+                      ? "bg-emerald-50 text-emerald-900"
+                      : "bg-red-50 text-red-900"
+                }`}
+              >
+                {aiFeedback.message}
+              </div>
+            ) : null}
+
+            {(title || shortDescription || fullDescription || suggestedTags.length > 0 || standardsResult) ? (
+              <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.14em]">
+                {title ? (
+                  <span className="rounded-full bg-white px-3 py-1 text-ink-soft">
+                    Title ready
+                  </span>
+                ) : null}
+                {shortDescription || fullDescription ? (
+                  <span className="rounded-full bg-white px-3 py-1 text-ink-soft">
+                    Description ready
+                  </span>
+                ) : null}
+                {suggestedTags.length > 0 ? (
+                  <span className="rounded-full bg-white px-3 py-1 text-ink-soft">
+                    Tags generated
+                  </span>
+                ) : null}
+                {standardsResult ? (
+                  <span className="rounded-full bg-white px-3 py-1 text-ink-soft">
+                    Standards scanned
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
         {isCreatorReady ? (
           <p className="sr-only" data-testid="seller-creator-ready">
             Creator ready
@@ -792,12 +1221,27 @@ export function ProductCreator() {
                   </span>
                 ) : null}
                 <span className="mt-2 block text-xs leading-5 text-ink-soft">
-                  Upload a worksheet, slide deck, assessment, lesson page, or pack that already works in class.
+                  Upload a worksheet, slide deck, assessment, lesson page, or pack that already works in class. AI starts after upload.
                 </span>
               </label>
 
               <label className="block">
-                <span className="text-sm font-semibold text-ink">Title</span>
+                <span className="flex items-center justify-between gap-3 text-sm font-semibold text-ink">
+                  <span>Title</span>
+                  <button
+                    className="text-xs font-semibold uppercase tracking-[0.14em] text-brand disabled:text-ink-soft"
+                    disabled={currentAiAction !== null || aiKillSwitchEnabled || !canRunTitleSuggestion || files.length === 0}
+                    onClick={async () => {
+                      const assistResult = await runListingAssist("title");
+                      if (assistResult?.suggestion) {
+                        applyListingAssistSuggestion(assistResult.suggestion, "title");
+                      }
+                    }}
+                    type="button"
+                  >
+                    Generate title
+                  </button>
+                </span>
                 <input
                   className={`mt-2 w-full rounded-[1rem] border px-4 py-3 text-sm text-ink outline-none transition ${getPublishFieldClassName(
                     missingPublishKeys.has("title"),
@@ -918,7 +1362,22 @@ export function ProductCreator() {
               </div>
 
               <label className="block" id="publish-target-description">
-                <span className="text-sm font-semibold text-ink">Short description</span>
+                <span className="flex items-center justify-between gap-3 text-sm font-semibold text-ink">
+                  <span>Short description</span>
+                  <button
+                    className="text-xs font-semibold uppercase tracking-[0.14em] text-brand disabled:text-ink-soft"
+                    disabled={currentAiAction !== null || aiKillSwitchEnabled || !canRunDescriptionRewrite || files.length === 0}
+                    onClick={async () => {
+                      const assistResult = await runListingAssist("description");
+                      if (assistResult?.suggestion) {
+                        applyListingAssistSuggestion(assistResult.suggestion, "description");
+                      }
+                    }}
+                    type="button"
+                  >
+                    Write description
+                  </button>
+                </span>
                 <textarea
                   className={`mt-2 min-h-24 w-full rounded-[1rem] border px-4 py-3 text-sm text-ink outline-none transition ${getPublishFieldClassName(
                     missingPublishKeys.has("description"),
@@ -947,6 +1406,83 @@ export function ProductCreator() {
                   </span>
                 ) : null}
               </label>
+
+              <div className="grid gap-4 lg:grid-cols-2">
+                <section className="rounded-[1rem] border border-black/5 bg-white p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-ink">Suggested tags</p>
+                      <p className="mt-1 text-sm leading-6 text-ink-soft">
+                        AI builds quick browse terms from your upload.
+                      </p>
+                    </div>
+                    <button
+                    className="text-xs font-semibold uppercase tracking-[0.14em] text-brand disabled:text-ink-soft"
+                    disabled={currentAiAction !== null || aiKillSwitchEnabled || !canRunTitleSuggestion || files.length === 0}
+                    onClick={async () => {
+                      const assistResult = await runListingAssist("tags");
+                      if (assistResult?.suggestion) {
+                        applyListingAssistSuggestion(assistResult.suggestion, "tags");
+                      }
+                    }}
+                      type="button"
+                    >
+                      Generate tags
+                    </button>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {suggestedTags.length > 0 ? (
+                      suggestedTags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-ink-soft"
+                        >
+                          {tag}
+                        </span>
+                      ))
+                    ) : (
+                      <p className="text-sm leading-6 text-ink-soft">No tags generated yet.</p>
+                    )}
+                  </div>
+                </section>
+
+                <section className="rounded-[1rem] border border-black/5 bg-white p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-ink">Standards</p>
+                      <p className="mt-1 text-sm leading-6 text-ink-soft">
+                        {standardsResult
+                          ? `Scanned with ${standardsResult.provider === "openai" ? "OpenAI" : "Gemini"}`
+                          : `Provider: ${provider === "openai" ? "OpenAI" : "Gemini"}`}
+                      </p>
+                    </div>
+                    <button
+                      className="text-xs font-semibold uppercase tracking-[0.14em] text-brand disabled:text-ink-soft"
+                      disabled={currentAiAction !== null || aiKillSwitchEnabled || !canRunStandardsScan || files.length === 0}
+                      onClick={() => {
+                        void runStandardsScan("manual");
+                      }}
+                      type="button"
+                    >
+                      {standardsResult ? "Rescan standards" : "Scan standards"}
+                    </button>
+                  </div>
+                  <div className="mt-3 space-y-2 text-sm leading-6 text-ink-soft">
+                    <p>
+                      <span className="font-semibold text-ink">Suggested standard:</span>{" "}
+                      {standardsResult?.suggestedStandard || "Not scanned yet"}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-ink">Confidence:</span>{" "}
+                      {standardsResult?.confidence || "Pending"}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-ink">Reason:</span>{" "}
+                      {standardsResult?.rationale || "AI will explain the match here."}
+                    </p>
+                  </div>
+                </section>
+              </div>
             </div>
           </section>
 
@@ -1151,24 +1687,6 @@ export function ProductCreator() {
                   </select>
                 </label>
 
-                <div>
-                  <span className="text-sm font-semibold text-ink">Standards scan provider</span>
-                  <div className="mt-2 flex gap-3">
-                    {(["openai", "gemini"] as const).map((option) => (
-                      <button
-                        key={option}
-                        className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                          provider === option ? "bg-brand text-white" : "bg-surface-subtle text-ink-soft"
-                        }`}
-                        data-testid={`seller-creator-provider-${option}`}
-                        onClick={() => setProvider(option)}
-                        type="button"
-                      >
-                        {option === "openai" ? "OpenAI" : "Gemini"}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
 
               <details className="rounded-[18px] border border-black/5 bg-surface-subtle p-4">
