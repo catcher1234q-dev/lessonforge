@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { getPublicMarketplaceListingBySlug } from "@/lib/lessonforge/server-catalog";
-import { renderManagedPreviewSvg } from "@/lib/lessonforge/preview-assets";
+import {
+  renderManagedPreviewSvg,
+  renderMissingPreviewSvg,
+} from "@/lib/lessonforge/preview-assets";
 
 export async function GET(
   request: Request,
@@ -11,14 +14,37 @@ export async function GET(
   const listing = await getPublicMarketplaceListingBySlug(slug);
 
   if (!listing) {
-    return NextResponse.json({ error: "Preview asset not found." }, { status: 404 });
+    const fallbackSvg = renderMissingPreviewSvg({
+      title: slug.replace(/-/g, " ") || "Preview not ready yet",
+    });
+
+    return new NextResponse(fallbackSvg, {
+      status: 404,
+      headers: {
+        "Content-Type": "image/svg+xml; charset=utf-8",
+        "Cache-Control": "public, max-age=60, s-maxage=300",
+        "X-Robots-Tag": "noindex",
+      },
+    });
   }
 
   const { searchParams } = new URL(request.url);
   const page = Number(searchParams.get("page") ?? "1");
 
   if (!Number.isFinite(page) || page < 1 || page > listing.previewAssets.length) {
-    return NextResponse.json({ error: "Preview page not found." }, { status: 404 });
+    const fallbackSvg = renderMissingPreviewSvg({
+      title: listing.title,
+      message: "We are still preparing your sample pages.",
+    });
+
+    return new NextResponse(fallbackSvg, {
+      status: 404,
+      headers: {
+        "Content-Type": "image/svg+xml; charset=utf-8",
+        "Cache-Control": "public, max-age=60, s-maxage=300",
+        "X-Robots-Tag": "noindex",
+      },
+    });
   }
 
   const svg = renderManagedPreviewSvg({

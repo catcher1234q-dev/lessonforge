@@ -1,9 +1,13 @@
-import Link from "next/link";
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 
 import {
   buildManagedPreviewAssets,
   buildStoredAssetPaths,
   renderManagedThumbnailSvg,
+  renderMissingPreviewSvg,
+  type ManagedPreviewAsset,
 } from "@/lib/lessonforge/preview-assets";
 
 type ProductAssetPanelProps = {
@@ -18,8 +22,25 @@ type ProductAssetPanelProps = {
   assetVersionNumber?: number;
   previewAssetUrls?: string[];
   originalAssetUrl?: string;
+  localFiles?: File[];
   className?: string;
 };
+
+type LocalPreviewAsset = ManagedPreviewAsset & {
+  source: "uploaded" | "sample";
+};
+
+function getFilePreviewMode(file: File) {
+  if (file.type.startsWith("image/")) {
+    return "image";
+  }
+
+  if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+    return "pdf";
+  }
+
+  return "unsupported";
+}
 
 export function ProductAssetPanel({
   productId,
@@ -33,8 +54,28 @@ export function ProductAssetPanel({
   assetVersionNumber,
   previewAssetUrls,
   originalAssetUrl,
+  localFiles,
   className,
 }: ProductAssetPanelProps) {
+  const [localPreviewUrls, setLocalPreviewUrls] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!localFiles?.length) {
+      setLocalPreviewUrls([]);
+      return;
+    }
+
+    const nextUrls = localFiles
+      .filter((file) => getFilePreviewMode(file) !== "unsupported")
+      .map((file) => URL.createObjectURL(file));
+
+    setLocalPreviewUrls(nextUrls);
+
+    return () => {
+      nextUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [localFiles]);
+
   const thumbnailPreviewSvg = renderManagedThumbnailSvg({
     title: title || "Untitled resource",
     subject,
@@ -46,16 +87,58 @@ export function ProductAssetPanel({
     title: title || "untitled-resource",
     format,
   });
-  const previewAssets = buildManagedPreviewAssets({
+  const versionNumber = assetVersionNumber ?? storedPaths.assetVersionNumber;
+  const protectedOriginalUrl = originalAssetUrl ?? storedPaths.originalUrl;
+  const thumbnailPreviewUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(thumbnailPreviewSvg)}`;
+  const previewPlaceholderSvg = renderMissingPreviewSvg({
+    title: title || "Preview not ready yet",
+  });
+  const previewPlaceholderUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(previewPlaceholderSvg)}`;
+
+  const localPreviewAssets = useMemo<LocalPreviewAsset[]>(() => {
+    if (!localFiles?.length || localPreviewUrls.length === 0) {
+      return [];
+    }
+
+    return localPreviewUrls.slice(0, 3).map((previewUrl, index) => {
+      const file = localFiles[index];
+      const mode = file ? getFilePreviewMode(file) : "unsupported";
+      const pageUrl =
+        mode === "pdf" ? `${previewUrl}#page=${index + 1}` : previewUrl;
+
+      return {
+        id: `${productId}-local-preview-${index + 1}`,
+        label: `Preview page ${index + 1}`,
+        formatLabel: file?.type || format,
+        previewUrl: pageUrl,
+        cacheKey: `local-preview:${productId}:${index + 1}`,
+        pageCount: localPreviewUrls.length,
+        pageRangeLabel:
+          mode === "pdf"
+            ? `Real uploaded PDF preview`
+            : `Real uploaded image preview`,
+        watermarkLines: ["Uploaded preview"],
+        exposurePolicy: "Real uploaded file preview",
+        deliveryMode: "cached-preview",
+        originalDelivery: "protected-download",
+        source: "uploaded",
+      };
+    });
+  }, [format, localFiles, localPreviewUrls, productId]);
+
+  const managedPreviewAssets = buildManagedPreviewAssets({
     productId,
     title: title || "Untitled resource",
     subject,
     format,
     previewUrls: previewAssetUrls?.length ? previewAssetUrls : storedPaths.previewUrls,
-  });
-  const versionNumber = assetVersionNumber ?? storedPaths.assetVersionNumber;
-  const protectedOriginalUrl = originalAssetUrl ?? storedPaths.originalUrl;
-  const thumbnailPreviewUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(thumbnailPreviewSvg)}`;
+  }).map((asset) => ({
+    ...asset,
+    source: "sample" as const,
+  }));
+
+  const previewAssets = localPreviewAssets.length > 0 ? localPreviewAssets : managedPreviewAssets;
+  const hasRealUploadedPreview = localPreviewAssets.length > 0;
 
   return (
     <section
@@ -75,10 +158,18 @@ export function ProductAssetPanel({
             Preview set
           </p>
           <p className="mt-2 text-base font-semibold text-ink">
-            {previewIncluded ? "Ready" : "Still needed"}
+            {hasRealUploadedPreview
+              ? "Using uploaded file"
+              : previewIncluded
+                ? "Ready"
+                : "Preview not ready"}
           </p>
           <p className="mt-1 text-sm leading-6 text-ink-soft">
-            {previewAssets.length} preview page{previewAssets.length === 1 ? "" : "s"} ready to open.
+            {hasRealUploadedPreview
+              ? `${localPreviewAssets.length} real preview page${localPreviewAssets.length === 1 ? "" : "s"} from your upload.`
+              : previewIncluded
+                ? `${previewAssets.length} preview page${previewAssets.length === 1 ? "" : "s"} ready to open.`
+                : "We are still preparing your sample pages."}
           </p>
         </article>
 
@@ -110,32 +201,66 @@ export function ProductAssetPanel({
           <div>
             <p className="text-sm font-semibold text-ink">Preview pages</p>
             <p className="mt-1 text-sm leading-6 text-ink-soft">
-              Public sample pages buyers can open before purchase.
+              {hasRealUploadedPreview
+                ? "Real preview pages from your uploaded file."
+                : previewIncluded
+                  ? "Preview pages are ready to open."
+                  : "Preview pages will appear here after upload processing."}
             </p>
           </div>
           <p className="text-xs uppercase tracking-[0.18em] text-ink-soft">{format}</p>
         </div>
 
-        <div className="mt-4 grid gap-2.5">
-          {previewAssets.map((asset) => (
-            <div
-              key={asset.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-white px-4 py-3"
-            >
-              <div>
-                <p className="text-sm font-semibold text-ink">{asset.label}</p>
-                <p className="mt-1 text-xs leading-5 text-ink-soft">{asset.pageRangeLabel}</p>
+        {previewAssets.length > 0 ? (
+          <div className="mt-4 grid gap-2.5">
+            {previewAssets.map((asset) => (
+              <div
+                key={asset.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-[1rem] border border-slate-200 bg-white px-4 py-3"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-ink">{asset.label}</p>
+                  <p className="mt-1 text-xs leading-5 text-ink-soft">
+                    {hasRealUploadedPreview
+                      ? asset.pageRangeLabel
+                      : asset.source === "sample"
+                        ? "Sample preview layout"
+                        : asset.pageRangeLabel}
+                  </p>
+                </div>
+                <a
+                  className="inline-flex rounded-full bg-brand-soft px-4 py-2 text-xs font-semibold text-brand transition hover:bg-brand/15"
+                  href={asset.previewUrl}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  Open preview
+                </a>
               </div>
-              <Link
-                className="inline-flex rounded-full bg-brand-soft px-4 py-2 text-xs font-semibold text-brand transition hover:bg-brand/15"
-                href={asset.previewUrl}
+            ))}
+          </div>
+        ) : null}
+
+        {!hasRealUploadedPreview && !previewIncluded ? (
+          <div className="mt-4 rounded-[1rem] border border-slate-200 bg-white p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-ink">Preview not ready yet</p>
+                <p className="mt-1 text-sm leading-6 text-ink-soft">
+                  We are still preparing your sample pages.
+                </p>
+              </div>
+              <a
+                className="inline-flex rounded-full bg-brand px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-700"
+                href={previewPlaceholderUrl}
+                rel="noreferrer"
                 target="_blank"
               >
-                Open preview
-              </Link>
+                Try again
+              </a>
             </div>
-          ))}
-        </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-4 rounded-[1.35rem] border border-slate-200 bg-slate-50 p-4">

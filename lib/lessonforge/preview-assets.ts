@@ -88,11 +88,8 @@ export function buildManagedPreviewAssets(input: {
   const pageCount = inferPreviewPageCount(input.format);
   const baseSlug = slugify(input.title);
   const labels =
-    input.previewLabels ?? [
-      `${input.title} overview`,
-      `${input.subject} preview pages`,
-      "Teacher notes preview",
-    ];
+    input.previewLabels ??
+    Array.from({ length: Math.min(pageCount, 3) }, (_, index) => `Preview page ${index + 1}`);
 
   return labels.slice(0, 3).map((label, index) => ({
     id: `${input.productId}-preview-${index + 1}`,
@@ -103,12 +100,43 @@ export function buildManagedPreviewAssets(input: {
       `/api/lessonforge/preview-assets/${baseSlug}?page=${index + 1}`,
     cacheKey: `preview:${input.productId}:v1:page-${index + 1}`,
     pageCount,
-    pageRangeLabel: `Showing page ${index + 1} of the protected preview set`,
+    pageRangeLabel: `Preview page ${index + 1} of ${pageCount}`,
     watermarkLines: ["LessonForge Preview", "Sample Only"],
     exposurePolicy: `Only the first ${pageCount} preview pages are exposed before purchase.`,
     deliveryMode: "cached-preview" as const,
     originalDelivery: "protected-download" as const,
   }));
+}
+
+export function renderMissingPreviewSvg(input: {
+  title: string;
+  message?: string;
+}) {
+  const safeTitle = escapeXml(input.title || "Preview not ready yet");
+  const safeMessage = escapeXml(
+    input.message || "We are still preparing your sample pages.",
+  );
+
+  return `
+    <svg width="1200" height="1600" viewBox="0 0 1200 1600" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="1200" height="1600" rx="48" fill="#F8FAFC"/>
+      <rect x="70" y="70" width="1060" height="1460" rx="40" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="4"/>
+      <rect x="120" y="132" width="240" height="54" rx="27" fill="#FEE2E2"/>
+      <text x="160" y="168" fill="#B91C1C" font-size="24" font-family="Arial, sans-serif" font-weight="700">Preview not ready yet</text>
+      <text x="120" y="260" fill="#0F172A" font-size="66" font-family="Arial, sans-serif" font-weight="800">${safeTitle}</text>
+      <text x="120" y="336" fill="#475569" font-size="34" font-family="Arial, sans-serif">${safeMessage}</text>
+      <rect x="120" y="420" width="960" height="420" rx="28" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="4" stroke-dasharray="16 16"/>
+      <text x="394" y="626" fill="#64748B" font-size="42" font-family="Arial, sans-serif" font-weight="700">Sample preview layout</text>
+      <text x="303" y="682" fill="#94A3B8" font-size="28" font-family="Arial, sans-serif">Preview pages will appear here after upload processing.</text>
+      <rect x="120" y="902" width="448" height="220" rx="28" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="4"/>
+      <rect x="612" y="902" width="468" height="220" rx="28" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="4"/>
+      <text x="154" y="980" fill="#0F172A" font-size="28" font-family="Arial, sans-serif" font-weight="700">Try again</text>
+      <text x="154" y="1036" fill="#64748B" font-size="24" font-family="Arial, sans-serif">Open preview again after the upload finishes processing.</text>
+      <text x="648" y="980" fill="#0F172A" font-size="28" font-family="Arial, sans-serif" font-weight="700">Real files stay protected</text>
+      <text x="648" y="1036" fill="#64748B" font-size="24" font-family="Arial, sans-serif">This fallback avoids broken asset errors while previews are missing.</text>
+      <text x="764" y="1490" fill="#CBD5E1" font-size="54" font-family="Arial, sans-serif" font-weight="800" transform="rotate(-24 764 1490)">LESSONFORGE PREVIEW</text>
+    </svg>
+  `;
 }
 
 function escapeXml(value: string) {

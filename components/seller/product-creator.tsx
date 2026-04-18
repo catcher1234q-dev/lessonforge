@@ -1921,6 +1921,7 @@ export function ProductCreator() {
           assetVersionNumber={1}
           format={files.length ? inferFormatFromFiles(files) : "Uploaded Resource"}
           gradeBand={gradeBand}
+          localFiles={files}
           previewIncluded={previewIncluded}
           productId={title ? `draft-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}` : "draft-product"}
           subject={subject}
