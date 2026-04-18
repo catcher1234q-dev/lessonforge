@@ -83,6 +83,8 @@ const patterns = [
   },
 ];
 
+const MIN_STANDARDS_CONFIDENCE = 80;
+
 function limitText(value: string) {
   return value.trim().slice(0, AI_MAX_INPUT_CHARACTERS);
 }
@@ -138,10 +140,27 @@ function sanitizeSubject(value: unknown) {
   return "Math";
 }
 
+function parseConfidencePercent(value: string) {
+  const match = value.match(/(\d{1,3})/);
+  return match ? Number(match[1]) : 0;
+}
+
+function buildLowConfidenceStandardsResult(provider: ProviderId): AIProviderResult {
+  return {
+    provider,
+    status: "placeholder",
+    message: "Could not confidently match standards yet.",
+    subject: "",
+    suggestedStandard: "",
+    rationale: "Could not confidently match standards yet.",
+    confidence: "",
+  };
+}
+
 function inferStandards({
   title = "",
   excerpt,
-}: MappingInput): Omit<AIProviderResult, "provider" | "status" | "message"> {
+}: MappingInput): Omit<AIProviderResult, "provider" | "status" | "message"> | null {
   const haystack = `${title} ${excerpt}`.toLowerCase();
 
   const match = patterns.find((pattern) =>
@@ -157,13 +176,7 @@ function inferStandards({
     };
   }
 
-  return {
-    subject: "ELA",
-    suggestedStandard: "CCSS.ELA-LITERACY.RI.5.1",
-    rationale:
-      "The excerpt reads like an informational reading task, so the fallback points to a general evidence-based comprehension standard.",
-    confidence: "72%",
-  };
+  return null;
 }
 
 function humanizeFileName(fileName: string) {
@@ -464,6 +477,9 @@ function buildStandardsPrompt(input: MappingInput) {
     "subject, suggestedStandard, rationale, confidence",
     'subject must be one of: "Math", "ELA", "Science", "Social Studies".',
     "confidence should look like a percentage, for example 88%.",
+    "Use the uploaded file details and visible listing content only.",
+    "If you cannot confidently match a standard, return an empty suggestedStandard and explain briefly why.",
+    "If confidence is below 80%, prefer returning no standard instead of a weak guess.",
     `Title: ${limitText(input.title || "Untitled resource")}`,
     `Excerpt: ${limitText(input.excerpt)}`,
   ].join("\n");
@@ -489,9 +505,22 @@ function buildListingAssistPrompt(input: ListingAssistInput) {
 function normalizeStandardsResult(
   provider: ProviderId,
   value: unknown,
-  fallback: Omit<AIProviderResult, "provider" | "status" | "message">,
+  fallback: Omit<AIProviderResult, "provider" | "status" | "message"> | null,
 ): AIProviderResult {
   const record = (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
+  const suggestedStandard =
+    (typeof record.suggestedStandard === "string" && record.suggestedStandard.trim()) ||
+    fallback?.suggestedStandard ||
+    "";
+  const confidence =
+    (typeof record.confidence === "string" && record.confidence.trim()) ||
+    fallback?.confidence ||
+    "";
+  const parsedConfidence = parseConfidencePercent(confidence);
+
+  if (!suggestedStandard || parsedConfidence < MIN_STANDARDS_CONFIDENCE) {
+    return buildLowConfidenceStandardsResult(provider);
+  }
 
   return {
     provider,
@@ -500,16 +529,13 @@ function normalizeStandardsResult(
       provider === "openai"
         ? "OpenAI standards mapping completed."
         : "Gemini standards mapping completed.",
-    subject: sanitizeSubject(record.subject ?? fallback.subject),
-    suggestedStandard:
-      (typeof record.suggestedStandard === "string" && record.suggestedStandard.trim()) ||
-      fallback.suggestedStandard,
+    subject: sanitizeSubject(record.subject ?? fallback?.subject),
+    suggestedStandard,
     rationale:
       (typeof record.rationale === "string" && record.rationale.trim()) ||
-      fallback.rationale,
-    confidence:
-      (typeof record.confidence === "string" && record.confidence.trim()) ||
-      fallback.confidence,
+      fallback?.rationale ||
+      "Standards match looks reasonable from the uploaded resource.",
+    confidence,
   };
 }
 
@@ -548,6 +574,10 @@ export async function mapStandardsWithOpenAI({
   const fallback = inferStandards({ title, excerpt });
 
   if (typeof window !== "undefined") {
+    if (!fallback) {
+      return buildLowConfidenceStandardsResult("openai");
+    }
+
     return {
       provider: "openai",
       status: "success",
@@ -571,6 +601,10 @@ export async function mapStandardsWithGemini({
   const fallback = inferStandards({ title, excerpt });
 
   if (typeof window !== "undefined") {
+    if (!fallback) {
+      return buildLowConfidenceStandardsResult("gemini");
+    }
+
     return {
       provider: "gemini",
       status: "success",

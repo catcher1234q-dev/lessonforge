@@ -655,10 +655,11 @@ export function ProductCreator() {
 
   async function runStandardsScan(
     _mode: "auto" | "manual",
-    options?: { quiet?: boolean },
+    options?: { quiet?: boolean; providerOverride?: "openai" | "gemini" },
   ) {
     const sellerId = profile?.email || seller?.email;
     const sellerEmail = profile?.email || seller?.email;
+    const selectedProvider = options?.providerOverride ?? provider;
 
     if (!sellerId || !sellerEmail) {
       if (!options?.quiet) {
@@ -708,7 +709,7 @@ export function ProductCreator() {
       setAiFeedback({
         state: "loading",
         action: "standards",
-        message: `Scanning with ${provider === "openai" ? "OpenAI" : "Gemini"}…`,
+        message: `Scanning with ${selectedProvider === "openai" ? "OpenAI" : "Gemini"}…`,
       });
     }
 
@@ -723,10 +724,10 @@ export function ProductCreator() {
         sellerPlanKey: currentPlanKey,
         title: title || normalizeUploadedTitle(files[0]?.name),
         excerpt: `${shortDescription} ${fullDescription} ${notes} ${files.map((file) => file.name).join(" ")}`.trim(),
-        provider,
+        provider: selectedProvider,
         idempotencyKey: buildStandardsScanCacheKey({
           sellerId,
-          provider,
+          provider: selectedProvider,
           title: title || normalizeUploadedTitle(files[0]?.name),
           excerpt: `${shortDescription} ${fullDescription} ${notes} ${files.map((file) => file.name).join(" ")}`.trim(),
         }),
@@ -752,14 +753,19 @@ export function ProductCreator() {
 
     setStandardsResult(payload.mapping);
     setAvailableCredits(payload.availableCredits ?? null);
-    setSubject((current) =>
-      current === "Math" || !current.trim() ? payload.mapping?.subject || current : current,
-    );
+    if (payload.mapping.status === "success") {
+      setSubject((current) =>
+        current === "Math" || !current.trim() ? payload.mapping?.subject || current : current,
+      );
+    }
     if (!options?.quiet) {
       setAiFeedback({
-        state: "success",
+        state: payload.mapping.status === "success" ? "success" : "error",
         action: "standards",
-        message: `Scanned with ${payload.mapping.provider === "openai" ? "OpenAI" : "Gemini"}`,
+            message:
+          payload.mapping.status === "success"
+            ? `Scanned with ${selectedProvider === "openai" ? "OpenAI" : "Gemini"}`
+            : payload.mapping.message,
       });
     }
 
@@ -874,12 +880,14 @@ export function ProductCreator() {
       summary.push("Tags suggested");
     }
 
-    if (!standardsResult) {
+    if (!standardsResult || standardsResult.provider !== provider || standardsResult.status !== "success") {
       const standardsMapping = await runStandardsScan("manual", { quiet: true });
 
-      if (standardsMapping) {
+      if (standardsMapping?.status === "success") {
         markAiUpdated({ standards: "suggested" });
         summary.push("Standards scanned");
+      } else if (standardsMapping?.message) {
+        summary.push(standardsMapping.message);
       }
     }
 
@@ -1110,9 +1118,11 @@ export function ProductCreator() {
       return;
     }
     let suggestedStandard =
-      standardsResult?.suggestedStandard || "Standards pending seller review";
+      standardsResult?.status === "success" && standardsResult.suggestedStandard
+        ? standardsResult.suggestedStandard
+        : "Standards pending seller review";
 
-    if (!standardsResult && !aiKillSwitchEnabled && canRunStandardsScan) {
+    if ((!standardsResult || standardsResult.status !== "success") && !aiKillSwitchEnabled && canRunStandardsScan) {
       const mappingResponse = await fetch("/api/lessonforge/ai/standards-scan", {
         method: "POST",
         headers: {
@@ -1146,8 +1156,11 @@ export function ProductCreator() {
           setIsSaving(false);
           return;
         }
-      } else {
+      } else if (mappingPayload.mapping.status === "success") {
         suggestedStandard = mappingPayload.mapping.suggestedStandard;
+        setStandardsResult(mappingPayload.mapping);
+        setAvailableCredits(mappingPayload.availableCredits ?? null);
+      } else {
         setStandardsResult(mappingPayload.mapping);
         setAvailableCredits(mappingPayload.availableCredits ?? null);
       }
@@ -1320,7 +1333,49 @@ export function ProductCreator() {
                         : "bg-white text-ink-soft"
                     }`}
                     data-testid={`seller-creator-provider-${option}`}
-                    onClick={() => setProvider(option)}
+                    onClick={() => {
+                      if (provider === option) {
+                        return;
+                      }
+
+                      setProvider(option);
+                      clearAiField("standards");
+
+                      if (files.length === 0) {
+                        setStandardsResult(null);
+                        return;
+                      }
+
+                      void (async () => {
+                        setAiFeedback({
+                          state: "loading",
+                          action: "standards",
+                          message: `Scanning standards with ${option === "openai" ? "OpenAI" : "Gemini"}…`,
+                        });
+
+                          const mapping = await runStandardsScan("manual", {
+                            quiet: true,
+                            providerOverride: option,
+                          });
+
+                        if (mapping?.status === "success") {
+                          markAiUpdated({ standards: "suggested" });
+                          setShowAiReviewNotice(true);
+                          setAiFeedback({
+                            state: "success",
+                            action: "standards",
+                            message: `Scanned with ${option === "openai" ? "OpenAI" : "Gemini"}`,
+                          });
+                        } else {
+                          setAiFeedback({
+                            state: "error",
+                            action: "standards",
+                            message:
+                              mapping?.message || "Could not confidently match standards yet.",
+                          });
+                        }
+                      })();
+                    }}
                     type="button"
                   >
                     {option === "openai" ? "OpenAI" : "Gemini"}
@@ -1366,7 +1421,7 @@ export function ProductCreator() {
                     Tags generated
                   </span>
                 ) : null}
-                {standardsResult ? (
+                {standardsResult?.status === "success" ? (
                   <span className="rounded-full bg-white px-3 py-1 text-ink-soft">
                     Standards scanned
                   </span>
@@ -1720,7 +1775,7 @@ export function ProductCreator() {
                     <div>
                       <p className="text-sm font-semibold text-ink">Standards</p>
                       <p className="mt-1 text-sm leading-6 text-ink-soft">
-                        {standardsResult
+                        {standardsResult?.status === "success"
                           ? `Scanned with ${standardsResult.provider === "openai" ? "OpenAI" : "Gemini"}`
                           : `Provider: ${provider === "openai" ? "OpenAI" : "Gemini"}`}
                       </p>
@@ -1731,7 +1786,7 @@ export function ProductCreator() {
                       onClick={() => {
                         void (async () => {
                           const mapping = await runStandardsScan("manual");
-                          if (mapping) {
+                          if (mapping?.status === "success") {
                             markAiUpdated({ standards: "suggested" });
                             setShowAiReviewNotice(true);
                           }
@@ -1739,21 +1794,27 @@ export function ProductCreator() {
                       }}
                       type="button"
                     >
-                      {standardsResult ? "Rescan standards" : "Scan standards"}
+                      {standardsResult?.status === "success" ? "Rescan standards" : "Scan standards"}
                     </button>
                   </div>
                   <div className="mt-3 space-y-2 text-sm leading-6 text-ink-soft">
                     <p>
                       <span className="font-semibold text-ink">Suggested standard:</span>{" "}
-                      {standardsResult?.suggestedStandard || "Not scanned yet"}
+                      {standardsResult?.status === "success"
+                        ? standardsResult.suggestedStandard
+                        : "Could not confidently match standards yet"}
                     </p>
                     <p>
                       <span className="font-semibold text-ink">Confidence:</span>{" "}
-                      {standardsResult?.confidence || "Pending"}
+                      {standardsResult?.status === "success"
+                        ? standardsResult.confidence
+                        : "Pending"}
                     </p>
                     <p>
                       <span className="font-semibold text-ink">Reason:</span>{" "}
-                      {standardsResult?.rationale || "AI will explain the match here."}
+                      {standardsResult?.status === "success"
+                        ? standardsResult.rationale
+                        : standardsResult?.message || "AI will explain the match here."}
                     </p>
                   </div>
                   {renderAiFieldNote("standards")}
