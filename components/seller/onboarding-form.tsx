@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { ArrowRight, BadgeDollarSign, CheckCircle2, FilePlus2, ShieldCheck, Store } from "lucide-react";
 import Link from "next/link";
 
-import { secondaryActionLinkClassName } from "@/components/shared/secondary-action-link";
 import { trackFunnelEvent } from "@/lib/analytics/events";
 import { normalizePlanKey, planConfig, type PlanKey } from "@/lib/config/plans";
 import { buildSellerPlanCheckoutHref } from "@/lib/stripe/seller-plan-billing";
@@ -72,6 +71,7 @@ export function SellerOnboardingForm() {
   const [profile, setProfile] = useState<SellerProfileDraft>(defaultProfile);
   const [selectedPlanKey, setSelectedPlanKey] = useState<PlanKey>("starter");
   const [connectedSeller, setConnectedSeller] = useState<ConnectedSeller | null>(null);
+  const [hasListings, setHasListings] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -89,25 +89,40 @@ export function SellerOnboardingForm() {
     {
       label: "Store profile",
       status: profileBasicsComplete ? "Complete" : "Needed",
-      detail: "Add the name, email, store name, and handle buyers will recognize.",
+      detail: "Your store is set",
       icon: Store,
       ready: profileBasicsComplete,
     },
     {
       label: "Stripe payouts",
       status: payoutsConnected ? "Connected" : payoutsStarted ? "In progress" : "Next",
-      detail: "Connect Stripe so real sales can route safely to your seller payout account.",
+      detail: "Payments are connected",
       icon: ShieldCheck,
       ready: payoutsConnected,
     },
     {
       label: "First listing",
       status: profileBasicsComplete && payoutsConnected ? "Ready" : "After setup",
-      detail: "Upload one classroom-ready resource with a preview, thumbnail, and rights confirmation.",
+      detail: "Create your first product",
       icon: FilePlus2,
       ready: profileBasicsComplete && payoutsConnected,
     },
   ];
+  const listingCta = hasListings
+    ? {
+        title: "You’re live",
+        detail: "Keep building from your seller dashboard.",
+        href: "/sell/dashboard",
+        label: "Go to Dashboard",
+        helper: null,
+      }
+    : {
+        title: "Create your first listing",
+        detail: "Start selling in minutes",
+        href: "/sell/products/new",
+        label: "Create Listing",
+        helper: "AI helps fill this for you",
+      };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -165,6 +180,22 @@ export function SellerOnboardingForm() {
 
         setProfile(nextProfile);
         setConnectedSeller(buildConnectedSeller(nextProfile));
+
+        const productsResponse = await fetch("/api/lessonforge/products").catch(() => null);
+        if (productsResponse?.ok) {
+          const productsPayload = (await productsResponse.json()) as {
+            products?: Array<{ sellerId?: string }>;
+          };
+          const sellerId = nextProfile.email || payload.viewer?.email;
+          setHasListings(
+            Boolean(
+              sellerId &&
+                productsPayload.products?.some(
+                  (product) => product.sellerId === sellerId,
+                ),
+            ),
+          );
+        }
 
         if (nextProfile.stripeAccountId) {
           if (nextProfile.stripeChargesEnabled && nextProfile.stripePayoutsEnabled) {
@@ -308,112 +339,65 @@ export function SellerOnboardingForm() {
           Seller onboarding
         </p>
         <h1 className="mt-4 font-[family-name:var(--font-display)] text-4xl leading-tight text-ink sm:text-5xl">
-          Set up payouts and publish your first resource.
+          Finish setup and create your first listing.
         </h1>
-        <p className="mt-5 max-w-3xl text-lg leading-8 text-ink-soft">
-          Start with the store basics, connect Stripe for payouts, then create one
-          buyer-ready listing with a preview, thumbnail, and rights confirmation.
+        <p className="mt-4 max-w-2xl text-base leading-7 text-ink-soft sm:text-lg">
+          Keep this simple: finish setup, then create one product.
         </p>
 
-        <div className="mt-7 grid gap-3 lg:grid-cols-3">
+        <div className="mt-6 grid gap-3 lg:grid-cols-3">
           {setupSteps.map((step) => {
             const Icon = step.icon;
 
             return (
               <div
                 key={step.label}
-                className={`rounded-[1.35rem] border px-4 py-4 ${
+                className={`flex h-full flex-col rounded-[1.25rem] border bg-white p-4 ${
                   step.ready
-                    ? "border-emerald-100 bg-emerald-50/80"
-                    : "border-ink/5 bg-surface-subtle"
+                    ? "border-emerald-200"
+                    : "border-slate-200"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-brand">
+                  <div
+                    className={`flex h-9 w-9 items-center justify-center rounded-2xl ${
+                      step.ready ? "bg-emerald-50 text-emerald-700" : "bg-surface-subtle text-brand"
+                    }`}
+                  >
                     <Icon className="h-4 w-4" />
                   </div>
                   <span
-                    className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${
-                      step.ready ? "bg-emerald-100 text-emerald-700" : "bg-white text-ink-soft"
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${
+                      step.ready
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "bg-surface-subtle text-ink-soft"
                     }`}
                   >
                     {step.status}
                   </span>
                 </div>
-                <p className="mt-4 font-semibold text-ink">{step.label}</p>
-                <p className="mt-2 text-sm leading-6 text-ink-soft">{step.detail}</p>
+                <p className="mt-4 text-base font-semibold text-ink">{step.label}</p>
+                <p className="mt-1 text-sm leading-6 text-ink-soft">{step.detail}</p>
               </div>
             );
           })}
         </div>
 
-        <div
-          className={`mt-6 rounded-[1.35rem] border p-4 ${
-            returnState === "connected"
-              ? "border-emerald-100 bg-emerald-50/80"
-              : returnState === "refresh"
-                ? "border-amber-100 bg-amber-50/80"
-                : "border-emerald-100 bg-emerald-50/80"
-          }`}
-        >
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-ink">
-            {returnState === "connected"
-              ? "Stripe connected"
-              : returnState === "refresh"
-                ? "Pick up here"
-                : "Start here"}
-          </p>
-          <p className="mt-2 text-base font-semibold text-ink">
-            {returnState === "connected"
-              ? "Stripe is done. The last step is creating your first listing."
-              : returnState === "refresh"
-                ? "Your saved seller setup is still here."
-                : "Add the four basics that make your store feel real, then save before connecting payouts."}
-          </p>
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            {(returnState === "connected"
-              ? [
-                  "Payouts are linked, so your store setup is finished.",
-                  "Create your first listing now so buyers have something real to see and buy.",
-                  "After that, use the seller dashboard to track readiness, sales, and earnings.",
-                ]
-              : returnState === "refresh"
-                ? [
-                    "Stripe still needs more details before payouts can finish.",
-                  "Review your seller basics here, then reopen Stripe onboarding.",
-                  "Your saved seller profile is still here, so you are not starting over.",
-                ]
-              : [
-                    "Name, email, store name, and handle are enough for the first save.",
-                    "Buyers will later see this on your storefront and listings.",
-                    "After this, connect Stripe payouts, then move into product creation.",
-                  ]).map((detail) => (
-              <div
-                key={detail}
-                className="rounded-[1rem] border border-white/70 bg-white/80 px-4 py-3 text-sm leading-6 text-ink-soft"
-              >
-                {detail}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {returnState === "connected" ? (
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+        <div className="mt-5 rounded-[1.25rem] border border-slate-200 bg-white p-5">
+          <p className="text-xl font-semibold text-ink">{listingCta.title}</p>
+          <p className="mt-1 text-sm leading-6 text-ink-soft">{listingCta.detail}</p>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link
               className="inline-flex items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
-              href="/sell/products/new"
+              href={listingCta.href}
             >
-              Create your first listing
+              {listingCta.label}
             </Link>
-            <Link
-              className={secondaryActionLinkClassName("px-5 py-3")}
-              href="/sell/dashboard?setup=payouts-connected"
-            >
-              Open seller dashboard
-            </Link>
+            {listingCta.helper ? (
+              <p className="text-sm text-ink-soft">{listingCta.helper}</p>
+            ) : null}
           </div>
-        ) : null}
+        </div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <label className="block">
@@ -609,28 +593,6 @@ export function SellerOnboardingForm() {
             {isConnecting || isSaving ? "Opening Stripe" : "Connect Stripe payouts"}
             <ArrowRight className="h-4 w-4" />
           </button>
-        </div>
-
-        <div className="mt-6 grid gap-3 rounded-[1.35rem] border border-brand/10 bg-brand-soft/35 p-4 sm:grid-cols-3">
-          {[
-            {
-              title: "Already used in class",
-              body: "A resource you have taught before is usually the easiest first listing.",
-            },
-            {
-              title: "Easy to preview",
-              body: "Include a sample page or cover so buyers understand what they will receive.",
-            },
-            {
-              title: "Clear next step",
-              body: "After Stripe, create one draft. You can improve it before publishing.",
-            },
-          ].map((item) => (
-            <div key={item.title} className="rounded-[1rem] bg-white/80 px-4 py-3 text-sm leading-6 text-ink-soft">
-              <p className="font-semibold text-ink">{item.title}</p>
-              <p className="mt-1">{item.body}</p>
-            </div>
-          ))}
         </div>
 
         {message ? (
