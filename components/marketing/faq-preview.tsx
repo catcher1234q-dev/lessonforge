@@ -5,29 +5,24 @@ import { Minus, Plus } from "lucide-react";
 
 const questions = [
   {
-    question: "Do I need an account before I can understand the product?",
+    question: "Are payments secure?",
     answer:
-      "No. The site is set up so you can browse the marketplace, open listings, and understand the main product flow before signing in.",
+      "Yes. Payments are handled through Stripe. After a purchase is confirmed, the resource appears in the buyer library.",
   },
   {
-    question: "What should I click first if I am confused?",
+    question: "What happens after I buy a resource?",
     answer:
-      "Start with the marketplace if you want the buyer view, the seller flow if you want to publish, or your account page if you want one signed-in home for purchases, saved items, and seller progress.",
+      "You can return to your library to reopen purchased resources and find support if something needs attention.",
   },
   {
-    question: "Is this mainly for buyers or sellers?",
+    question: "How do sellers get paid?",
     answer:
-      "Both. Buyers can browse, preview, shortlist, and purchase. Sellers can onboard, create listings, manage assets, and prepare products for buyers.",
+      "Sellers connect Stripe, choose a plan, and see the payout percentage before they start selling.",
   },
   {
-    question: "What role does AI play here?",
+    question: "Where do I go if something looks wrong?",
     answer:
-      "AI is optional listing help for sellers. It can support things like organization, standards suggestions, thumbnails, and listing polish, but the product is designed so the teacher stays in control.",
-  },
-  {
-    question: "How do seller payouts work on resource sales?",
-    answer:
-      "LessonForge routes purchases through checkout and then applies the seller plan revenue split. The pricing section shows how much the seller keeps on each plan.",
+      "Start with the Support page. Refund, privacy, and terms pages are linked in the footer.",
   },
 ];
 
@@ -42,7 +37,7 @@ export function FAQPreview() {
             FAQ
           </p>
           <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl text-ink sm:text-4xl">
-            Quick answers before you click deeper.
+            Questions teachers usually ask.
           </h2>
         </div>
 
