@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getMarketplaceListingBySlug } from "@/lib/lessonforge/server-catalog";
+import { getPublicMarketplaceListingBySlug } from "@/lib/lessonforge/server-catalog";
 import { renderManagedPreviewSvg } from "@/lib/lessonforge/preview-assets";
 
 export async function GET(
@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
-  const listing = await getMarketplaceListingBySlug(slug);
+  const listing = await getPublicMarketplaceListingBySlug(slug);
 
   if (!listing) {
     return NextResponse.json({ error: "Preview asset not found." }, { status: 404 });

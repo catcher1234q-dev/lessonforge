@@ -95,6 +95,7 @@ export function ProductCard({
   buyTestId,
   checkoutReturnTo,
   viewTestId,
+  demoPreview = false,
 }: {
   listing: MarketplaceListing;
   initiallyFavorited?: boolean;
@@ -104,6 +105,7 @@ export function ProductCard({
   buyTestId?: string;
   checkoutReturnTo?: string;
   viewTestId?: string;
+  demoPreview?: boolean;
 }) {
   const rankingReasons = getRankingReasons(listing);
   const listingHref = buildMarketplaceListingHref({
@@ -113,6 +115,87 @@ export function ProductCard({
   const theme = getSubjectTheme(listing.subject);
   const coverImage = listing.thumbnailUrl ?? listing.previewAssets[0]?.previewUrl;
   const featuredLabel = getFeaturedLabel(listing);
+
+  if (demoPreview) {
+    return (
+      <article
+        className="group flex h-full flex-col rounded-[26px] bg-white p-3 shadow-[0_16px_44px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_56px_rgba(15,23,42,0.12)]"
+        data-testid={testId}
+      >
+        <Link
+          className="block"
+          data-analytics-event="product_card_clicked"
+          data-analytics-props={JSON.stringify({ productId: listing.id, surface: "demo_preview_card" })}
+          href={listingHref}
+        >
+          <div className="relative overflow-hidden rounded-[22px] border border-slate-200 bg-slate-100">
+            {coverImage ? (
+              <img
+                alt={`${listing.title} cover preview`}
+                className="aspect-[3/4] w-full bg-slate-100 object-cover object-top"
+                decoding="async"
+                loading={featured ? "eager" : "lazy"}
+                sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw"
+                src={coverImage}
+              />
+            ) : (
+              <div className="flex aspect-[3/4] items-end bg-[linear-gradient(180deg,#eff6ff_0%,#ffffff_100%)] p-5">
+                <div className="rounded-[20px] border border-white/80 bg-white/92 p-4 backdrop-blur">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-brand">
+                    {listing.subject}
+                  </p>
+                  <h3 className="mt-2 text-2xl font-semibold leading-tight text-ink">
+                    {listing.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-ink-soft">
+                    {listing.gradeBand} · {listing.resourceType}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
+              <span className="rounded-full bg-white/92 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink shadow-sm">
+                {listing.subject}
+              </span>
+              <span className="rounded-full bg-white/92 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink shadow-sm">
+                {listing.gradeBand}
+              </span>
+            </div>
+
+            <div className="absolute inset-x-0 bottom-0 flex flex-wrap gap-2 p-3">
+              <span className="rounded-full bg-slate-950 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white">
+                Demo
+              </span>
+              <span className="rounded-full bg-white/92 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink shadow-sm">
+                Preview only
+              </span>
+            </div>
+          </div>
+
+          <div className="px-1 pb-2 pt-4">
+            <h3 className="line-clamp-2 text-lg font-semibold leading-tight text-ink">
+              {listing.title}
+            </h3>
+            <p className="mt-2 text-sm text-ink-soft">
+              {listing.subject} · {listing.gradeBand}
+            </p>
+            <p className="mt-3 line-clamp-2 text-sm leading-6 text-ink-soft">
+              {listing.shortDescription}
+            </p>
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
+                Not for sale
+              </span>
+              <span className="text-sm font-semibold text-brand transition group-hover:text-brand-700">
+                View demo
+              </span>
+            </div>
+          </div>
+        </Link>
+      </article>
+    );
+  }
 
   return (
     <article

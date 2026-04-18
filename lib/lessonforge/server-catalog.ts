@@ -309,6 +309,69 @@ export async function listMarketplaceListings() {
   return attachSellerTrustSignals(persistedListings);
 }
 
+export async function listPublicMarketplacePreviewListings() {
+  const demoListings = attachSellerTrustSignals(
+    demoMarketplaceListings.filter((listing) => listing.demoOnly),
+  );
+
+  return demoListings.slice(0, 12);
+}
+
+export async function getPublicMarketplaceListingBySlug(slug: string) {
+  const listings = await listPublicMarketplacePreviewListings();
+  return listings.find((listing) => listing.slug === slug);
+}
+
+export async function getPublicRelatedListings(subject: string, currentId: string) {
+  const listings = await listPublicMarketplacePreviewListings();
+  return listings
+    .filter((listing) => listing.subject === subject && listing.id !== currentId)
+    .slice(0, 3);
+}
+
+export async function filterPublicMarketplaceListings(
+  query: string,
+  subject?: string,
+  _trustFilter?: string,
+  _gradeFilter?: string,
+  _resourceTypeFilter?: string,
+  _priceFilter?: string,
+  sort?: string,
+) {
+  const listings = await listPublicMarketplacePreviewListings();
+  const normalizedQuery = query.trim().toLowerCase();
+
+  const filtered = listings.filter((listing) => {
+    const matchesSubject = !subject || subject === "All" || listing.subject === subject;
+
+    if (!normalizedQuery) {
+      return matchesSubject;
+    }
+
+    const titleScore = listing.title.toLowerCase().includes(normalizedQuery) ? 3 : 0;
+    const metadataScore =
+      listing.subject.toLowerCase().includes(normalizedQuery) ||
+      listing.standardsTag.toLowerCase().includes(normalizedQuery)
+        ? 2
+        : 0;
+    const descriptionScore = listing.summary.toLowerCase().includes(normalizedQuery)
+      ? 1
+      : 0;
+
+    return matchesSubject && titleScore + metadataScore + descriptionScore > 0;
+  });
+
+  if (sort === "newest") {
+    return [...filtered].sort((left, right) => right.assetVersionNumber - left.assetVersionNumber);
+  }
+
+  if (sort === "title") {
+    return [...filtered].sort((left, right) => left.title.localeCompare(right.title));
+  }
+
+  return filtered;
+}
+
 export async function getMarketplaceListingBySlug(slug: string) {
   const listings = await listMarketplaceListings();
   return listings.find((listing) => listing.slug === slug);

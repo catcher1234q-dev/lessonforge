@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 
 import { renderManagedThumbnailSvg } from "@/lib/lessonforge/preview-assets";
-import { getMarketplaceListingBySlug } from "@/lib/lessonforge/server-catalog";
+import { getPublicMarketplaceListingBySlug } from "@/lib/lessonforge/server-catalog";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
-  const listing = await getMarketplaceListingBySlug(slug);
+  const listing = await getPublicMarketplaceListingBySlug(slug);
 
   if (!listing) {
     return NextResponse.json({ error: "Thumbnail asset not found." }, { status: 404 });

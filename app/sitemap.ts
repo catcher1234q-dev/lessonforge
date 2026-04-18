@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { siteConfig } from "@/lib/config/site";
-import { listMarketplaceListings } from "@/lib/lessonforge/server-catalog";
+import { listPublicMarketplacePreviewListings } from "@/lib/lessonforge/server-catalog";
 
 const publicStaticRoutes = [
   "",
@@ -19,7 +19,7 @@ function toUrl(path: string) {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
-  const listings = await listMarketplaceListings().catch(() => []);
+  const listings = await listPublicMarketplacePreviewListings().catch(() => []);
   const sellerIds = Array.from(new Set(listings.map((listing) => listing.sellerId)));
 
   return [
