@@ -1373,6 +1373,12 @@ export function SellerDashboardContent() {
                 ? "Create listing"
                 : "Create first listing"}
           </Link>
+          <Link
+            className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
+            href="/feedback?source=seller_dashboard"
+          >
+            Give feedback
+          </Link>
         </div>
       </div>
 

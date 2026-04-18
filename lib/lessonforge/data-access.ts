@@ -27,11 +27,17 @@ import {
   prismaUpdateReportStatus,
 } from "@/lib/lessonforge/repository-prisma";
 import { hasRealDatabaseUrl, prisma } from "@/lib/prisma/client";
+import {
+  getSupabaseServerAdminClient,
+  hasSupabaseServerEnv,
+} from "@/lib/supabase/server";
 import type {
   AdminAiSettings,
   AiActionCacheRecord,
   AIProviderResult,
   MonetizationEventRecord,
+  PrivateFeedbackRecord,
+  FeedbackRating,
   SellerProfileDraft,
   SubscriptionRecord,
   SystemSettings,
@@ -222,6 +228,108 @@ function coerceMonetizationEvent(
     source: metadata.source as MonetizationEventRecord["source"],
     metadata: isRecord(metadata.payload) ? metadata.payload : undefined,
     createdAt: entry.createdAt.toISOString(),
+  };
+}
+
+function isFeedbackRating(value: unknown): value is FeedbackRating {
+  return value === "Easy" || value === "Okay" || value === "Confusing";
+}
+
+function coercePrivateFeedback(
+  entry: Awaited<ReturnType<typeof prisma.adminAuditLog.findFirst>>,
+): PrivateFeedbackRecord | null {
+  if (!entry || !isRecord(entry.metadataJson)) {
+    return null;
+  }
+
+  const metadata = entry.metadataJson;
+
+  return {
+    id: entry.id,
+    createdAt: entry.createdAt.toISOString(),
+    rating: isFeedbackRating(metadata.rating) ? metadata.rating : undefined,
+    confusingText:
+      typeof metadata.confusingText === "string" ? metadata.confusingText : undefined,
+    improvementText:
+      typeof metadata.improvementText === "string" ? metadata.improvementText : undefined,
+    contact: typeof metadata.contact === "string" ? metadata.contact : undefined,
+    pageContext:
+      typeof metadata.pageContext === "string" ? metadata.pageContext : undefined,
+    source: typeof metadata.source === "string" ? metadata.source : undefined,
+    signedIn: metadata.signedIn === true,
+    userEmail: typeof metadata.userEmail === "string" ? metadata.userEmail : undefined,
+    userRole:
+      metadata.userRole === "buyer" ||
+      metadata.userRole === "seller" ||
+      metadata.userRole === "admin" ||
+      metadata.userRole === "owner"
+        ? metadata.userRole
+        : undefined,
+  };
+}
+
+function buildFeedbackPayload(input: {
+  confusingText?: string;
+  improvementText?: string;
+  contact?: string;
+  pageContext?: string;
+  source?: string;
+  rating?: FeedbackRating;
+  signedIn: boolean;
+  userEmail?: string;
+  userRole?: ViewerRole;
+}) {
+  return {
+    schemaVersion: 1,
+    confusingText: input.confusingText,
+    improvementText: input.improvementText,
+    contact: input.contact,
+    pageContext: input.pageContext,
+    source: input.source,
+    rating: input.rating,
+    signedIn: input.signedIn,
+    userEmail: input.signedIn ? input.userEmail : undefined,
+    userRole: input.signedIn ? input.userRole : undefined,
+  };
+}
+
+function toJsonValue(value: Record<string, unknown>) {
+  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+}
+
+function coercePrivateFeedbackFromSupabaseRow(row: {
+  id?: unknown;
+  created_at?: unknown;
+  metadata_json?: unknown;
+}): PrivateFeedbackRecord | null {
+  if (typeof row.id !== "string" || !isRecord(row.metadata_json)) {
+    return null;
+  }
+
+  const metadata = row.metadata_json;
+
+  return {
+    id: row.id,
+    createdAt:
+      typeof row.created_at === "string" ? row.created_at : new Date().toISOString(),
+    rating: isFeedbackRating(metadata.rating) ? metadata.rating : undefined,
+    confusingText:
+      typeof metadata.confusingText === "string" ? metadata.confusingText : undefined,
+    improvementText:
+      typeof metadata.improvementText === "string" ? metadata.improvementText : undefined,
+    contact: typeof metadata.contact === "string" ? metadata.contact : undefined,
+    pageContext:
+      typeof metadata.pageContext === "string" ? metadata.pageContext : undefined,
+    source: typeof metadata.source === "string" ? metadata.source : undefined,
+    signedIn: metadata.signedIn === true,
+    userEmail: typeof metadata.userEmail === "string" ? metadata.userEmail : undefined,
+    userRole:
+      metadata.userRole === "buyer" ||
+      metadata.userRole === "seller" ||
+      metadata.userRole === "admin" ||
+      metadata.userRole === "owner"
+        ? metadata.userRole
+        : undefined,
   };
 }
 
@@ -497,6 +605,135 @@ export async function trackMonetizationEvent(input: {
     metadata: input.metadata,
     createdAt: entry.createdAt.toISOString(),
   };
+}
+
+export async function savePrivateFeedback(input: {
+  confusingText?: string;
+  improvementText?: string;
+  contact?: string;
+  pageContext?: string;
+  source?: string;
+  rating?: FeedbackRating;
+  signedIn: boolean;
+  userEmail?: string;
+  userRole?: ViewerRole;
+}): Promise<PrivateFeedbackRecord> {
+  const payload = buildFeedbackPayload(input);
+  const targetId = input.source || input.pageContext || "feedback";
+
+  if (hasRealDatabaseUrl() && (await hasAdminAuditLogsTable())) {
+    const actorUser = input.signedIn
+      ? await ensureActorUser({
+          email: input.userEmail,
+          role: input.userRole,
+        })
+      : null;
+    const entry = await prisma.adminAuditLog.create({
+      data: {
+        actorUserId: actorUser?.id ?? null,
+        action: "user.feedback.submitted",
+        targetType: "private_feedback",
+        targetId,
+        metadataJson: toJsonValue(payload),
+      },
+    });
+
+    return {
+      id: entry.id,
+      createdAt: entry.createdAt.toISOString(),
+      rating: input.rating,
+      confusingText: input.confusingText,
+      improvementText: input.improvementText,
+      contact: input.contact,
+      pageContext: input.pageContext,
+      source: input.source,
+      signedIn: input.signedIn,
+      userEmail: input.signedIn ? input.userEmail : undefined,
+      userRole: input.signedIn ? input.userRole : undefined,
+    };
+  }
+
+  if (!hasSupabaseServerEnv()) {
+    throw new Error("Feedback storage is unavailable right now.");
+  }
+
+  const id = `feedback-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const { data, error } = await getSupabaseServerAdminClient()
+    .from("admin_audit_logs")
+    .insert({
+      id,
+      action: "user.feedback.submitted",
+      target_type: "private_feedback",
+      target_id: targetId,
+      metadata_json: payload,
+    })
+    .select("id, created_at, metadata_json")
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return {
+    id: typeof data?.id === "string" ? data.id : id,
+    createdAt:
+      typeof data?.created_at === "string"
+        ? data.created_at
+        : new Date().toISOString(),
+    rating: input.rating,
+    confusingText: input.confusingText,
+    improvementText: input.improvementText,
+    contact: input.contact,
+    pageContext: input.pageContext,
+    source: input.source,
+    signedIn: input.signedIn,
+    userEmail: input.signedIn ? input.userEmail : undefined,
+    userRole: input.signedIn ? input.userRole : undefined,
+  };
+}
+
+export async function listPrivateFeedback(): Promise<PrivateFeedbackRecord[]> {
+  if (hasRealDatabaseUrl()) {
+    return safeDatabaseRead("listPrivateFeedback", [], async () => {
+      const entries = await prisma.adminAuditLog.findMany({
+        where: {
+          action: "user.feedback.submitted",
+          targetType: "private_feedback",
+        },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      });
+
+      return entries
+        .map((entry) => coercePrivateFeedback(entry))
+        .filter((entry): entry is PrivateFeedbackRecord => Boolean(entry));
+    });
+  }
+
+  if (!hasSupabaseServerEnv()) {
+    return [];
+  }
+
+  try {
+    const { data, error } = await getSupabaseServerAdminClient()
+      .from("admin_audit_logs")
+      .select("id, created_at, metadata_json")
+      .eq("action", "user.feedback.submitted")
+      .eq("target_type", "private_feedback")
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data ?? [])
+      .map((row) => coercePrivateFeedbackFromSupabaseRow(row))
+      .filter((entry): entry is PrivateFeedbackRecord => Boolean(entry));
+  } catch (error) {
+    logDatabaseFallback("listPrivateFeedback.supabase", error);
+    return [];
+  }
 }
 
 export async function findAiActionCacheEntry(_input: {

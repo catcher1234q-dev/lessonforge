@@ -108,6 +108,12 @@ export default async function CheckoutSuccessPage({
                 >
                   Keep browsing
                 </Link>
+                <Link
+                  className="inline-flex min-h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
+                  href="/feedback?source=checkout_success"
+                >
+                  Give feedback
+                </Link>
               </div>
             </div>
           </AppAccessGate>

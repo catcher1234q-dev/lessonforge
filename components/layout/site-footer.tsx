@@ -113,6 +113,9 @@ export function SiteFooter() {
                 <Link className="py-1 transition hover:text-ink" href="/support">
                   Support center
                 </Link>
+                <Link className="py-1 transition hover:text-ink" href="/feedback">
+                  Give feedback
+                </Link>
                 <Link className="py-1 transition hover:text-ink" href="/library?view=support">
                   Buyer support
                 </Link>
@@ -133,6 +136,9 @@ export function SiteFooter() {
             <div className="flex flex-wrap gap-x-4 gap-y-2">
               <Link className="transition hover:text-ink" href="/support">
                 Support
+              </Link>
+              <Link className="transition hover:text-ink" href="/feedback">
+                Give feedback
               </Link>
               <Link className="transition hover:text-ink" href="/sell">
                 Sell on LessonForge

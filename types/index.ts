@@ -260,6 +260,22 @@ export type AdminAuditLog = {
   createdAt: string;
 };
 
+export type FeedbackRating = "Easy" | "Okay" | "Confusing";
+
+export type PrivateFeedbackRecord = {
+  id: string;
+  createdAt: string;
+  rating?: FeedbackRating;
+  confusingText?: string;
+  improvementText?: string;
+  contact?: string;
+  pageContext?: string;
+  source?: string;
+  signedIn: boolean;
+  userEmail?: string;
+  userRole?: ViewerRole;
+};
+
 export type AIProviderResult = {
   provider: "gemini" | "openai";
   status: "idle" | "placeholder" | "success";

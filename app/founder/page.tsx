@@ -13,6 +13,7 @@ import { canAccessOwner, getPrivateAccessRole } from "@/lib/auth/private-access"
 import { featureFlags } from "@/lib/config/feature-flags";
 import { normalizePlanKey, planConfig } from "@/lib/config/plans";
 import { siteConfig } from "@/lib/config/site";
+import { listPrivateFeedback } from "@/lib/lessonforge/data-access";
 import { getIntegrationReadiness } from "@/lib/lessonforge/integration-readiness";
 import { getAdminOverview } from "@/lib/lessonforge/server-operations";
 import { getPersistenceReadiness } from "@/lib/lessonforge/persistence-readiness";
@@ -25,6 +26,21 @@ export const metadata: Metadata = buildNoIndexMetadata(
 
 function formatBoolean(value: boolean) {
   return value ? "On" : "Off";
+}
+
+function formatFeedbackDate(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 export default async function FounderPage() {
@@ -64,10 +80,11 @@ export default async function FounderPage() {
     );
   }
 
-  const [adminOverview, persistenceReadiness, integrationReadiness] = await Promise.all([
+  const [adminOverview, persistenceReadiness, integrationReadiness, privateFeedback] = await Promise.all([
     getAdminOverview(),
     getPersistenceReadiness(),
     getIntegrationReadiness(),
+    listPrivateFeedback(),
   ]);
   const launchReadyListings = adminOverview.persistedProducts.filter(
     (product) =>
@@ -160,6 +177,76 @@ export default async function FounderPage() {
                     : "Use the cards below to see whether moderation or seller setup gaps are the main reason launch still feels blocked."}
                 </p>
               </div>
+            </div>
+          </section>
+
+          <section className="rounded-[32px] border border-black/5 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:p-8">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand">
+                  Feedback inbox
+                </p>
+                <h2 className="mt-3 text-3xl font-semibold text-ink">
+                  Private user feedback for the owner.
+                </h2>
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-ink-soft">
+                  These notes are private. They are not public reviews, ratings, testimonials, seller scores, payout signals, or ranking inputs.
+                </p>
+              </div>
+              <Link
+                className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
+                href="/feedback?source=founder_preview"
+              >
+                Open feedback form
+              </Link>
+            </div>
+
+            <div className="mt-6 grid gap-4">
+              {privateFeedback.length ? (
+                privateFeedback.slice(0, 8).map((feedback) => (
+                  <article
+                    key={feedback.id}
+                    className="rounded-[1.35rem] border border-ink/5 bg-surface-subtle px-5 py-4"
+                  >
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-ink">
+                          {feedback.rating ?? "No quick rating"}
+                        </p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.16em] text-ink-muted">
+                          {formatFeedbackDate(feedback.createdAt)}
+                          {feedback.source ? ` · ${feedback.source}` : ""}
+                          {feedback.pageContext ? ` · ${feedback.pageContext}` : ""}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-ink-soft">
+                        {feedback.signedIn ? feedback.userRole ?? "signed in" : "anonymous"}
+                      </span>
+                    </div>
+                    {feedback.confusingText ? (
+                      <div className="mt-4 rounded-[1rem] bg-white px-4 py-3 text-sm leading-6 text-ink-soft">
+                        <p className="font-semibold text-ink">Confusing or frustrating</p>
+                        <p className="mt-1">{feedback.confusingText}</p>
+                      </div>
+                    ) : null}
+                    {feedback.improvementText ? (
+                      <div className="mt-3 rounded-[1rem] bg-white px-4 py-3 text-sm leading-6 text-ink-soft">
+                        <p className="font-semibold text-ink">Suggested improvement</p>
+                        <p className="mt-1">{feedback.improvementText}</p>
+                      </div>
+                    ) : null}
+                    {(feedback.contact || feedback.userEmail) ? (
+                      <p className="mt-3 text-sm leading-6 text-ink-soft">
+                        Contact: {feedback.contact || feedback.userEmail}
+                      </p>
+                    ) : null}
+                  </article>
+                ))
+              ) : (
+                <div className="rounded-[1.35rem] border border-dashed border-slate-300 bg-slate-50 px-5 py-5 text-sm leading-6 text-ink-soft">
+                  No private feedback has been submitted yet. When users send feedback, newest notes will appear here first.
+                </div>
+              )}
             </div>
           </section>
 
