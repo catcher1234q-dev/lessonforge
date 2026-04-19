@@ -9,6 +9,7 @@ import { hasAppSessionForEmail } from "@/lib/auth/app-session";
 import { getCurrentViewer } from "@/lib/auth/viewer";
 import { getAiCreditCost } from "@/lib/services/ai/credits";
 import { getAdminAiSettings, consumeCredits, refundCredits } from "@/lib/lessonforge/data-access";
+import { classifyAiRouteError } from "@/lib/lessonforge/ai-route-errors";
 import { planConfig, type PlanKey } from "@/lib/config/plans";
 
 type ListingAssistAction = "autofill" | "title" | "description" | "tags";
@@ -179,6 +180,8 @@ export async function POST(request: Request) {
         cost: costConfig.cost,
       });
     } catch (error) {
+      const classified = classifyAiRouteError(error);
+
       try {
         await refundCredits(body.idempotencyKey);
       } catch (refundError) {
@@ -192,27 +195,26 @@ export async function POST(request: Request) {
       console.error("[lessonforge.ai] listing-assist failed", {
         provider: body.provider,
         action: body.action,
+        reason: classified.reason,
         message: error instanceof Error ? error.message : "Unknown error",
       });
 
       return NextResponse.json(
-        {
-          error:
-            error instanceof Error
-              ? error.message
-              : "Could not generate this right now.",
-        },
-        { status: 500 },
+        { error: classified.userMessage },
+        { status: classified.status },
       );
     }
   } catch (error) {
+    const classified = classifyAiRouteError(error);
+
     console.error("[lessonforge.ai] listing-assist route crashed", {
+      reason: classified.reason,
       message: error instanceof Error ? error.message : "Unknown route error",
     });
 
     return NextResponse.json(
-      { error: "AI could not finish this right now. Try again." },
-      { status: 500 },
+      { error: classified.userMessage },
+      { status: classified.status },
     );
   }
 }

@@ -74,6 +74,22 @@ function logDatabaseFallback(scope: string, error: unknown) {
   );
 }
 
+function logAiFallbackEvent(
+  event:
+    | "supabase_fallback_enabled"
+    | "seller_profile_missing"
+    | "usage_duplicate_reused"
+    | "credits_exhausted"
+    | "usage_recorded"
+    | "usage_refunded",
+  metadata: Record<string, unknown>,
+) {
+  console.info("[lessonforge.ai] fallback event", {
+    event,
+    ...metadata,
+  });
+}
+
 async function safeDatabaseRead<T>(
   scope: string,
   fallbackValue: T,
@@ -431,6 +447,9 @@ async function listSupabaseAiUsageLedger(): Promise<UsageLedgerEntry[]> {
     .limit(1000);
 
   if (error) {
+    console.error("[lessonforge.ai] fallback ledger read failed", {
+      message: error.message,
+    });
     throw new Error(`Unable to load Supabase AI usage ledger: ${error.message}`);
   }
 
@@ -544,6 +563,11 @@ export async function listSubscriptions() {
       return [];
     }
 
+    logAiFallbackEvent("supabase_fallback_enabled", {
+      scope: "listSubscriptions",
+      message: error instanceof Error ? error.message : String(error),
+    });
+
     const profiles = await listSupabaseSellerProfiles();
     const subscriptions = await Promise.all(
       profiles.map(async (profile) => {
@@ -570,6 +594,11 @@ export async function listUsageLedger() {
       return [];
     }
 
+    logAiFallbackEvent("supabase_fallback_enabled", {
+      scope: "listUsageLedger",
+      message: error instanceof Error ? error.message : String(error),
+    });
+
     return listSupabaseAiUsageLedger();
   }
 }
@@ -585,6 +614,12 @@ export async function getOrCreateSubscription(
     if (!isPrismaAiFallbackError(error)) {
       throw error;
     }
+
+    logAiFallbackEvent("supabase_fallback_enabled", {
+      scope: "getOrCreateSubscription",
+      sellerId,
+      message: error instanceof Error ? error.message : String(error),
+    });
 
     const { subscription } = await buildSupabaseSubscriptionRecord({
       sellerId,
@@ -614,9 +649,21 @@ export async function consumeCredits(input: {
       throw error;
     }
 
+    logAiFallbackEvent("supabase_fallback_enabled", {
+      scope: "consumeCredits",
+      sellerId: input.sellerId,
+      provider: input.provider,
+      action: input.action,
+      message: error instanceof Error ? error.message : String(error),
+    });
+
     const profile = await getSupabaseProfileByEmail(input.sellerEmail);
 
     if (!profile?.id) {
+      logAiFallbackEvent("seller_profile_missing", {
+        sellerId: input.sellerId,
+        sellerEmail: input.sellerEmail,
+      });
       throw new Error("Signed-in seller access required.");
     }
 
@@ -633,6 +680,11 @@ export async function consumeCredits(input: {
     });
 
     if (existingEntry) {
+      logAiFallbackEvent("usage_duplicate_reused", {
+        sellerId: input.sellerId,
+        provider: input.provider,
+        action: input.action,
+      });
       return {
         subscription,
         ledgerEntry: existingEntry,
@@ -640,6 +692,13 @@ export async function consumeCredits(input: {
     }
 
     if (subscription.availableCredits < input.creditsUsed) {
+      logAiFallbackEvent("credits_exhausted", {
+        sellerId: input.sellerId,
+        provider: input.provider,
+        action: input.action,
+        availableCredits: subscription.availableCredits,
+        requestedCredits: input.creditsUsed,
+      });
       throw new Error("Not enough AI credits remaining for this action.");
     }
 
@@ -680,6 +739,13 @@ export async function consumeCredits(input: {
       throw new Error("AI usage could not be recorded right now.");
     }
 
+    logAiFallbackEvent("usage_recorded", {
+      sellerId: input.sellerId,
+      provider: input.provider,
+      action: input.action,
+      creditsUsed: input.creditsUsed,
+    });
+
     return {
       subscription: {
         ...subscription,
@@ -697,6 +763,12 @@ export async function refundCredits(idempotencyKey: string) {
     if (!isPrismaAiFallbackError(error)) {
       throw error;
     }
+
+    logAiFallbackEvent("supabase_fallback_enabled", {
+      scope: "refundCredits",
+      idempotencyKey,
+      message: error instanceof Error ? error.message : String(error),
+    });
 
     const { data, error: selectError } = await getSupabaseServerAdminClient()
       .from("admin_audit_logs")
@@ -734,6 +806,11 @@ export async function refundCredits(idempotencyKey: string) {
     if (updateError) {
       throw new Error(`Unable to refund AI usage: ${updateError.message}`);
     }
+
+    logAiFallbackEvent("usage_refunded", {
+      idempotencyKey,
+      refundedCredits: entry.creditsUsed,
+    });
 
     return updatedData ? coerceSupabaseAiUsageEntry(updatedData) : null;
   }

@@ -4,6 +4,7 @@ import { mapStandardsWithGemini, mapStandardsWithOpenAI } from "@/lib/ai/provide
 import type { UploadedAiSource } from "@/lib/ai/providers";
 import type { PlanKey } from "@/lib/config/plans";
 import { handleStandardsScanRequest } from "@/lib/lessonforge/api-handlers";
+import { classifyAiRouteError } from "@/lib/lessonforge/ai-route-errors";
 import {
   consumeCredits,
   findAiActionCacheEntry,
@@ -37,13 +38,16 @@ export async function POST(request: Request) {
 
     return NextResponse.json(response.body, { status: response.status });
   } catch (error) {
+    const classified = classifyAiRouteError(error);
+
     console.error("[lessonforge.ai] standards-scan route crashed", {
+      reason: classified.reason,
       message: error instanceof Error ? error.message : "Unknown route error",
     });
 
     return NextResponse.json(
-      { error: "Standards scan failed. Try again." },
-      { status: 500 },
+      { error: classified.userMessage },
+      { status: classified.status },
     );
   }
 }

@@ -14,6 +14,7 @@ import type {
 } from "@/lib/lessonforge/persistence-readiness-contract";
 import { getAiCreditCost } from "@/lib/services/ai/credits";
 import type { UploadedAiSource } from "@/lib/ai/providers";
+import { classifyAiRouteError } from "@/lib/lessonforge/ai-route-errors";
 import type {
   AdminAiSettings,
   AIProviderResult,
@@ -320,6 +321,8 @@ export async function handleStandardsScanRequest(
       },
     };
   } catch (error) {
+    const classified = classifyAiRouteError(error);
+
     try {
       await deps.refundCredits(body.idempotencyKey);
     } catch (refundError) {
@@ -331,14 +334,14 @@ export async function handleStandardsScanRequest(
 
     console.error("[lessonforge.ai] standards-scan failed", {
       provider: body.provider,
+      reason: classified.reason,
       message: error instanceof Error ? error.message : "Unknown error",
     });
 
     return {
-      status: 500,
+      status: classified.status,
       body: {
-        error:
-          error instanceof Error ? error.message : "Unable to complete AI scan.",
+        error: classified.userMessage,
       },
     };
   }
