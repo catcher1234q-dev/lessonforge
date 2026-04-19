@@ -165,6 +165,7 @@ export async function POST(request: Request) {
 
     console.info("[lessonforge.ai] listing-assist completed", {
       provider: body.provider,
+      status: suggestion.status,
       titleLength: suggestion.title.length,
       shortDescriptionLength: suggestion.shortDescription.length,
       fullDescriptionLength: suggestion.fullDescription.length,

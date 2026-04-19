@@ -39,7 +39,7 @@ type AiFieldKey =
 type AiFieldStatus = "filled" | "suggested";
 type ListingAssistResponse = {
   provider: "openai" | "gemini";
-  status: "success";
+  status: "success" | "partial";
   message: string;
   title: string;
   shortDescription: string;
@@ -385,6 +385,14 @@ function isWeakShortDescriptionValue(value: string) {
 
 function isWeakFullDescriptionValue(value: string) {
   return value.trim().length < 60;
+}
+
+function hasUsableShortDescription(value: string) {
+  return value.trim().length >= 20;
+}
+
+function hasUsableFullDescription(value: string) {
+  return value.trim().length >= 60;
 }
 
 export function ProductCreator() {
@@ -997,11 +1005,36 @@ export function ProductCreator() {
       mode: "helper",
     });
 
+    const nextShortDescription =
+      (updatedFields.shortDescription ? assistResult.suggestion.shortDescription : shortDescription).trim();
+    const nextFullDescription =
+      (updatedFields.fullDescription ? assistResult.suggestion.fullDescription : fullDescription).trim();
+    const missingDescriptionAfterFill =
+      !hasUsableShortDescription(nextShortDescription) ||
+      !hasUsableFullDescription(nextFullDescription);
+
+    if (missingDescriptionAfterFill) {
+      const descriptionResult = await runListingAssist("description", { quiet: true });
+
+      if (descriptionResult?.suggestion) {
+        const retriedFields = applyListingAssistSuggestion(descriptionResult.suggestion, "description", {
+          mode: "manual",
+        });
+
+        if (retriedFields.shortDescription || retriedFields.fullDescription) {
+          summary.push("Description filled");
+        }
+      }
+    }
+
     if (updatedFields.title) {
       summary.push("Title filled");
     }
 
-    if (updatedFields.shortDescription || updatedFields.fullDescription) {
+    if (
+      (updatedFields.shortDescription || updatedFields.fullDescription) &&
+      !summary.includes("Description filled")
+    ) {
       summary.push("Description filled");
     }
 
@@ -1026,11 +1059,14 @@ export function ProductCreator() {
 
     setShowAiReviewNotice(summary.length > 0);
     setAiFeedback({
-      state: "success",
+      state:
+        assistResult.suggestion.status === "partial" || summary.length === 0
+          ? "error"
+          : "success",
       action: "finish",
       message:
         summary.length > 0
-          ? `${summary.includes("Standards scanned") ? "Filled by AI" : "AI filled part of your listing."} ${summary.join(" • ")}`
+          ? `${assistResult.suggestion.status === "success" && summary.includes("Description filled") ? "Filled by AI" : "AI filled part of your listing."} ${summary.join(" • ")}`
           : "AI filled part of your listing.",
     });
   }

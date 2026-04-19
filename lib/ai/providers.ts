@@ -27,7 +27,7 @@ type ListingAssistInput = {
 
 export type ListingAssistResult = {
   provider: ProviderId;
-  status: "success";
+  status: "success" | "partial";
   message: string;
   title: string;
   shortDescription: string;
@@ -129,6 +129,14 @@ function normalizeTagList(tags: unknown) {
     .map((tag) => (typeof tag === "string" ? tag.trim() : ""))
     .filter(Boolean)
     .slice(0, 6);
+}
+
+function hasUsableShortDescription(value: string) {
+  return value.trim().length >= 20;
+}
+
+function hasUsableFullDescription(value: string) {
+  return value.trim().length >= 60;
 }
 
 function sanitizeGradeBand(value: unknown) {
@@ -618,25 +626,55 @@ function normalizeListingAssistResult(
   fallback: ListingAssistResult,
 ): ListingAssistResult {
   const record = (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
+  const title =
+    (typeof record.title === "string" && record.title.trim()) || fallback.title;
+  const shortDescription =
+    (typeof record.shortDescription === "string" && record.shortDescription.trim()) ||
+    fallback.shortDescription;
+  const fullDescription =
+    (typeof record.fullDescription === "string" && record.fullDescription.trim()) ||
+    fallback.fullDescription;
+  const tags = normalizeTagList(record.tags).length > 0 ? normalizeTagList(record.tags) : fallback.tags;
+  const missingFields: string[] = [];
+
+  if (!title.trim()) {
+    missingFields.push("title");
+  }
+
+  if (!hasUsableShortDescription(shortDescription)) {
+    missingFields.push("shortDescription");
+  }
+
+  if (!hasUsableFullDescription(fullDescription)) {
+    missingFields.push("fullDescription");
+  }
+
+  if (tags.length === 0) {
+    missingFields.push("tags");
+  }
+
+  if (missingFields.length > 0) {
+    console.warn("[lessonforge.ai] listing-assist missing generated fields", {
+      provider,
+      missingFields,
+    });
+  }
 
   return {
     provider,
-    status: "success",
+    status: missingFields.length > 0 ? "partial" : "success",
     message:
-      provider === "openai"
-        ? "Generated with OpenAI."
-        : "Generated with Gemini.",
-    title:
-      (typeof record.title === "string" && record.title.trim()) || fallback.title,
-    shortDescription:
-      (typeof record.shortDescription === "string" && record.shortDescription.trim()) ||
-      fallback.shortDescription,
-    fullDescription:
-      (typeof record.fullDescription === "string" && record.fullDescription.trim()) ||
-      fallback.fullDescription,
+      missingFields.length > 0
+        ? "AI filled part of your listing."
+        : provider === "openai"
+          ? "Generated with OpenAI."
+          : "Generated with Gemini.",
+    title,
+    shortDescription,
+    fullDescription,
     subject: sanitizeSubject(record.subject ?? fallback.subject),
     gradeBand: sanitizeGradeBand(record.gradeBand ?? fallback.gradeBand),
-    tags: normalizeTagList(record.tags).length > 0 ? normalizeTagList(record.tags) : fallback.tags,
+    tags,
   };
 }
 
