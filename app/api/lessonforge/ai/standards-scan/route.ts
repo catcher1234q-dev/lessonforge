@@ -13,26 +13,37 @@ import {
 } from "@/lib/lessonforge/data-access";
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as {
-    sellerId?: string;
-    sellerEmail?: string;
-    sellerPlanKey?: PlanKey;
-    title?: string;
-    excerpt?: string;
-    upload?: UploadedAiSource;
-    provider?: "openai" | "gemini";
-    idempotencyKey?: string;
-  };
+  try {
+    const body = (await request.json()) as {
+      sellerId?: string;
+      sellerEmail?: string;
+      sellerPlanKey?: PlanKey;
+      title?: string;
+      excerpt?: string;
+      upload?: UploadedAiSource;
+      provider?: "openai" | "gemini";
+      idempotencyKey?: string;
+    };
 
-  const response = await handleStandardsScanRequest(body, {
-    getAdminAiSettings,
-    findAiActionCacheEntry,
-    saveAiActionCacheEntry,
-    consumeCredits,
-    refundCredits,
-    mapStandardsWithOpenAI,
-    mapStandardsWithGemini,
-  });
+    const response = await handleStandardsScanRequest(body, {
+      getAdminAiSettings,
+      findAiActionCacheEntry,
+      saveAiActionCacheEntry,
+      consumeCredits,
+      refundCredits,
+      mapStandardsWithOpenAI,
+      mapStandardsWithGemini,
+    });
 
-  return NextResponse.json(response.body, { status: response.status });
+    return NextResponse.json(response.body, { status: response.status });
+  } catch (error) {
+    console.error("[lessonforge.ai] standards-scan route crashed", {
+      message: error instanceof Error ? error.message : "Unknown route error",
+    });
+
+    return NextResponse.json(
+      { error: "Standards scan failed. Try again." },
+      { status: 500 },
+    );
+  }
 }

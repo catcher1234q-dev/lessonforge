@@ -320,7 +320,14 @@ export async function handleStandardsScanRequest(
       },
     };
   } catch (error) {
-    await deps.refundCredits(body.idempotencyKey);
+    try {
+      await deps.refundCredits(body.idempotencyKey);
+    } catch (refundError) {
+      console.error("[lessonforge.ai] standards-scan refund failed", {
+        provider: body.provider,
+        message: refundError instanceof Error ? refundError.message : "Unknown refund error",
+      });
+    }
 
     console.error("[lessonforge.ai] standards-scan failed", {
       provider: body.provider,

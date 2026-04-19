@@ -353,6 +353,7 @@ function toSubscriptionRecord(
   user: User,
   subscription: Subscription,
   creditBalance: CreditBalance | null,
+  fallbackAvailableCredits?: number,
 ): SubscriptionRecord {
   const cycleDate = creditBalance?.cycleStartedAt ?? subscription.currentPeriodStart ?? new Date();
   const cycle = getCurrentCreditCycle(cycleDate);
@@ -362,10 +363,63 @@ function toSubscriptionRecord(
     sellerEmail: user.email,
     planKey: unmapPlanKey(subscription.planKey),
     monthlyCredits: subscription.monthlyCreditAllowance,
-    availableCredits: creditBalance?.availableCredits ?? 0,
+    availableCredits: creditBalance?.availableCredits ?? fallbackAvailableCredits ?? 0,
     cycleLabel: cycle.label,
     rolloverPolicy: "none",
   };
+}
+
+function isMissingTableError(error: unknown, tableNames: string[]) {
+  const message = error instanceof Error ? error.message : String(error);
+  const normalized = message.toLowerCase();
+
+  return tableNames.some((tableName) => {
+    const table = tableName.toLowerCase();
+    const compactTable = table.replace(/_/g, "");
+
+    return (
+      normalized.includes(`public.${table}`) ||
+      normalized.includes(`table \`${table}\``) ||
+      normalized.includes(`relation "${table}"`) ||
+      normalized.includes(table) ||
+      normalized.includes(compactTable)
+    );
+  });
+}
+
+async function aggregateUsedCreditsForCycle(input: {
+  userId: string;
+  startsAt: Date;
+  endsAt: Date;
+}) {
+  const aggregate = await prisma.usageLedger.aggregate({
+    where: {
+      userId: input.userId,
+      createdAt: {
+        gte: input.startsAt,
+        lt: input.endsAt,
+      },
+    },
+    _sum: {
+      creditsUsed: true,
+      refundedCredits: true,
+    },
+  });
+
+  const used = aggregate._sum.creditsUsed ?? 0;
+  const refunded = aggregate._sum.refundedCredits ?? 0;
+
+  return Math.max(0, used - refunded);
+}
+
+async function getAvailableCreditsWithoutBalanceTable(input: {
+  userId: string;
+  monthlyCredits: number;
+  startsAt: Date;
+  endsAt: Date;
+}) {
+  const usedCredits = await aggregateUsedCreditsForCycle(input);
+  return Math.max(0, input.monthlyCredits - usedCredits);
 }
 
 function toUsageLedgerEntryRecord(
@@ -1331,9 +1385,24 @@ export async function prismaGetOrCreateSubscription(
   const existingSubscription = await prisma.subscription.findUnique({
     where: { userId: user.id },
   });
-  const existingCreditBalance = await prisma.creditBalance.findUnique({
-    where: { userId: user.id },
-  });
+  let existingCreditBalance: CreditBalance | null = null;
+  let useCreditBalanceTable = true;
+
+  try {
+    existingCreditBalance = await prisma.creditBalance.findUnique({
+      where: { userId: user.id },
+    });
+  } catch (error) {
+    if (!isMissingTableError(error, ["credit_balance", "creditbalance"])) {
+      throw error;
+    }
+
+    useCreditBalanceTable = false;
+    console.warn("[lessonforge.ai] credit balance table missing during subscription lookup", {
+      sellerEmail,
+    });
+  }
+
   const planChanged =
     !existingSubscription ||
     mapPlanKey(planKey) !== existingSubscription.planKey ||
@@ -1364,6 +1433,17 @@ export async function prismaGetOrCreateSubscription(
       currentPeriodEnd: cycle.endsAt,
     },
   });
+
+  if (!useCreditBalanceTable) {
+    const fallbackAvailableCredits = await getAvailableCreditsWithoutBalanceTable({
+      userId: user.id,
+      monthlyCredits,
+      startsAt: cycle.startsAt,
+      endsAt: cycle.endsAt,
+    });
+
+    return toSubscriptionRecord(user, subscription, null, fallbackAvailableCredits);
+  }
 
   const creditBalance = await prisma.creditBalance.upsert({
     where: { userId: user.id },
@@ -1411,15 +1491,32 @@ export async function prismaConsumeCredits(input: {
     const subscription = await prisma.subscription.findUnique({
       where: { userId: user.id },
     });
-    const creditBalance = await prisma.creditBalance.findUnique({
-      where: { userId: user.id },
-    });
+    let creditBalance: CreditBalance | null = null;
+    let fallbackAvailableCredits: number | undefined;
+
+    try {
+      creditBalance = await prisma.creditBalance.findUnique({
+        where: { userId: user.id },
+      });
+    } catch (error) {
+      if (!isMissingTableError(error, ["credit_balance", "creditbalance"])) {
+        throw error;
+      }
+
+      fallbackAvailableCredits = await getAvailableCreditsWithoutBalanceTable({
+        userId: user.id,
+        monthlyCredits: subscription?.monthlyCreditAllowance ?? input.monthlyCredits,
+        startsAt: cycle.startsAt,
+        endsAt: cycle.endsAt,
+      });
+    }
 
     return {
       subscription: toSubscriptionRecord(
         user,
         subscription!,
         creditBalance,
+        fallbackAvailableCredits,
       ),
       ledgerEntry: toUsageLedgerEntryRecord(existing),
     };
@@ -1448,13 +1545,88 @@ export async function prismaConsumeCredits(input: {
     },
   });
 
-  const existingCreditBalance = await prisma.creditBalance.findUnique({
-    where: { userId: user.id },
-  });
+  let existingCreditBalance: CreditBalance | null = null;
+  let useCreditBalanceTable = true;
+
+  try {
+    existingCreditBalance = await prisma.creditBalance.findUnique({
+      where: { userId: user.id },
+    });
+  } catch (error) {
+    if (!isMissingTableError(error, ["credit_balance", "creditbalance"])) {
+      throw error;
+    }
+
+    useCreditBalanceTable = false;
+    console.warn("[lessonforge.ai] credit balance table missing during credit consume", {
+      sellerEmail: input.sellerEmail,
+      action: input.action,
+    });
+  }
+
   const shouldResetCycle =
     !existingCreditBalance?.cycleStartedAt ||
     existingCreditBalance.cycleStartedAt.getTime() !== cycle.startsAt.getTime() ||
     subscription.monthlyCreditAllowance !== input.monthlyCredits;
+
+  if (!useCreditBalanceTable) {
+    const { availableCreditsAfterConsume, ledgerEntry } = await prisma.$transaction(async (tx) => {
+      const aggregate = await tx.usageLedger.aggregate({
+        where: {
+          userId: user.id,
+          createdAt: {
+            gte: cycle.startsAt,
+            lt: cycle.endsAt,
+          },
+        },
+        _sum: {
+          creditsUsed: true,
+          refundedCredits: true,
+        },
+      });
+
+      const usedCredits = Math.max(
+        0,
+        (aggregate._sum.creditsUsed ?? 0) - (aggregate._sum.refundedCredits ?? 0),
+      );
+      const availableCredits = Math.max(0, input.monthlyCredits - usedCredits);
+
+      if (availableCredits < input.creditsUsed) {
+        throw new Error("Not enough AI credits remaining for this action.");
+      }
+
+      const createdLedgerEntry = await tx.usageLedger.create({
+        data: {
+          userId: user.id,
+          subscriptionId: subscription.id,
+          entryType: UsageEntryType.DEBIT,
+          action: mapAiAction(input.action),
+          creditsUsed: input.creditsUsed,
+          refundedCredits: 0,
+          idempotencyKey: input.idempotencyKey,
+          providerName: input.provider,
+        },
+        include: {
+          user: true,
+        },
+      });
+
+      return {
+        availableCreditsAfterConsume: availableCredits - input.creditsUsed,
+        ledgerEntry: createdLedgerEntry,
+      };
+    });
+
+    return {
+      subscription: toSubscriptionRecord(
+        user,
+        subscription,
+        null,
+        availableCreditsAfterConsume,
+      ),
+      ledgerEntry: toUsageLedgerEntryRecord(ledgerEntry),
+    };
+  }
 
   const creditBalance = await prisma.creditBalance.upsert({
     where: { userId: user.id },
@@ -1537,23 +1709,41 @@ export async function prismaRefundCredits(idempotencyKey: string) {
     return entry;
   }
 
-  await prisma.$transaction([
-    prisma.creditBalance.update({
-      where: { userId: entry.userId },
-      data: {
-        availableCredits: {
-          increment: entry.creditsUsed,
+  try {
+    await prisma.$transaction([
+      prisma.creditBalance.update({
+        where: { userId: entry.userId },
+        data: {
+          availableCredits: {
+            increment: entry.creditsUsed,
+          },
         },
-      },
-    }),
-    prisma.usageLedger.update({
+      }),
+      prisma.usageLedger.update({
+        where: { id: entry.id },
+        data: {
+          refundedCredits: entry.creditsUsed,
+          entryType: UsageEntryType.REFUND,
+        },
+      }),
+    ]);
+  } catch (error) {
+    if (!isMissingTableError(error, ["credit_balance", "creditbalance"])) {
+      throw error;
+    }
+
+    console.warn("[lessonforge.ai] credit balance table missing during refund", {
+      idempotencyKey,
+    });
+
+    await prisma.usageLedger.update({
       where: { id: entry.id },
       data: {
         refundedCredits: entry.creditsUsed,
         entryType: UsageEntryType.REFUND,
       },
-    }),
-  ]);
+    });
+  }
 
   return prisma.usageLedger.findUnique({
     where: { id: entry.id },

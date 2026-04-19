@@ -139,6 +139,20 @@ async function buildSellerAiUploadPayload(file?: File): Promise<SellerAiUploadPa
   return null;
 }
 
+async function readJsonSafely<T>(response: Response): Promise<T | null> {
+  const contentType = response.headers.get("content-type") || "";
+
+  if (!contentType.toLowerCase().includes("application/json")) {
+    return null;
+  }
+
+  try {
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
 function formatPlanLabel(planKey: NonNullable<SellerProfileDraft["sellerPlanKey"]>) {
   return planConfig[normalizePlanKey(planKey)].label;
 }
@@ -708,65 +722,76 @@ export function ProductCreator() {
       });
     }
 
-    const response = await fetch("/api/lessonforge/ai/listing-assist", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        sellerId,
-        sellerEmail,
-        sellerPlanKey: currentPlanKey,
-        provider: SELLER_FLOW_AI_PROVIDER,
-        action,
-        fileNames: files.map((file) => file.name),
-        upload,
-        title,
-        excerpt: `${shortDescription} ${fullDescription} ${notes}`.trim(),
-        subject,
-        gradeBand,
-        idempotencyKey: buildListingAssistCacheKey({
+    try {
+      const response = await fetch("/api/lessonforge/ai/listing-assist", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
           sellerId,
+          sellerEmail,
+          sellerPlanKey: currentPlanKey,
           provider: SELLER_FLOW_AI_PROVIDER,
           action,
           fileNames: files.map((file) => file.name),
+          upload,
           title,
           excerpt: `${shortDescription} ${fullDescription} ${notes}`.trim(),
-          uploadSignature,
+          subject,
+          gradeBand,
+          idempotencyKey: buildListingAssistCacheKey({
+            sellerId,
+            provider: SELLER_FLOW_AI_PROVIDER,
+            action,
+            fileNames: files.map((file) => file.name),
+            title,
+            excerpt: `${shortDescription} ${fullDescription} ${notes}`.trim(),
+            uploadSignature,
+          }),
         }),
-      }),
-    });
+      });
 
-    const payload = (await response.json()) as {
-      suggestion?: ListingAssistResponse;
-      availableCredits?: number;
-      error?: string;
-    };
+      const payload = (await readJsonSafely<{
+        suggestion?: ListingAssistResponse;
+        availableCredits?: number;
+        error?: string;
+      }>(response)) ?? { error: "AI could not finish this right now. Try again." };
 
-    if (!response.ok || !payload.suggestion) {
+      if (!response.ok || !payload.suggestion) {
+        if (!options?.quiet) {
+          setAiFeedback({
+            state: "error",
+            action,
+            message: payload.error || "Could not generate this right now.",
+          });
+        }
+        return null;
+      }
+
+      setAvailableCredits(payload.availableCredits ?? null);
+      if (!options?.quiet) {
+        setAiFeedback({
+          state: "success",
+          action,
+          message: "Filled by AI",
+        });
+      }
+
+      return {
+        suggestion: payload.suggestion,
+        availableCredits: payload.availableCredits ?? null,
+      };
+    } catch {
       if (!options?.quiet) {
         setAiFeedback({
           state: "error",
           action,
-          message: payload.error || "Could not generate this right now.",
+          message: "AI could not finish this right now. Try again.",
         });
       }
       return null;
     }
-
-    setAvailableCredits(payload.availableCredits ?? null);
-    if (!options?.quiet) {
-      setAiFeedback({
-        state: "success",
-        action,
-        message: "Filled by AI",
-      });
-    }
-
-    return {
-      suggestion: payload.suggestion,
-      availableCredits: payload.availableCredits ?? null,
-    };
   }
 
   async function runStandardsScan(
@@ -842,65 +867,76 @@ export function ProductCreator() {
       });
     }
 
-    const response = await fetch("/api/lessonforge/ai/standards-scan", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        sellerId,
-        sellerEmail,
-        sellerPlanKey: currentPlanKey,
-        title: title || normalizeUploadedTitle(files[0]?.name),
-        upload,
-        excerpt: `${shortDescription} ${fullDescription} ${notes} ${files.map((file) => file.name).join(" ")}`.trim(),
-        provider: SELLER_FLOW_AI_PROVIDER,
-        idempotencyKey: buildStandardsScanCacheKey({
+    try {
+      const response = await fetch("/api/lessonforge/ai/standards-scan", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
           sellerId,
-          provider: SELLER_FLOW_AI_PROVIDER,
+          sellerEmail,
+          sellerPlanKey: currentPlanKey,
           title: title || normalizeUploadedTitle(files[0]?.name),
+          upload,
           excerpt: `${shortDescription} ${fullDescription} ${notes} ${files.map((file) => file.name).join(" ")}`.trim(),
-          uploadSignature,
+          provider: SELLER_FLOW_AI_PROVIDER,
+          idempotencyKey: buildStandardsScanCacheKey({
+            sellerId,
+            provider: SELLER_FLOW_AI_PROVIDER,
+            title: title || normalizeUploadedTitle(files[0]?.name),
+            excerpt: `${shortDescription} ${fullDescription} ${notes} ${files.map((file) => file.name).join(" ")}`.trim(),
+            uploadSignature,
+          }),
         }),
-      }),
-    });
+      });
 
-    const payload = (await response.json()) as {
-      mapping?: AIProviderResult;
-      availableCredits?: number;
-      error?: string;
-    };
+      const payload = (await readJsonSafely<{
+        mapping?: AIProviderResult;
+        availableCredits?: number;
+        error?: string;
+      }>(response)) ?? { error: "Standards scan failed. Try again." };
 
-    if (!response.ok || !payload.mapping) {
+      if (!response.ok || !payload.mapping) {
+        if (!options?.quiet) {
+          setAiFeedback({
+            state: "error",
+            action: "standards",
+            message: payload.error || "Standards scan failed. Try again.",
+          });
+        }
+        return null;
+      }
+
+      setStandardsResult(payload.mapping);
+      setAvailableCredits(payload.availableCredits ?? null);
+      if (payload.mapping.status === "success") {
+        setSubject((current) =>
+          current === "Math" || !current.trim() ? payload.mapping?.subject || current : current,
+        );
+      }
+      if (!options?.quiet) {
+        setAiFeedback({
+          state: payload.mapping.status === "success" ? "success" : "error",
+          action: "standards",
+          message:
+            payload.mapping.status === "success"
+              ? "Standards scanned"
+              : payload.mapping.message,
+        });
+      }
+
+      return payload.mapping;
+    } catch {
       if (!options?.quiet) {
         setAiFeedback({
           state: "error",
           action: "standards",
-          message: payload.error || "Standards scan failed. Try again.",
+          message: "Standards scan failed. Try again.",
         });
       }
       return null;
     }
-
-    setStandardsResult(payload.mapping);
-    setAvailableCredits(payload.availableCredits ?? null);
-    if (payload.mapping.status === "success") {
-      setSubject((current) =>
-        current === "Math" || !current.trim() ? payload.mapping?.subject || current : current,
-      );
-    }
-    if (!options?.quiet) {
-      setAiFeedback({
-        state: payload.mapping.status === "success" ? "success" : "error",
-        action: "standards",
-        message:
-          payload.mapping.status === "success"
-            ? "Standards scanned"
-            : payload.mapping.message,
-      });
-    }
-
-    return payload.mapping;
   }
 
   function applyListingAssistSuggestion(
