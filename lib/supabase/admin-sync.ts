@@ -88,7 +88,7 @@ export async function upsertSupabaseProfile(input: UpsertSupabaseProfileInput) {
   };
 }
 
-async function getSupabaseProfileByEmail(email: string) {
+export async function getSupabaseProfileByEmail(email: string) {
   const supabase = getSupabaseServerAdminClient();
   const { data, error } = await supabase
     .from("profiles")

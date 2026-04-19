@@ -27,10 +27,6 @@ import {
   prismaUpdateReportStatus,
 } from "@/lib/lessonforge/repository-prisma";
 import { hasRealDatabaseUrl, prisma } from "@/lib/prisma/client";
-import {
-  getSupabaseServerAdminClient,
-  hasSupabaseServerEnv,
-} from "@/lib/supabase/server";
 import type {
   AdminAiSettings,
   AiActionCacheRecord,
@@ -41,8 +37,15 @@ import type {
   SellerProfileDraft,
   SubscriptionRecord,
   SystemSettings,
+  UsageLedgerEntry,
   ViewerRole,
 } from "@/types";
+import {
+  getSupabaseProfileByEmail,
+  getSupabaseSubscriptionRecord,
+  listSupabaseSellerProfiles,
+} from "@/lib/supabase/admin-sync";
+import { getSupabaseServerAdminClient, hasSupabaseServerEnv } from "@/lib/supabase/server";
 
 const defaultAdminAiSettings: AdminAiSettings = {
   aiKillSwitchEnabled: false,
@@ -333,6 +336,175 @@ function coercePrivateFeedbackFromSupabaseRow(row: {
   };
 }
 
+type SupabaseAiUsageMetadata = {
+  schemaVersion?: number;
+  sellerId?: string;
+  sellerEmail?: string;
+  planKey?: SubscriptionRecord["planKey"];
+  action?: UsageLedgerEntry["action"];
+  provider?: UsageLedgerEntry["provider"];
+  creditsUsed?: number;
+  refundedCredits?: number;
+  status?: UsageLedgerEntry["status"];
+  idempotencyKey?: string;
+};
+
+type SupabaseAiUsageRow = {
+  id?: unknown;
+  target_id?: unknown;
+  metadata_json?: unknown;
+  created_at?: unknown;
+};
+
+function isPrismaAiFallbackError(error: unknown) {
+  if (!hasSupabaseServerEnv()) {
+    return false;
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+
+  return (
+    /public\.User|table `public\.User`|relation "User"|Can't reach database server/i.test(message)
+  );
+}
+
+function getCurrentAiCycleWindow(now = new Date()) {
+  const startsAt = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const endsAt = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  const label = startsAt.toLocaleString("en-US", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+
+  return {
+    startsAt,
+    endsAt,
+    label: `${label} billing cycle`,
+  };
+}
+
+function coerceSupabaseAiUsageEntry(row: SupabaseAiUsageRow): UsageLedgerEntry | null {
+  if (typeof row.id !== "string" || !isRecord(row.metadata_json)) {
+    return null;
+  }
+
+  const metadata = row.metadata_json as SupabaseAiUsageMetadata;
+
+  if (
+    typeof metadata.sellerId !== "string" ||
+    typeof metadata.action !== "string" ||
+    typeof metadata.provider !== "string" ||
+    typeof metadata.creditsUsed !== "number" ||
+    typeof metadata.refundedCredits !== "number" ||
+    typeof metadata.status !== "string" ||
+    typeof metadata.idempotencyKey !== "string"
+  ) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    sellerId: metadata.sellerId,
+    action: metadata.action,
+    creditsUsed: metadata.creditsUsed,
+    refundedCredits: metadata.refundedCredits,
+    status: metadata.status,
+    provider: metadata.provider,
+    idempotencyKey: metadata.idempotencyKey,
+    createdAt:
+      typeof row.created_at === "string" ? row.created_at : new Date().toISOString(),
+  };
+}
+
+async function listSupabaseAiUsageLedger(): Promise<UsageLedgerEntry[]> {
+  if (!hasSupabaseServerEnv()) {
+    return [];
+  }
+
+  const { data, error } = await getSupabaseServerAdminClient()
+    .from("admin_audit_logs")
+    .select("id, target_id, metadata_json, created_at")
+    .eq("action", "ai.usage")
+    .eq("target_type", "ai_usage")
+    .order("created_at", { ascending: false })
+    .limit(1000);
+
+  if (error) {
+    throw new Error(`Unable to load Supabase AI usage ledger: ${error.message}`);
+  }
+
+  return (data ?? [])
+    .map((row) => coerceSupabaseAiUsageEntry(row))
+    .filter((entry): entry is UsageLedgerEntry => Boolean(entry));
+}
+
+function calculateAvailableCredits(input: {
+  monthlyCredits: number;
+  ledger: UsageLedgerEntry[];
+}) {
+  const cycle = getCurrentAiCycleWindow();
+  const usedThisCycle = input.ledger.reduce((sum, entry) => {
+    const createdAt = new Date(entry.createdAt);
+
+    if (createdAt < cycle.startsAt || createdAt >= cycle.endsAt) {
+      return sum;
+    }
+
+    return sum + Math.max(0, entry.creditsUsed - entry.refundedCredits);
+  }, 0);
+
+  return {
+    cycleLabel: cycle.label,
+    availableCredits: Math.max(0, input.monthlyCredits - usedThisCycle),
+  };
+}
+
+function getFallbackMonthlyCredits(planKey: SubscriptionRecord["planKey"]) {
+  switch (planKey) {
+    case "basic":
+      return Number(process.env.PLAN_BASIC_MONTHLY_CREDITS || "100");
+    case "pro":
+      return Number(process.env.PLAN_PRO_MONTHLY_CREDITS || "300");
+    default:
+      return Number(process.env.PLAN_STARTER_CREDITS || "5");
+  }
+}
+
+async function buildSupabaseSubscriptionRecord(input: {
+  sellerId: string;
+  sellerEmail: string;
+  planKey: SubscriptionRecord["planKey"];
+  monthlyCredits: number;
+}) {
+  const [subscriptionRow, ledger] = await Promise.all([
+    getSupabaseSubscriptionRecord(input.sellerEmail),
+    listSupabaseAiUsageLedger(),
+  ]);
+  const resolvedPlanKey = normalizePlanKey(subscriptionRow?.plan_name ?? input.planKey);
+  const monthlyCredits = getFallbackMonthlyCredits(resolvedPlanKey);
+  const sellerLedger = ledger.filter(
+    (entry) => entry.sellerId === input.sellerId || entry.sellerId === input.sellerEmail,
+  );
+  const cycle = calculateAvailableCredits({
+    monthlyCredits,
+    ledger: sellerLedger,
+  });
+
+  return {
+    subscription: {
+      sellerId: input.sellerId,
+      sellerEmail: input.sellerEmail,
+      planKey: resolvedPlanKey,
+      monthlyCredits,
+      availableCredits: cycle.availableCredits,
+      cycleLabel: cycle.cycleLabel,
+      rolloverPolicy: "none",
+    } satisfies SubscriptionRecord,
+    ledger: sellerLedger,
+  };
+}
+
 export async function listPersistedProducts() {
   return safeDatabaseRead("listPersistedProducts", [], () => prismaListPersistedProducts());
 }
@@ -364,24 +536,238 @@ export const saveReport = prismaSaveReport;
 export const updateReportStatus = prismaUpdateReportStatus;
 export const updateProductStatus = prismaUpdateProductStatus;
 export async function listSubscriptions() {
-  return safeDatabaseRead("listSubscriptions", [], () => prismaListSubscriptions());
+  try {
+    return await prismaListSubscriptions();
+  } catch (error) {
+    if (!isPrismaAiFallbackError(error)) {
+      logDatabaseFallback("listSubscriptions", error);
+      return [];
+    }
+
+    const profiles = await listSupabaseSellerProfiles();
+    const subscriptions = await Promise.all(
+      profiles.map(async (profile) => {
+        const { subscription } = await buildSupabaseSubscriptionRecord({
+          sellerId: profile.email,
+          sellerEmail: profile.email,
+          planKey: normalizePlanKey(profile.sellerPlanKey),
+          monthlyCredits: getFallbackMonthlyCredits(normalizePlanKey(profile.sellerPlanKey)),
+        });
+
+        return subscription;
+      }),
+    );
+
+    return subscriptions;
+  }
 }
 export async function listUsageLedger() {
-  return safeDatabaseRead("listUsageLedger", [], () => prismaListUsageLedger());
+  try {
+    return await prismaListUsageLedger();
+  } catch (error) {
+    if (!isPrismaAiFallbackError(error)) {
+      logDatabaseFallback("listUsageLedger", error);
+      return [];
+    }
+
+    return listSupabaseAiUsageLedger();
+  }
 }
-export const getOrCreateSubscription = prismaGetOrCreateSubscription;
-export const consumeCredits = prismaConsumeCredits;
-export const refundCredits = prismaRefundCredits;
+export async function getOrCreateSubscription(
+  sellerId: string,
+  sellerEmail: string,
+  planKey: SubscriptionRecord["planKey"],
+  monthlyCredits: number,
+) {
+  try {
+    return await prismaGetOrCreateSubscription(sellerId, sellerEmail, planKey, monthlyCredits);
+  } catch (error) {
+    if (!isPrismaAiFallbackError(error)) {
+      throw error;
+    }
+
+    const { subscription } = await buildSupabaseSubscriptionRecord({
+      sellerId,
+      sellerEmail,
+      planKey,
+      monthlyCredits,
+    });
+
+    return subscription;
+  }
+}
+
+export async function consumeCredits(input: {
+  sellerId: string;
+  sellerEmail: string;
+  planKey: PlanKey;
+  monthlyCredits: number;
+  action: "titleSuggestion" | "descriptionRewrite" | "standardsScan";
+  creditsUsed: number;
+  provider: "openai" | "gemini";
+  idempotencyKey: string;
+}) {
+  try {
+    return await prismaConsumeCredits(input);
+  } catch (error) {
+    if (!isPrismaAiFallbackError(error)) {
+      throw error;
+    }
+
+    const profile = await getSupabaseProfileByEmail(input.sellerEmail);
+
+    if (!profile?.id) {
+      throw new Error("Signed-in seller access required.");
+    }
+
+    const existingLedger = await listSupabaseAiUsageLedger();
+    const existingEntry = existingLedger.find(
+      (entry) => entry.idempotencyKey === input.idempotencyKey,
+    );
+
+    const { subscription } = await buildSupabaseSubscriptionRecord({
+      sellerId: input.sellerId,
+      sellerEmail: input.sellerEmail,
+      planKey: normalizePlanKey(input.planKey),
+      monthlyCredits: input.monthlyCredits,
+    });
+
+    if (existingEntry) {
+      return {
+        subscription,
+        ledgerEntry: existingEntry,
+      };
+    }
+
+    if (subscription.availableCredits < input.creditsUsed) {
+      throw new Error("Not enough AI credits remaining for this action.");
+    }
+
+    const id = `ai-usage-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const metadata: SupabaseAiUsageMetadata = {
+      schemaVersion: 1,
+      sellerId: input.sellerId,
+      sellerEmail: input.sellerEmail,
+      planKey: normalizePlanKey(input.planKey),
+      action: input.action,
+      provider: input.provider,
+      creditsUsed: input.creditsUsed,
+      refundedCredits: 0,
+      status: "applied",
+      idempotencyKey: input.idempotencyKey,
+    };
+
+    const { data, error: insertError } = await getSupabaseServerAdminClient()
+      .from("admin_audit_logs")
+      .insert({
+        id,
+        actor_user_id: profile.id,
+        action: "ai.usage",
+        target_type: "ai_usage",
+        target_id: input.idempotencyKey,
+        metadata_json: metadata,
+      })
+      .select("id, target_id, metadata_json, created_at")
+      .single();
+
+    if (insertError) {
+      throw new Error(`Unable to record AI usage: ${insertError.message}`);
+    }
+
+    const ledgerEntry = data ? coerceSupabaseAiUsageEntry(data) : null;
+
+    if (!ledgerEntry) {
+      throw new Error("AI usage could not be recorded right now.");
+    }
+
+    return {
+      subscription: {
+        ...subscription,
+        availableCredits: Math.max(0, subscription.availableCredits - input.creditsUsed),
+      },
+      ledgerEntry,
+    };
+  }
+}
+
+export async function refundCredits(idempotencyKey: string) {
+  try {
+    return await prismaRefundCredits(idempotencyKey);
+  } catch (error) {
+    if (!isPrismaAiFallbackError(error)) {
+      throw error;
+    }
+
+    const { data, error: selectError } = await getSupabaseServerAdminClient()
+      .from("admin_audit_logs")
+      .select("id, target_id, metadata_json, created_at")
+      .eq("action", "ai.usage")
+      .eq("target_type", "ai_usage")
+      .eq("target_id", idempotencyKey)
+      .maybeSingle();
+
+    if (selectError) {
+      throw new Error(`Unable to load AI usage for refund: ${selectError.message}`);
+    }
+
+    const entry = data ? coerceSupabaseAiUsageEntry(data) : null;
+
+    if (!entry || entry.refundedCredits > 0) {
+      return entry;
+    }
+
+    const nextMetadata: SupabaseAiUsageMetadata = {
+      ...(isRecord(data?.metadata_json) ? (data?.metadata_json as SupabaseAiUsageMetadata) : {}),
+      refundedCredits: entry.creditsUsed,
+      status: "refunded",
+    };
+
+    const { data: updatedData, error: updateError } = await getSupabaseServerAdminClient()
+      .from("admin_audit_logs")
+      .update({
+        metadata_json: nextMetadata,
+      })
+      .eq("id", entry.id)
+      .select("id, target_id, metadata_json, created_at")
+      .single();
+
+    if (updateError) {
+      throw new Error(`Unable to refund AI usage: ${updateError.message}`);
+    }
+
+    return updatedData ? coerceSupabaseAiUsageEntry(updatedData) : null;
+  }
+}
 
 export async function listSellerProfiles() {
-  const [profiles, subscriptions] = await Promise.all([
-    safeDatabaseRead("listSellerProfiles", [] as SellerProfileDraft[], () =>
+  let profiles: SellerProfileDraft[] = [];
+  let subscriptions: SubscriptionRecord[] = [];
+
+  try {
+    [profiles, subscriptions] = await Promise.all([
       prismaListSellerProfiles(),
-    ),
-    safeDatabaseRead("listSellerProfiles.subscriptions", [] as SubscriptionRecord[], () =>
       prismaListSubscriptions(),
-    ),
-  ]);
+    ]);
+  } catch (error) {
+    if (!isPrismaAiFallbackError(error)) {
+      logDatabaseFallback("listSellerProfiles", error);
+      return [];
+    }
+
+    profiles = await listSupabaseSellerProfiles();
+    subscriptions = await Promise.all(
+      profiles.map(async (profile) => {
+        const { subscription } = await buildSupabaseSubscriptionRecord({
+          sellerId: profile.email,
+          sellerEmail: profile.email,
+          planKey: normalizePlanKey(profile.sellerPlanKey),
+          monthlyCredits: getFallbackMonthlyCredits(normalizePlanKey(profile.sellerPlanKey)),
+        });
+
+        return subscription;
+      }),
+    );
+  }
 
   const planByEmail = new Map(
     subscriptions.map((entry) => [
