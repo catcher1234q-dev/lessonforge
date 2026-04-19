@@ -57,6 +57,16 @@ type SellerAiUploadPayload = {
   base64Data?: string;
 };
 
+type SellerAiUploadResult =
+  | { status: "ready"; upload: SellerAiUploadPayload }
+  | { status: "error"; message: string };
+
+const AI_GENERIC_FAILURE_MESSAGE = "AI could not finish this right now. Try again.";
+const AI_TEMPORARY_UNAVAILABLE_MESSAGE = "AI is temporarily unavailable right now.";
+const AI_ONBOARDING_REQUIRED_MESSAGE = "Finish seller onboarding before using Fill with AI.";
+const AI_UPLOAD_REQUIRED_MESSAGE = "Upload a resource before using Fill with AI.";
+const AI_STANDARDS_UPLOAD_REQUIRED_MESSAGE = "Upload a resource before scanning standards.";
+
 const AI_BINARY_UPLOAD_LIMIT_BYTES = 4_500_000;
 const AI_TEXT_UPLOAD_LIMIT_BYTES = 1_000_000;
 const AI_TEXT_CONTENT_LIMIT = 16_000;
@@ -95,48 +105,76 @@ function encodeBase64(bytes: Uint8Array) {
   return btoa(binary);
 }
 
-async function buildSellerAiUploadPayload(file?: File): Promise<SellerAiUploadPayload | null> {
-  if (!file) {
-    return null;
-  }
-
-  if (canUseTextExtraction(file)) {
-    if (file.size > AI_TEXT_UPLOAD_LIMIT_BYTES) {
-      return null;
+async function buildSellerAiUploadPayload(file?: File): Promise<SellerAiUploadResult> {
+  try {
+    if (!file) {
+      return {
+        status: "error",
+        message: AI_UPLOAD_REQUIRED_MESSAGE,
+      };
     }
 
-    const textContent = (await file.text()).trim().slice(0, AI_TEXT_CONTENT_LIMIT);
+    if (canUseTextExtraction(file)) {
+      if (file.size > AI_TEXT_UPLOAD_LIMIT_BYTES) {
+        return {
+          status: "error",
+          message: "That file is too large for AI help right now.",
+        };
+      }
 
-    if (!textContent) {
-      return null;
+      const textContent = (await file.text()).trim().slice(0, AI_TEXT_CONTENT_LIMIT);
+
+      if (!textContent) {
+        return {
+          status: "error",
+          message: "We could not read enough text from that upload.",
+        };
+      }
+
+      return {
+        status: "ready",
+        upload: {
+          fileName: file.name,
+          mimeType: file.type || "text/plain",
+          sizeBytes: file.size,
+          textContent,
+        },
+      };
+    }
+
+    if (canUseBinaryUpload(file)) {
+      if (file.size > AI_BINARY_UPLOAD_LIMIT_BYTES) {
+        return {
+          status: "error",
+          message: "That file is too large for AI help right now.",
+        };
+      }
+
+      const bytes = new Uint8Array(await file.arrayBuffer());
+
+      return {
+        status: "ready",
+        upload: {
+          fileName: file.name,
+          mimeType:
+            file.type ||
+            (file.name.toLowerCase().endsWith(".pdf") ? "application/pdf" : "image/jpeg"),
+          sizeBytes: file.size,
+          base64Data: encodeBase64(bytes),
+        },
+      };
     }
 
     return {
-      fileName: file.name,
-      mimeType: file.type || "text/plain",
-      sizeBytes: file.size,
-      textContent,
+      status: "error",
+      message: "That file type is not supported for AI help yet.",
     };
-  }
-
-  if (canUseBinaryUpload(file)) {
-    if (file.size > AI_BINARY_UPLOAD_LIMIT_BYTES) {
-      return null;
-    }
-
-    const bytes = new Uint8Array(await file.arrayBuffer());
-
+  } catch {
     return {
-      fileName: file.name,
-      mimeType:
-        file.type ||
-        (file.name.toLowerCase().endsWith(".pdf") ? "application/pdf" : "image/jpeg"),
-      sizeBytes: file.size,
-      base64Data: encodeBase64(bytes),
+      status: "error",
+      message: "We could not read that file for AI help.",
     };
   }
-
-  return null;
 }
 
 async function readJsonSafely<T>(response: Response): Promise<T | null> {
@@ -640,7 +678,7 @@ export function ProductCreator() {
         setAiFeedback({
           state: "error",
           action,
-          message: "Finish seller onboarding before using AI.",
+          message: AI_ONBOARDING_REQUIRED_MESSAGE,
         });
       }
       return null;
@@ -651,32 +689,33 @@ export function ProductCreator() {
         setAiFeedback({
           state: "error",
           action,
-          message: "Upload a resource before using AI.",
+          message: AI_UPLOAD_REQUIRED_MESSAGE,
         });
       }
       return null;
     }
 
-    const upload = await buildSellerAiUploadPayload(files[0]);
-    const uploadSignature = upload ? `${upload.fileName}:${upload.sizeBytes}:${upload.mimeType}` : "";
+    const uploadResult = await buildSellerAiUploadPayload(files[0]);
 
-    if (!upload) {
+    if (uploadResult.status !== "ready") {
       if (!options?.quiet) {
         setAiFeedback({
           state: "error",
           action,
-          message: "AI could not finish this right now. Try again.",
+          message: uploadResult.message,
         });
       }
       return null;
     }
+    const upload = uploadResult.upload;
+    const uploadSignature = `${upload.fileName}:${upload.sizeBytes}:${upload.mimeType}`;
 
     if (aiKillSwitchEnabled) {
       if (!options?.quiet) {
         setAiFeedback({
           state: "error",
           action,
-          message: "AI is temporarily unavailable right now.",
+          message: AI_TEMPORARY_UNAVAILABLE_MESSAGE,
         });
       }
       return null;
@@ -715,10 +754,10 @@ export function ProductCreator() {
           action === "autofill"
             ? "AI is scanning your file…"
             : action === "title"
-              ? "AI is generating…"
+              ? "AI is writing your title…"
               : action === "description"
-                ? "AI is generating…"
-                : "AI is generating…",
+                ? "AI is writing your description…"
+                : "AI is suggesting tags…",
       });
     }
 
@@ -756,14 +795,14 @@ export function ProductCreator() {
         suggestion?: ListingAssistResponse;
         availableCredits?: number;
         error?: string;
-      }>(response)) ?? { error: "AI could not finish this right now. Try again." };
+      }>(response)) ?? { error: AI_GENERIC_FAILURE_MESSAGE };
 
       if (!response.ok || !payload.suggestion) {
         if (!options?.quiet) {
           setAiFeedback({
             state: "error",
             action,
-            message: payload.error || "Could not generate this right now.",
+            message: payload.error || AI_GENERIC_FAILURE_MESSAGE,
           });
         }
         return null;
@@ -787,7 +826,7 @@ export function ProductCreator() {
         setAiFeedback({
           state: "error",
           action,
-          message: "AI could not finish this right now. Try again.",
+          message: AI_GENERIC_FAILURE_MESSAGE,
         });
       }
       return null;
@@ -806,7 +845,7 @@ export function ProductCreator() {
         setAiFeedback({
           state: "error",
           action: "standards",
-          message: "Finish seller onboarding before using AI.",
+          message: AI_ONBOARDING_REQUIRED_MESSAGE,
         });
       }
       return null;
@@ -817,32 +856,33 @@ export function ProductCreator() {
         setAiFeedback({
           state: "error",
           action: "standards",
-          message: "Upload a resource before scanning standards.",
+          message: AI_STANDARDS_UPLOAD_REQUIRED_MESSAGE,
         });
       }
       return null;
     }
 
-    const upload = await buildSellerAiUploadPayload(files[0]);
-    const uploadSignature = upload ? `${upload.fileName}:${upload.sizeBytes}:${upload.mimeType}` : "";
+    const uploadResult = await buildSellerAiUploadPayload(files[0]);
 
-    if (!upload) {
+    if (uploadResult.status !== "ready") {
       if (!options?.quiet) {
         setAiFeedback({
           state: "error",
           action: "standards",
-          message: "AI could not finish this right now. Try again.",
+          message: uploadResult.message,
         });
       }
       return null;
     }
+    const upload = uploadResult.upload;
+    const uploadSignature = `${upload.fileName}:${upload.sizeBytes}:${upload.mimeType}`;
 
     if (aiKillSwitchEnabled) {
       if (!options?.quiet) {
         setAiFeedback({
           state: "error",
           action: "standards",
-          message: "AI is temporarily unavailable right now.",
+          message: AI_TEMPORARY_UNAVAILABLE_MESSAGE,
         });
       }
       return null;
@@ -1026,7 +1066,7 @@ export function ProductCreator() {
       setAiFeedback({
         state: "error",
         action: "finish",
-        message: "AI could not finish this right now. Try again.",
+        message: AI_GENERIC_FAILURE_MESSAGE,
       });
       return;
     }
@@ -1293,7 +1333,8 @@ export function ProductCreator() {
       standardsResult?.status === "success" && standardsResult.suggestedStandard
         ? standardsResult.suggestedStandard
         : "Standards pending seller review";
-    const upload = await buildSellerAiUploadPayload(files[0]);
+    const uploadResult = await buildSellerAiUploadPayload(files[0]);
+    const upload = uploadResult.status === "ready" ? uploadResult.upload : null;
     const uploadSignature = upload ? `${upload.fileName}:${upload.sizeBytes}:${upload.mimeType}` : "";
 
     if ((!standardsResult || standardsResult.status !== "success") && !aiKillSwitchEnabled && canRunStandardsScan) {
