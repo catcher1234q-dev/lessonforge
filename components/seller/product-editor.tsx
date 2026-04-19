@@ -5,12 +5,17 @@ import { ArrowRight, Lock, WandSparkles } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
+import { ProductImageGalleryManager } from "@/components/seller/product-image-gallery-manager";
 import { aiActionCosts, normalizePlanKey, planConfig } from "@/lib/config/plans";
 import { getSellerModerationGuidance } from "@/lib/lessonforge/moderation-guidance";
 import {
   getAiUpgradeMessage,
   getLockedFeatureMessage,
 } from "@/lib/lessonforge/plan-enforcement";
+import {
+  MIN_PRODUCT_INTERIOR_PREVIEW_IMAGES,
+  normalizeProductGallery,
+} from "@/lib/lessonforge/product-gallery";
 import {
   getProductAssetHealthStatus,
   getProductPublishBlockers,
@@ -21,7 +26,7 @@ import {
 } from "@/lib/lessonforge/remediation-focus";
 import { ProductAssetPanel } from "@/components/seller/product-asset-panel";
 import { buildSellerPlanCheckoutHref } from "@/lib/stripe/seller-plan-billing";
-import type { AdminAiSettings, ProductRecord, SellerProfileDraft } from "@/types";
+import type { AdminAiSettings, ProductGalleryImage, ProductRecord, SellerProfileDraft } from "@/types";
 
 function buildOptimizationPreview(input: {
   title: string;
@@ -79,6 +84,9 @@ export function ProductEditor({ product }: { product: ProductRecord }) {
   const [createdPath, setCreatedPath] = useState<ProductRecord["createdPath"]>(
     product.createdPath ?? "Manual upload",
   );
+  const [imageGallery, setImageGallery] = useState<ProductGalleryImage[]>(
+    normalizeProductGallery(product.id, product.imageGallery ?? []),
+  );
   const [previewIncluded, setPreviewIncluded] = useState(product.previewIncluded ?? false);
   const [thumbnailIncluded, setThumbnailIncluded] = useState(product.thumbnailIncluded ?? false);
   const [rightsConfirmed, setRightsConfirmed] = useState(product.rightsConfirmed ?? false);
@@ -105,6 +113,7 @@ export function ProductEditor({ product }: { product: ProductRecord }) {
     fullDescription: notes.trim() || product.fullDescription || product.summary,
     licenseType,
     createdPath,
+    imageGallery,
     previewIncluded,
     thumbnailIncluded,
     rightsConfirmed,
@@ -159,6 +168,12 @@ export function ProductEditor({ product }: { product: ProductRecord }) {
   useEffect(() => {
     setIsEditorReady(true);
   }, []);
+
+  useEffect(() => {
+    const normalizedGallery = normalizeProductGallery(product.id, imageGallery);
+    setThumbnailIncluded(normalizedGallery.length > 0);
+    setPreviewIncluded(normalizedGallery.length > MIN_PRODUCT_INTERIOR_PREVIEW_IMAGES);
+  }, [imageGallery, product.id]);
 
   useEffect(() => {
     const sellerId = product.sellerId;
@@ -318,6 +333,20 @@ export function ProductEditor({ product }: { product: ProductRecord }) {
           className="mt-4"
           method="post"
         >
+          <input
+            name="imageGalleryJson"
+            type="hidden"
+            value={JSON.stringify(
+              normalizeProductGallery(product.id, imageGallery).map((image) => ({
+                id: image.id,
+                storagePath: image.storagePath,
+                fileName: image.fileName,
+                mimeType: image.mimeType,
+                fileSizeBytes: image.fileSizeBytes,
+                position: image.position,
+              })),
+            )}
+          />
           <div
             className="rounded-[1.25rem] border border-ink/10 bg-surface-subtle px-5 py-4 text-sm leading-6 text-ink"
             data-testid="seller-editor-live-progress"
@@ -485,50 +514,45 @@ export function ProductEditor({ product }: { product: ProductRecord }) {
             </p>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            <label
-              className={`flex items-start gap-3 rounded-[1.25rem] border border-ink/10 bg-surface-subtle px-4 py-4 text-sm text-ink ${
-                focusedSection === "preview" ? "ring-2 ring-brand/30 ring-offset-2" : ""
-              }`}
-              data-testid="seller-editor-preview-section"
+          <input name="previewIncluded" type="hidden" value={previewIncluded ? "on" : ""} />
+          <input name="thumbnailIncluded" type="hidden" value={thumbnailIncluded ? "on" : ""} />
+
+          <div className="space-y-4">
+            <div
+              className={focusedSection === "preview" || focusedSection === "thumbnail" ? "rounded-[1.25rem] ring-2 ring-brand/30 ring-offset-2" : ""}
             >
-              <input
-                checked={previewIncluded}
-                className="mt-1 h-4 w-4 rounded border border-ink/20 text-brand focus:ring-brand"
-                data-testid="seller-editor-preview-included"
-                name="previewIncluded"
-                onChange={(event) => setPreviewIncluded(event.target.checked)}
-                type="checkbox"
+              <ProductImageGalleryManager
+                onChange={setImageGallery}
+                productId={product.id}
+                value={imageGallery}
               />
-              <span>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div
+                className="rounded-[1.25rem] border border-ink/10 bg-surface-subtle px-4 py-4 text-sm text-ink"
+                data-testid="seller-editor-preview-section"
+              >
                 <span className="block font-semibold">Preview pages ready</span>
                 <span className="mt-1 block text-ink-soft">
-                  Required before publish or resubmission approval.
+                  {previewIncluded
+                    ? "At least two real interior preview images are ready."
+                    : "Add at least two real interior preview images before resubmitting."}
                 </span>
-              </span>
-            </label>
+              </div>
 
-            <label
-              className={`flex items-start gap-3 rounded-[1.25rem] border border-ink/10 bg-surface-subtle px-4 py-4 text-sm text-ink ${
-                focusedSection === "thumbnail" ? "ring-2 ring-brand/30 ring-offset-2" : ""
-              }`}
-              data-testid="seller-editor-thumbnail-section"
-            >
-              <input
-                checked={thumbnailIncluded}
-                className="mt-1 h-4 w-4 rounded border border-ink/20 text-brand focus:ring-brand"
-                data-testid="seller-editor-thumbnail-included"
-                name="thumbnailIncluded"
-                onChange={(event) => setThumbnailIncluded(event.target.checked)}
-                type="checkbox"
-              />
-              <span>
+              <div
+                className="rounded-[1.25rem] border border-ink/10 bg-surface-subtle px-4 py-4 text-sm text-ink"
+                data-testid="seller-editor-thumbnail-section"
+              >
                 <span className="block font-semibold">Thumbnail ready</span>
                 <span className="mt-1 block text-ink-soft">
-                  Needed for browse cards and seller storefront polish.
+                  {thumbnailIncluded
+                    ? "The first gallery image is now the marketplace thumbnail."
+                    : "Add a cover image for browse cards and storefront polish."}
                 </span>
-              </span>
-            </label>
+              </div>
+            </div>
 
             <label
               className={`flex items-start gap-3 rounded-[1.25rem] border border-ink/10 bg-surface-subtle px-4 py-4 text-sm text-ink ${
@@ -809,6 +833,7 @@ export function ProductEditor({ product }: { product: ProductRecord }) {
           assetVersionNumber={product.assetVersionNumber}
           format={product.format}
           gradeBand={gradeBand}
+          imageGallery={imageGallery}
           originalAssetUrl={product.originalAssetUrl}
           previewAssetUrls={product.previewAssetUrls}
           previewIncluded={previewIncluded}

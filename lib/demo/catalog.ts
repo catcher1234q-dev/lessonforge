@@ -103,18 +103,48 @@ function inferFileTypes(format: string) {
 
 function inferIncludedItems(title: string, format: string) {
   return [
-    `${format} teacher guide`,
-    `${title} student-facing pages`,
+    `${format} cover and student pages`,
+    `${title} teacher guide with answer support`,
     "Editable planning notes",
-    "Quick-start implementation tips",
+    "Print-ready preview pages",
   ];
 }
 
-function buildPreviewSlides(title: string, subject: string) {
+function buildPreviewSlides(title: string, subject: string, format: string) {
+  const lower = format.toLowerCase();
+
+  if (lower.includes("slide") || lower.includes("deck")) {
+    return [
+      `${title} cover slide`,
+      `${subject} lesson slide`,
+      "Guided practice slide",
+      "Teacher notes and answer support",
+    ];
+  }
+
+  if (lower.includes("center") || lower.includes("task")) {
+    return [
+      `${title} cover page`,
+      "Center directions and setup",
+      "Task cards and recording sheet",
+      "Answer key and teacher notes",
+    ];
+  }
+
+  if (lower.includes("lab") || lower.includes("inquiry")) {
+    return [
+      `${title} cover page`,
+      "Observation sheet",
+      "Student data and reflection page",
+      "Teacher guide and discussion notes",
+    ];
+  }
+
   return [
-    `${title} overview and teacher notes`,
-    `${subject} standards alignment and pacing`,
-    "Student preview pages and differentiation notes",
+    `${title} cover page`,
+    "Student practice page",
+    "Independent application page",
+    "Teacher notes and answer key",
   ];
 }
 
@@ -138,10 +168,12 @@ export function toMarketplaceListing(
   const priceCents = resource.priceCents ?? 0;
   const split = calculateMarketplaceSplit(priceCents);
   const fileTypes = resource.fileTypes?.length ? resource.fileTypes : inferFileTypes(resource.format);
+  const previewSlides = buildPreviewSlides(resource.title, resource.subject, resource.format);
+  const slug = slugify(resource.title);
 
   return {
     id: resource.id,
-    slug: slugify(resource.title),
+    slug,
     title: resource.title,
     subject: resource.subject,
     gradeBand: resource.gradeBand,
@@ -179,16 +211,17 @@ export function toMarketplaceListing(
       resource.includedItems?.length
         ? resource.includedItems
         : inferIncludedItems(resource.title, resource.format),
-    previewSlides: buildPreviewSlides(resource.title, resource.subject),
+    previewSlides,
     previewAssets: buildManagedPreviewAssets({
       productId: resource.id,
       title: resource.title,
       subject: resource.subject,
       format: resource.format,
-      previewLabels: buildPreviewSlides(resource.title, resource.subject),
+      previewLabels: previewSlides,
       previewUrls: resource.previewAssetUrls,
     }),
-    thumbnailUrl: resource.thumbnailUrl,
+    thumbnailUrl:
+      resource.thumbnailUrl ?? `/api/lessonforge/thumbnail-assets/${slug}`,
     assetVersionNumber: resource.assetVersionNumber ?? 1,
     assetHealthStatus:
       resource.previewIncluded === false

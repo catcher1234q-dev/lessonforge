@@ -4,7 +4,7 @@ import type {
   SubjectHub,
 } from "@/types";
 
-export const demoResources: DemoResource[] = [
+const baseDemoResources: DemoResource[] = [
   {
     id: "math-stripe-test-5",
     title: "Stripe Test Math Warm-Up Pack",
@@ -380,6 +380,123 @@ export const demoResources: DemoResource[] = [
     isPurchasable: true,
   },
 ];
+
+function inferResourceType(format: string) {
+  if (format.includes("Slide") || format.includes("Deck")) {
+    return "Slide lesson screenshots";
+  }
+  if (format.includes("Center")) {
+    return "Math center";
+  }
+  if (format.includes("Toolkit") || format.includes("Bundle")) {
+    return "Printable activity bundle";
+  }
+  if (format.includes("Lab") || format.includes("Inquiry")) {
+    return "Printable activity";
+  }
+  if (format.includes("Routine")) {
+    return "Worksheet set";
+  }
+  return format;
+}
+
+function inferFileTypes(format: string) {
+  const lower = format.toLowerCase();
+
+  if (lower.includes("slide") || lower.includes("deck")) {
+    return ["PPTX", "PDF"];
+  }
+
+  if (lower.includes("toolkit") || lower.includes("bundle")) {
+    return ["PDF", "PPTX", "DOCX"];
+  }
+
+  if (lower.includes("center") || lower.includes("pack") || lower.includes("unit")) {
+    return ["PDF", "DOCX"];
+  }
+
+  return ["PDF"];
+}
+
+function buildIncludedItems(resource: DemoResource) {
+  const subject = resource.subject;
+  const format = resource.format;
+
+  if (subject === "Math") {
+    return [
+      `${format} cover and teacher overview`,
+      "2 student practice pages with worked models",
+      "recording sheet or exit ticket",
+      "teacher answer key and small-group notes",
+    ];
+  }
+
+  if (subject === "ELA") {
+    return [
+      `${format} cover and pacing notes`,
+      "readable student pages with text evidence prompts",
+      "annotation or response organizer",
+      "teacher support page with discussion cues",
+    ];
+  }
+
+  if (subject === "Science") {
+    return [
+      `${format} launch page and lesson objective`,
+      "student observation or lab recording sheet",
+      "claim-evidence-reasoning response page",
+      "teacher notes and answer support",
+    ];
+  }
+
+  return [
+    `${format} cover and teacher guide`,
+    "student-facing printable pages",
+    "discussion or reflection sheet",
+    "teacher notes and answer support",
+  ];
+}
+
+function buildShortDescription(resource: DemoResource) {
+  if (resource.shortDescription) {
+    return resource.shortDescription;
+  }
+
+  return `${resource.summary} Designed as a polished classroom-ready ${resource.format.toLowerCase()} with real preview pages.`;
+}
+
+function buildFullDescription(resource: DemoResource) {
+  if (resource.fullDescription) {
+    return resource.fullDescription;
+  }
+
+  const demoLine = resource.demoOnly
+    ? "This listing is marked demo only, but the preview pages are intentionally built to look like a real teacher resource."
+    : "This preview is designed to show what a strong classroom listing can look like when a seller uploads a polished resource.";
+
+  return `${resource.summary} Buyers can see a strong cover, readable inside pages, and a clear sense of what is included before purchase. ${demoLine}`;
+}
+
+function withMarketplaceDefaults(resource: DemoResource): DemoResource {
+  return {
+    ...resource,
+    shortDescription: buildShortDescription(resource),
+    fullDescription: buildFullDescription(resource),
+    resourceType: resource.resourceType ?? inferResourceType(resource.format),
+    licenseType: resource.licenseType ?? "Single classroom",
+    fileTypes: resource.fileTypes?.length ? resource.fileTypes : inferFileTypes(resource.format),
+    includedItems:
+      resource.includedItems?.length ? resource.includedItems : buildIncludedItems(resource),
+    previewIncluded: resource.previewIncluded ?? true,
+    thumbnailIncluded: resource.thumbnailIncluded ?? true,
+    rightsConfirmed: resource.rightsConfirmed ?? true,
+    assetVersionNumber: resource.assetVersionNumber ?? 1,
+    productStatus: resource.productStatus ?? "Published",
+    createdPath: resource.createdPath ?? "Manual upload",
+  };
+}
+
+export const demoResources: DemoResource[] = baseDemoResources.map(withMarketplaceDefaults);
 
 export const subjectHubs: SubjectHub[] = [
   {

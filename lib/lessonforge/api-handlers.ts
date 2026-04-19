@@ -15,6 +15,7 @@ import type {
 import { getAiCreditCost } from "@/lib/services/ai/credits";
 import type { UploadedAiSource } from "@/lib/ai/providers";
 import { classifyAiRouteError } from "@/lib/lessonforge/ai-route-errors";
+import type { AiCreditReservationState } from "@/lib/lessonforge/data-access";
 import type {
   AdminAiSettings,
   AIProviderResult,
@@ -119,7 +120,7 @@ type StandardsScanDeps = {
     creditsUsed: number;
     provider: "openai" | "gemini";
     idempotencyKey: string;
-  }) => Promise<{ subscription: { availableCredits: number } }>;
+  }) => Promise<{ subscription: { availableCredits: number }; reservationState: AiCreditReservationState }>;
   refundCredits: (idempotencyKey: string) => Promise<unknown>;
   mapStandardsWithOpenAI: (input: {
     title: string;
@@ -230,6 +231,7 @@ export async function handleStandardsScanRequest(
   const plan = planConfig[body.sellerPlanKey];
   const cost = getAiCreditCost("standardsScan");
   const aiSettings = await deps.getAdminAiSettings();
+  let reservationState: AiCreditReservationState | null = null;
   const cached = deps.findAiActionCacheEntry
     ? await deps.findAiActionCacheEntry({
         sellerId: body.sellerId,
@@ -281,6 +283,46 @@ export async function handleStandardsScanRequest(
       provider: body.provider,
       idempotencyKey: body.idempotencyKey,
     });
+    reservationState = usage.reservationState;
+
+    console.info("[lessonforge.ai] ai provider started", {
+      provider: body.provider,
+      action: "standardsScan",
+      reservationState,
+    });
+
+    if (reservationState === "reused") {
+      const reusedCached = deps.findAiActionCacheEntry
+        ? await deps.findAiActionCacheEntry({
+            sellerId: body.sellerId,
+            action: "standardsScan",
+            provider: body.provider,
+            cacheKey: body.idempotencyKey,
+          })
+        : null;
+
+      if (reusedCached) {
+        return {
+          status: 200,
+          body: {
+            mapping: reusedCached.result,
+            availableCredits: usage.subscription.availableCredits,
+            cost,
+          },
+        };
+      }
+
+      console.info("[lessonforge.ai] duplicate request blocked while original run is in flight", {
+        provider: body.provider,
+        action: "standardsScan",
+        sellerId: body.sellerId,
+      });
+
+      return {
+        status: 503,
+        body: { error: "AI could not finish this right now. Try again." },
+      };
+    }
 
     const mapping =
       body.provider === "openai"
@@ -323,13 +365,15 @@ export async function handleStandardsScanRequest(
   } catch (error) {
     const classified = classifyAiRouteError(error);
 
-    try {
-      await deps.refundCredits(body.idempotencyKey);
-    } catch (refundError) {
-      console.error("[lessonforge.ai] standards-scan refund failed", {
-        provider: body.provider,
-        message: refundError instanceof Error ? refundError.message : "Unknown refund error",
-      });
+    if (reservationState === "reserved") {
+      try {
+        await deps.refundCredits(body.idempotencyKey);
+      } catch (refundError) {
+        console.error("[lessonforge.ai] standards-scan refund failed", {
+          provider: body.provider,
+          message: refundError instanceof Error ? refundError.message : "Unknown refund error",
+        });
+      }
     }
 
     console.error("[lessonforge.ai] standards-scan failed", {

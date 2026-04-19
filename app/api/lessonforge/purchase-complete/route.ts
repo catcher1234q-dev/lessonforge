@@ -6,6 +6,7 @@ import { hasRealDatabaseUrl } from "@/lib/lessonforge/prisma-preflight";
 import { handlePurchaseRequest } from "@/lib/lessonforge/api-handlers";
 import { saveOrder } from "@/lib/lessonforge/data-access";
 import { getPersistenceMode } from "@/lib/prisma/client";
+import { isStripeServerConfigured } from "@/lib/stripe/server";
 
 function buildCheckoutReturnParams(formData: FormData) {
   const params = new URLSearchParams();
@@ -41,6 +42,18 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const viewer = await getCurrentViewer();
   const params = buildCheckoutReturnParams(formData);
+
+  if (process.env.VERCEL === "1" || isStripeServerConfigured()) {
+    params.set(
+      "purchaseError",
+      "Preview purchase confirmation is disabled on the live site. Use real Stripe checkout instead.",
+    );
+    return NextResponse.redirect(
+      new URL(`/checkout-preview?${params.toString()}`, request.url),
+      303,
+    );
+  }
+
   const persistenceMode = getPersistenceMode();
   const hostedPreviewWithoutWritableStorage =
     process.env.VERCEL === "1" &&

@@ -71,6 +71,9 @@ export async function POST(request: Request) {
       );
     }
 
+    const existingProfile = await getSupabaseSellerProfile(body.profile.email).catch(
+      () => null,
+    );
     const normalizedPlanKey = normalizePlanKey(body.profile.sellerPlanKey);
     const sanitizedProfile: SellerProfileDraft =
       viewer.role === "admin" || viewer.role === "owner"
@@ -80,7 +83,12 @@ export async function POST(request: Request) {
           }
         : {
             ...body.profile,
-            sellerPlanKey: normalizedPlanKey === "starter" ? "starter" : "starter",
+            sellerPlanKey: "starter",
+            onboardingCompleted: existingProfile?.onboardingCompleted ?? false,
+            stripeAccountId: existingProfile?.stripeAccountId ?? undefined,
+            stripeOnboardingStatus: existingProfile?.stripeOnboardingStatus ?? undefined,
+            stripeChargesEnabled: existingProfile?.stripeChargesEnabled ?? false,
+            stripePayoutsEnabled: existingProfile?.stripePayoutsEnabled ?? false,
           };
 
     const supabaseUser = await getSupabaseServerUser();
@@ -100,10 +108,6 @@ export async function POST(request: Request) {
       email: supabaseUser.email,
       role: "seller",
     }).catch(() => null);
-
-    const existingProfile = await getSupabaseSellerProfile(body.profile.email).catch(
-      () => null,
-    );
 
     const saved = await upsertSupabaseSellerProfile({
       userId: supabaseUser.id,

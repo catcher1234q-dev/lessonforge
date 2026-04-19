@@ -47,6 +47,19 @@ export type ProductRecord = {
     | "Removed";
   moderationFeedback?: string;
   createdPath?: "Manual upload" | "Manual from scratch" | "AI assisted";
+  imageGallery?: ProductGalleryImage[];
+};
+
+export type ProductGalleryImage = {
+  id: string;
+  storagePath: string;
+  fileName: string;
+  mimeType: string;
+  fileSizeBytes: number;
+  role: "cover" | "preview";
+  position: number;
+  coverUrl: string;
+  previewUrl: string;
 };
 
 export type ConnectedSeller = {

@@ -3,14 +3,11 @@ import { NextResponse } from "next/server";
 import { hasAppSessionForEmail } from "@/lib/auth/app-session";
 import { getCurrentViewer } from "@/lib/auth/viewer";
 import {
-  normalizePlanKey,
-  type PlanKey,
-} from "@/lib/config/plans";
-import {
   logBuyerPaymentEvent,
   productMatchesClientPayload,
   resolveCheckoutProductById,
 } from "@/lib/lessonforge/buyer-payments";
+import { resolveSellerPayoutPlan } from "@/lib/lessonforge/checkout-plan-resolution";
 import { listOrders, listSellerProfiles } from "@/lib/lessonforge/data-access";
 import {
   getSupabaseSubscriptionRecord,
@@ -30,62 +27,6 @@ type CheckoutBody = {
   resource?: ProductRecord;
   returnTo?: string;
 };
-
-function isPaidSellerSubscriptionStatus(status?: string | null) {
-  return status === "active" || status === "trialing";
-}
-
-type SellerPlanResolution = {
-  planKey: PlanKey;
-  matchedProfilePlanKey: string | null;
-  subscriptionPlanName: string | null;
-  subscriptionStatus: string | null;
-  fallbackReason: "missing_seller_id" | "missing_subscription_record" | "subscription_not_paid" | null;
-};
-
-async function resolveSellerPlanKey(
-  resource: ProductRecord,
-  sellerProfiles: Awaited<ReturnType<typeof listSellerProfiles>>,
-): Promise<SellerPlanResolution> {
-  const sellerId = resource.sellerId?.trim().toLowerCase();
-
-  if (!sellerId) {
-    return {
-      planKey: "starter",
-      matchedProfilePlanKey: null,
-      subscriptionPlanName: null,
-      subscriptionStatus: null,
-      fallbackReason: "missing_seller_id",
-    };
-  }
-
-  const matchedProfile =
-    sellerProfiles.find((profile) => profile.email.trim().toLowerCase() === sellerId) ?? null;
-  const syncedSubscription = await getSupabaseSubscriptionRecord(sellerId).catch(
-    () => null,
-  );
-
-  if (
-    syncedSubscription?.plan_name &&
-    isPaidSellerSubscriptionStatus(syncedSubscription.status)
-  ) {
-    return {
-      planKey: normalizePlanKey(syncedSubscription.plan_name),
-      matchedProfilePlanKey: matchedProfile?.sellerPlanKey ?? null,
-      subscriptionPlanName: syncedSubscription.plan_name ?? null,
-      subscriptionStatus: syncedSubscription.status ?? null,
-      fallbackReason: null,
-    };
-  }
-
-  return {
-    planKey: "starter",
-    matchedProfilePlanKey: matchedProfile?.sellerPlanKey ?? null,
-    subscriptionPlanName: syncedSubscription?.plan_name ?? null,
-    subscriptionStatus: syncedSubscription?.status ?? null,
-    fallbackReason: syncedSubscription ? "subscription_not_paid" : "missing_subscription_record",
-  };
-}
 
 function getSafeReturnTo(candidate: string | null | undefined) {
   if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//")) {
@@ -216,18 +157,21 @@ export async function POST(request: Request) {
       );
     }
 
-    const sellerPlanResolution = await resolveSellerPlanKey(
-      checkoutResource,
+    const sellerSubscription = await getSupabaseSubscriptionRecord(
+      checkoutResource.sellerId?.trim().toLowerCase() ?? "",
+    ).catch(() => null);
+    const sellerPlanResolution = resolveSellerPayoutPlan({
+      sellerId: checkoutResource.sellerId,
       sellerProfiles,
-    );
-    const sellerPlanKey = sellerPlanResolution.planKey;
+      syncedSubscription: sellerSubscription,
+    });
 
-    if (sellerPlanResolution.fallbackReason) {
+    if (!sellerPlanResolution.ok) {
       logBuyerPaymentEvent({
-        event: "checkout_plan_fallback",
+        event: "checkout_denied",
         userId: supabaseUser?.id ?? viewer.email,
         productId: checkoutResource.id,
-        reason: sellerPlanResolution.fallbackReason,
+        reason: "seller_plan_unverified",
         metadata: {
           seller_id: checkoutResource.sellerId?.trim().toLowerCase() ?? null,
           seller_email: checkoutResource.sellerId?.trim().toLowerCase() ?? null,
@@ -237,10 +181,17 @@ export async function POST(request: Request) {
             sellerPlanResolution.subscriptionPlanName ?? null,
           subscription_status:
             sellerPlanResolution.subscriptionStatus ?? null,
-          resolved_plan: sellerPlanKey,
+          resolution_code: sellerPlanResolution.code,
         },
       });
+
+      return NextResponse.json(
+        { error: sellerPlanResolution.message },
+        { status: 409 },
+      );
     }
+
+    const sellerPlanKey = sellerPlanResolution.planKey;
 
     if (!checkoutResource.sellerStripeAccountEnvKey && !checkoutResource.sellerStripeAccountId) {
       return NextResponse.json(

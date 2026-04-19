@@ -1,4 +1,5 @@
 import { buildStoredAssetPaths } from "@/lib/lessonforge/preview-assets";
+import { normalizeProductGallery } from "@/lib/lessonforge/product-gallery";
 import {
   applyAdminProductModeration,
   debitAiCredits,
@@ -308,10 +309,19 @@ export async function saveProduct(product: ProductRecord) {
     });
     const normalizedProduct: ProductRecord = {
       ...product,
-      thumbnailUrl: product.thumbnailUrl ?? assetPaths.thumbnailUrl,
-      previewAssetUrls: product.previewAssetUrls?.length
-        ? product.previewAssetUrls
-        : assetPaths.previewUrls,
+      imageGallery: product.imageGallery?.length
+        ? normalizeProductGallery(product.id, product.imageGallery)
+        : [],
+      thumbnailUrl:
+        product.imageGallery?.[0]?.coverUrl ?? product.thumbnailUrl ?? assetPaths.thumbnailUrl,
+      previewAssetUrls:
+        product.imageGallery && product.imageGallery.length > 1
+          ? normalizeProductGallery(product.id, product.imageGallery)
+              .slice(1)
+              .map((image) => image.previewUrl)
+          : product.previewAssetUrls?.length
+            ? product.previewAssetUrls
+            : assetPaths.previewUrls,
       originalAssetUrl: product.originalAssetUrl ?? assetPaths.originalUrl,
       assetVersionNumber: product.assetVersionNumber ?? assetPaths.assetVersionNumber,
     };

@@ -5,6 +5,8 @@ import { getCurrentViewer } from "@/lib/auth/viewer";
 import { normalizePlanKey } from "@/lib/config/plans";
 import { checkAdminMutationRateLimit } from "@/lib/lessonforge/admin-rate-limit";
 import { handleProductModerationRequest } from "@/lib/lessonforge/api-handlers";
+import { deleteProductGalleryImages } from "@/lib/lessonforge/product-gallery-storage";
+import { mergeProductRecord } from "@/lib/lessonforge/product-record-merge";
 import { validateProductForSave } from "@/lib/lessonforge/product-validation";
 import {
   listPersistedProducts,
@@ -30,7 +32,8 @@ function mergeProductSources(
   }
 
   for (const product of syncedProducts) {
-    merged.set(product.id, product);
+    const existing = merged.get(product.id);
+    merged.set(product.id, existing ? mergeProductRecord(existing, product) : product);
   }
 
   return Array.from(merged.values());
@@ -78,21 +81,61 @@ export async function POST(request: Request) {
       );
     }
 
-    const profiles = await listSellerProfiles();
+    const [profiles, persistedProducts] = await Promise.all([
+      listSellerProfiles(),
+      listPersistedProducts(),
+    ]);
     const effectiveSellerId =
       body.product.sellerId ||
       (viewer.role === "seller" ? viewer.email : undefined);
+
+    if (
+      viewer.role === "seller" &&
+      effectiveSellerId?.trim().toLowerCase() !== viewer.email.trim().toLowerCase()
+    ) {
+      return NextResponse.json(
+        { error: "You can only save products for your own seller account." },
+        { status: 403 },
+      );
+    }
+
     const profile =
       profiles.find((entry) => entry.email === effectiveSellerId) ??
       profiles.find((entry) => entry.email === viewer.email);
 
-    const validationError = validateProductForSave(body.product);
+    const galleryAwareProduct = {
+      ...body.product,
+      previewIncluded:
+        (body.product.imageGallery?.length ?? 0) > 2 || body.product.previewIncluded,
+      thumbnailIncluded:
+        (body.product.imageGallery?.length ?? 0) > 0 || body.product.thumbnailIncluded,
+    };
+    const productToSave =
+      viewer.role === "seller"
+        ? {
+            ...galleryAwareProduct,
+            sellerId: viewer.email,
+          }
+        : galleryAwareProduct;
+
+    const previousProduct =
+      persistedProducts.find((entry) => entry.id === productToSave.id) ?? null;
+
+    const validationError = validateProductForSave(productToSave);
     if (validationError) {
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
 
-    const saved = await saveProduct(body.product);
+    const saved = await saveProduct(productToSave);
     await syncSupabaseProductRecord(saved).catch(() => null);
+    const removedGalleryStoragePaths =
+      previousProduct?.imageGallery
+        ?.filter(
+          (image) =>
+            !saved.imageGallery?.some((nextImage) => nextImage.storagePath === image.storagePath),
+        )
+        .map((image) => image.storagePath) ?? [];
+    await deleteProductGalleryImages(removedGalleryStoragePaths).catch(() => null);
     await trackMonetizationEvent({
       sellerId: saved.sellerId || viewer.email,
       sellerEmail: saved.sellerId || viewer.email,

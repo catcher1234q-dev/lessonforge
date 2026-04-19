@@ -1,7 +1,9 @@
 import type { ProductRecord } from "@/types";
+import { hasRequiredProductGallery } from "@/lib/lessonforge/product-gallery";
 
 export function getProductPublishBlockers(product: ProductRecord) {
   const blockers: string[] = [];
+  const galleryStatus = hasRequiredProductGallery(product);
 
   if (!product.fullDescription?.trim()) {
     blockers.push("Add a full description");
@@ -19,12 +21,12 @@ export function getProductPublishBlockers(product: ProductRecord) {
     blockers.push("Choose a license");
   }
 
-  if (!product.previewIncluded) {
-    blockers.push("Generate or attach preview pages");
+  if (!galleryStatus.hasPreviewImage && !product.previewIncluded) {
+    blockers.push("Add at least two real interior preview images");
   }
 
-  if (!product.thumbnailIncluded) {
-    blockers.push("Generate or attach a thumbnail");
+  if (!galleryStatus.hasCoverImage && !product.thumbnailIncluded) {
+    blockers.push("Add a cover image");
   }
 
   if (!product.rightsConfirmed) {
@@ -36,16 +38,17 @@ export function getProductPublishBlockers(product: ProductRecord) {
 
 export function getProductAssetHealthStatus(product: ProductRecord) {
   const blockers = getProductPublishBlockers(product);
+  const galleryStatus = hasRequiredProductGallery(product);
 
   if (blockers.length === 0) {
     return "Ready to publish";
   }
 
-  if (!product.previewIncluded) {
+  if (!galleryStatus.hasPreviewImage && !product.previewIncluded) {
     return "Needs preview";
   }
 
-  if (!product.thumbnailIncluded) {
+  if (!galleryStatus.hasCoverImage && !product.thumbnailIncluded) {
     return "Needs thumbnail";
   }
 
@@ -57,6 +60,8 @@ export function getProductAssetHealthStatus(product: ProductRecord) {
 }
 
 export function validateProductForSave(product: ProductRecord) {
+  const galleryStatus = hasRequiredProductGallery(product);
+
   if (!product.title?.trim() || !product.subject?.trim()) {
     return "Product title and subject are required.";
   }
@@ -87,12 +92,12 @@ export function validateProductForSave(product: ProductRecord) {
     return "Published listings need a license before they can go live.";
   }
 
-  if (!product.previewIncluded) {
-    return "Published listings need a preview before they can go live.";
+  if (!galleryStatus.hasPreviewImage && !product.previewIncluded) {
+    return "Published listings need at least two real interior preview images before they can go live.";
   }
 
-  if (!product.thumbnailIncluded) {
-    return "Published listings need a thumbnail before they can go live.";
+  if (!galleryStatus.hasCoverImage && !product.thumbnailIncluded) {
+    return "Published listings need a cover image before they can go live.";
   }
 
   if (!product.rightsConfirmed) {

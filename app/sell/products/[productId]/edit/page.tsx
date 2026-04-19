@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ProductEditor } from "@/components/seller/product-editor";
 import { listPersistedProducts } from "@/lib/lessonforge/data-access";
+import { mergeProductRecord } from "@/lib/lessonforge/product-record-merge";
 import { findSupabaseProductRecordById } from "@/lib/supabase/admin-sync";
 
 export const dynamic = "force-dynamic";
@@ -19,8 +20,11 @@ export default async function SellerProductEditPage({
     listPersistedProducts(),
     findSupabaseProductRecordById(productId).catch(() => null),
   ]);
+  const persistedProduct = products.find((entry) => entry.id === productId) ?? null;
   const product =
-    syncedProduct ?? products.find((entry) => entry.id === productId);
+    persistedProduct && syncedProduct
+      ? mergeProductRecord(persistedProduct, syncedProduct)
+      : syncedProduct ?? persistedProduct;
 
   if (!product) {
     notFound();

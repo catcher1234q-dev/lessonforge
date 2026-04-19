@@ -6,9 +6,13 @@ import {
   buildManagedPreviewAssets,
   buildStoredAssetPaths,
   renderManagedThumbnailSvg,
-  renderMissingPreviewSvg,
   type ManagedPreviewAsset,
 } from "@/lib/lessonforge/preview-assets";
+import {
+  getProductGalleryCoverImage,
+  getProductGalleryPreviewImages,
+} from "@/lib/lessonforge/product-gallery";
+import type { ProductGalleryImage } from "@/types";
 
 type ProductAssetPanelProps = {
   productId: string;
@@ -22,6 +26,7 @@ type ProductAssetPanelProps = {
   assetVersionNumber?: number;
   previewAssetUrls?: string[];
   originalAssetUrl?: string;
+  imageGallery?: ProductGalleryImage[];
   localFiles?: File[];
   className?: string;
 };
@@ -54,6 +59,7 @@ export function ProductAssetPanel({
   assetVersionNumber,
   previewAssetUrls,
   originalAssetUrl,
+  imageGallery,
   localFiles,
   className,
 }: ProductAssetPanelProps) {
@@ -90,17 +96,21 @@ export function ProductAssetPanel({
   const versionNumber = assetVersionNumber ?? storedPaths.assetVersionNumber;
   const protectedOriginalUrl = originalAssetUrl ?? storedPaths.originalUrl;
   const thumbnailPreviewUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(thumbnailPreviewSvg)}`;
-  const previewPlaceholderSvg = renderMissingPreviewSvg({
-    title: title || "Preview not ready yet",
+  const coverImage = getProductGalleryCoverImage({
+    id: productId,
+    imageGallery,
   });
-  const previewPlaceholderUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(previewPlaceholderSvg)}`;
+  const previewGalleryImages = getProductGalleryPreviewImages({
+    id: productId,
+    imageGallery,
+  });
 
   const localPreviewAssets = useMemo<LocalPreviewAsset[]>(() => {
     if (!localFiles?.length || localPreviewUrls.length === 0) {
       return [];
     }
 
-    return localPreviewUrls.slice(0, 3).map((previewUrl, index) => {
+    return localPreviewUrls.slice(0, 5).map((previewUrl, index) => {
       const file = localFiles[index];
       const mode = file ? getFilePreviewMode(file) : "unsupported";
       const pageUrl =
@@ -131,7 +141,12 @@ export function ProductAssetPanel({
     title: title || "Untitled resource",
     subject,
     format,
-    previewUrls: previewAssetUrls?.length ? previewAssetUrls : storedPaths.previewUrls,
+    previewUrls:
+      previewGalleryImages.length > 0
+        ? previewGalleryImages.map((image) => image.previewUrl)
+        : previewAssetUrls?.length
+          ? previewAssetUrls
+          : storedPaths.previewUrls,
   }).map((asset) => ({
     ...asset,
     source: "sample" as const,
@@ -169,7 +184,7 @@ export function ProductAssetPanel({
               ? `${localPreviewAssets.length} real preview page${localPreviewAssets.length === 1 ? "" : "s"} from your upload.`
               : previewIncluded
                 ? `${previewAssets.length} preview page${previewAssets.length === 1 ? "" : "s"} ready to open.`
-                : "We are still preparing your sample pages."}
+                : "Add real inside pages so buyers can see what the resource actually looks like."}
           </p>
         </article>
 
@@ -181,7 +196,7 @@ export function ProductAssetPanel({
             {thumbnailIncluded ? "Ready" : "Still needed"}
           </p>
           <p className="mt-1 text-sm leading-6 text-ink-soft">
-            Used in browse and storefront cards.
+            {coverImage ? "Using your uploaded cover image." : "Used in browse and storefront cards."}
           </p>
         </article>
 
@@ -204,8 +219,8 @@ export function ProductAssetPanel({
               {hasRealUploadedPreview
                 ? "Real preview pages from your uploaded file."
                 : previewIncluded
-                  ? "Preview pages are ready to open."
-                  : "Preview pages will appear here after upload processing."}
+                  ? "Real preview pages are ready to open."
+                  : "Preview pages are still missing."}
             </p>
           </div>
           <p className="text-xs uppercase tracking-[0.18em] text-ink-soft">{format}</p>
@@ -223,9 +238,7 @@ export function ProductAssetPanel({
                   <p className="mt-1 text-xs leading-5 text-ink-soft">
                     {hasRealUploadedPreview
                       ? asset.pageRangeLabel
-                      : asset.source === "sample"
-                        ? "Sample preview layout"
-                        : asset.pageRangeLabel}
+                      : asset.pageRangeLabel}
                   </p>
                 </div>
                 <a
@@ -243,22 +256,10 @@ export function ProductAssetPanel({
 
         {!hasRealUploadedPreview && !previewIncluded ? (
           <div className="mt-4 rounded-[1rem] border border-slate-200 bg-white p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-ink">Preview not ready yet</p>
-                <p className="mt-1 text-sm leading-6 text-ink-soft">
-                  We are still preparing your sample pages.
-                </p>
-              </div>
-              <a
-                className="inline-flex rounded-full bg-brand px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-700"
-                href={previewPlaceholderUrl}
-                rel="noreferrer"
-                target="_blank"
-              >
-                Try again
-              </a>
-            </div>
+            <p className="text-sm font-semibold text-ink">Preview pages still needed</p>
+            <p className="mt-1 text-sm leading-6 text-ink-soft">
+              Upload a real cover image and at least two real inside preview images before publishing.
+            </p>
           </div>
         ) : null}
       </div>
@@ -273,7 +274,7 @@ export function ProductAssetPanel({
           </div>
           <a
             className="inline-flex rounded-full bg-brand px-4 py-2 text-xs font-semibold text-white transition hover:bg-brand-700"
-            href={thumbnailPreviewUrl}
+            href={coverImage?.coverUrl ?? thumbnailPreviewUrl}
             rel="noreferrer"
             target="_blank"
           >
@@ -287,7 +288,7 @@ export function ProductAssetPanel({
             decoding="async"
             loading="lazy"
             sizes="(min-width: 768px) 560px, 100vw"
-            src={thumbnailPreviewUrl}
+            src={coverImage?.coverUrl ?? thumbnailPreviewUrl}
           />
         </div>
         <p className="mt-3 text-xs leading-5 text-ink-soft">

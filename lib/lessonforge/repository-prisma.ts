@@ -22,6 +22,10 @@ import {
   buildStoredAssetPaths,
   inferProductAssetType,
 } from "@/lib/lessonforge/preview-assets";
+import {
+  deserializeProductGallery,
+  serializeProductGallery,
+} from "@/lib/lessonforge/product-gallery";
 import { prisma } from "@/lib/prisma/client";
 import type {
   AdminAuditLog,
@@ -293,6 +297,7 @@ function toProductRecord(
     seller: User;
     sellerProfile: SellerProfile | null;
     assets?: Array<{
+      storageKey: string;
       previewUrl: string | null;
       originalUrl: string | null;
       versionNumber: number;
@@ -300,8 +305,15 @@ function toProductRecord(
     }>;
   },
 ): ProductRecord {
-  const previewAssets = (product.assets ?? []).filter((asset) => asset.isPreview);
-  const originalAsset = (product.assets ?? []).find((asset) => !asset.isPreview);
+  const imageGallery = deserializeProductGallery(product.id, product.previewImageUrls);
+  const previewAssets = (product.assets ?? []).filter(
+    (asset) => asset.isPreview && !asset.storageKey.includes("/gallery/"),
+  );
+  const originalAsset = (product.assets ?? []).find(
+    (asset) => !asset.isPreview && !asset.storageKey.includes("/gallery/"),
+  );
+  const coverImage = imageGallery[0] ?? null;
+  const previewGalleryImages = imageGallery.slice(1);
 
   return {
     id: product.id,
@@ -323,10 +335,13 @@ function toProductRecord(
         ? "Multiple classroom"
         : "Single classroom",
     fileTypes: product.fileTypesSummary,
-    thumbnailUrl: product.thumbnailUrl ?? undefined,
-    previewAssetUrls: previewAssets
-      .map((asset) => asset.previewUrl)
-      .filter((value): value is string => Boolean(value)),
+    thumbnailUrl: coverImage?.coverUrl ?? product.thumbnailUrl ?? undefined,
+    previewAssetUrls:
+      previewGalleryImages.length > 0
+        ? previewGalleryImages.map((image) => image.previewUrl)
+        : previewAssets
+            .map((asset) => asset.previewUrl)
+            .filter((value): value is string => Boolean(value)),
     originalAssetUrl: originalAsset?.originalUrl ?? undefined,
     assetVersionNumber: originalAsset?.versionNumber ?? previewAssets[0]?.versionNumber ?? 1,
     includedItems: product.whatIsIncluded
@@ -346,6 +361,7 @@ function toProductRecord(
     productStatus: unmapProductStatus(product.status),
     moderationFeedback: product.moderationNotes ?? undefined,
     createdPath: product.isAiAssisted ? "AI assisted" : "Manual upload",
+    imageGallery,
   };
 }
 
@@ -736,7 +752,8 @@ export async function prismaSaveProduct(product: ProductRecord) {
       resourceType: mapResourceType(product.format),
       status: mapProductStatus(product.productStatus),
       basePriceCents: product.priceCents ?? 0,
-      thumbnailUrl: product.thumbnailUrl ?? assetPaths.thumbnailUrl,
+      thumbnailUrl: product.imageGallery?.[0]?.coverUrl ?? product.thumbnailUrl ?? assetPaths.thumbnailUrl,
+      previewImageUrls: serializeProductGallery(product.imageGallery ?? []),
       previewIncluded: product.previewIncluded ?? false,
       thumbnailIncluded: product.thumbnailIncluded ?? false,
       rightsConfirmed: product.rightsConfirmed ?? false,
@@ -762,8 +779,8 @@ export async function prismaSaveProduct(product: ProductRecord) {
       resourceType: mapResourceType(product.format),
       status: mapProductStatus(product.productStatus),
       basePriceCents: product.priceCents ?? 0,
-      thumbnailUrl: product.thumbnailUrl ?? assetPaths.thumbnailUrl,
-      previewImageUrls: [],
+      thumbnailUrl: product.imageGallery?.[0]?.coverUrl ?? product.thumbnailUrl ?? assetPaths.thumbnailUrl,
+      previewImageUrls: serializeProductGallery(product.imageGallery ?? []),
       previewIncluded: product.previewIncluded ?? false,
       thumbnailIncluded: product.thumbnailIncluded ?? false,
       rightsConfirmed: product.rightsConfirmed ?? false,
@@ -779,23 +796,42 @@ export async function prismaSaveProduct(product: ProductRecord) {
   });
 
   await prisma.productAsset.deleteMany({
-    where: { productId: product.id },
+    where: {
+      productId: product.id,
+      OR: [
+        { storageKey: { contains: "/gallery/" } },
+        { isPreview: true },
+        { isPreview: false, storageKey: { endsWith: "/original" } },
+      ],
+    },
   });
 
   await prisma.productAsset.createMany({
     data: [
-      ...assetPaths.previewUrls.map((previewUrl, index) => ({
+      ...(product.imageGallery?.map((image) => ({
         productId: product.id,
-        assetType: inferProductAssetType(product.format) as ProductAssetType,
-        storageKey: `${product.id}/preview-${index + 1}`,
-        fileName: `${slugify(product.title)}-preview-${index + 1}.svg`,
-        originalUrl: null,
-        previewUrl,
-        isPreview: true,
-        mimeType: "image/svg+xml",
-        fileSizeBytes: 0,
+        assetType: "IMAGE" as ProductAssetType,
+        storageKey: image.storagePath,
+        fileName: image.fileName,
+        originalUrl: image.storagePath,
+        previewUrl: image.role === "cover" ? image.coverUrl : image.previewUrl,
+        isPreview: image.role === "preview",
+        mimeType: image.mimeType,
+        fileSizeBytes: image.fileSizeBytes,
         versionNumber: product.assetVersionNumber ?? assetPaths.assetVersionNumber,
-      })),
+      })) ??
+        assetPaths.previewUrls.map((previewUrl, index) => ({
+          productId: product.id,
+          assetType: inferProductAssetType(product.format) as ProductAssetType,
+          storageKey: `${product.id}/preview-${index + 1}`,
+          fileName: `${slugify(product.title)}-preview-${index + 1}.svg`,
+          originalUrl: null,
+          previewUrl,
+          isPreview: true,
+          mimeType: "image/svg+xml",
+          fileSizeBytes: 0,
+          versionNumber: product.assetVersionNumber ?? assetPaths.assetVersionNumber,
+        }))),
       {
         productId: product.id,
         assetType: inferProductAssetType(product.format) as ProductAssetType,
@@ -1482,46 +1518,6 @@ export async function prismaConsumeCredits(input: {
     role: UserRole.USER,
   });
 
-  const existing = await prisma.usageLedger.findUnique({
-    where: { idempotencyKey: input.idempotencyKey },
-    include: { user: true },
-  });
-
-  if (existing) {
-    const subscription = await prisma.subscription.findUnique({
-      where: { userId: user.id },
-    });
-    let creditBalance: CreditBalance | null = null;
-    let fallbackAvailableCredits: number | undefined;
-
-    try {
-      creditBalance = await prisma.creditBalance.findUnique({
-        where: { userId: user.id },
-      });
-    } catch (error) {
-      if (!isMissingTableError(error, ["credit_balance", "creditbalance"])) {
-        throw error;
-      }
-
-      fallbackAvailableCredits = await getAvailableCreditsWithoutBalanceTable({
-        userId: user.id,
-        monthlyCredits: subscription?.monthlyCreditAllowance ?? input.monthlyCredits,
-        startsAt: cycle.startsAt,
-        endsAt: cycle.endsAt,
-      });
-    }
-
-    return {
-      subscription: toSubscriptionRecord(
-        user,
-        subscription!,
-        creditBalance,
-        fallbackAvailableCredits,
-      ),
-      ledgerEntry: toUsageLedgerEntryRecord(existing),
-    };
-  }
-
   const subscription = await prisma.subscription.upsert({
     where: { userId: user.id },
     update: {
@@ -1570,7 +1566,77 @@ export async function prismaConsumeCredits(input: {
     subscription.monthlyCreditAllowance !== input.monthlyCredits;
 
   if (!useCreditBalanceTable) {
-    const { availableCreditsAfterConsume, ledgerEntry } = await prisma.$transaction(async (tx) => {
+    const { availableCreditsAfterConsume, ledgerEntry, reservationState } = await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`lessonforge-ai:${user.id}`})::bigint)`;
+
+      const existing = await tx.usageLedger.findUnique({
+        where: { idempotencyKey: input.idempotencyKey },
+        include: { user: true },
+      });
+
+      if (existing) {
+        const aggregateExisting = await tx.usageLedger.aggregate({
+          where: {
+            userId: user.id,
+            createdAt: {
+              gte: cycle.startsAt,
+              lt: cycle.endsAt,
+            },
+          },
+          _sum: {
+            creditsUsed: true,
+            refundedCredits: true,
+          },
+        });
+
+        const usedCredits = Math.max(
+          0,
+          (aggregateExisting._sum.creditsUsed ?? 0) - (aggregateExisting._sum.refundedCredits ?? 0),
+        );
+        const availableCredits = Math.max(0, input.monthlyCredits - usedCredits);
+
+        if (existing.refundedCredits >= existing.creditsUsed) {
+          if (availableCredits < input.creditsUsed) {
+            console.info("[lessonforge.ai] insufficient credits rejected", {
+              sellerEmail: input.sellerEmail,
+              action: input.action,
+              provider: input.provider,
+              availableCredits,
+              requestedCredits: input.creditsUsed,
+            });
+            throw new Error("Not enough AI credits remaining for this action.");
+          }
+
+          const retriedLedgerEntry = await tx.usageLedger.update({
+            where: { id: existing.id },
+            data: {
+              refundedCredits: 0,
+              entryType: UsageEntryType.DEBIT,
+              providerName: input.provider,
+            },
+            include: { user: true },
+          });
+
+          return {
+            availableCreditsAfterConsume: availableCredits - input.creditsUsed,
+            ledgerEntry: retriedLedgerEntry,
+            reservationState: "reserved" as const,
+          };
+        }
+
+        console.info("[lessonforge.ai] duplicate request reused", {
+          sellerEmail: input.sellerEmail,
+          action: input.action,
+          provider: input.provider,
+        });
+
+        return {
+          availableCreditsAfterConsume: availableCredits,
+          ledgerEntry: existing,
+          reservationState: "reused" as const,
+        };
+      }
+
       const aggregate = await tx.usageLedger.aggregate({
         where: {
           userId: user.id,
@@ -1592,6 +1658,13 @@ export async function prismaConsumeCredits(input: {
       const availableCredits = Math.max(0, input.monthlyCredits - usedCredits);
 
       if (availableCredits < input.creditsUsed) {
+        console.info("[lessonforge.ai] insufficient credits rejected", {
+          sellerEmail: input.sellerEmail,
+          action: input.action,
+          provider: input.provider,
+          availableCredits,
+          requestedCredits: input.creditsUsed,
+        });
         throw new Error("Not enough AI credits remaining for this action.");
       }
 
@@ -1614,8 +1687,18 @@ export async function prismaConsumeCredits(input: {
       return {
         availableCreditsAfterConsume: availableCredits - input.creditsUsed,
         ledgerEntry: createdLedgerEntry,
+        reservationState: "reserved" as const,
       };
     });
+
+    if (reservationState === "reserved") {
+      console.info("[lessonforge.ai] credit reserved", {
+        sellerEmail: input.sellerEmail,
+        action: input.action,
+        provider: input.provider,
+        creditsUsed: input.creditsUsed,
+      });
+    }
 
     return {
       subscription: toSubscriptionRecord(
@@ -1625,6 +1708,7 @@ export async function prismaConsumeCredits(input: {
         availableCreditsAfterConsume,
       ),
       ledgerEntry: toUsageLedgerEntryRecord(ledgerEntry),
+      reservationState,
     };
   }
 
@@ -1645,11 +1729,82 @@ export async function prismaConsumeCredits(input: {
     },
   });
 
-  if (creditBalance.availableCredits < input.creditsUsed) {
-    throw new Error("Not enough AI credits remaining for this action.");
-  }
+  const { updatedCreditBalance, ledgerEntry, reservationState } = await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`lessonforge-ai:${user.id}`})::bigint)`;
 
-  const { updatedCreditBalance, ledgerEntry } = await prisma.$transaction(async (tx) => {
+    const existing = await tx.usageLedger.findUnique({
+      where: { idempotencyKey: input.idempotencyKey },
+      include: { user: true },
+    });
+
+    if (existing) {
+      if (existing.refundedCredits >= existing.creditsUsed) {
+        const retriedUpdate = await tx.creditBalance.updateMany({
+          where: {
+            userId: user.id,
+            availableCredits: {
+              gte: input.creditsUsed,
+            },
+          },
+          data: {
+            availableCredits: {
+              decrement: input.creditsUsed,
+            },
+          },
+        });
+
+        if (retriedUpdate.count !== 1) {
+          const currentBalance = await tx.creditBalance.findUniqueOrThrow({
+            where: { userId: user.id },
+          });
+          console.info("[lessonforge.ai] parallel request blocked", {
+            sellerEmail: input.sellerEmail,
+            action: input.action,
+            provider: input.provider,
+            availableCredits: currentBalance.availableCredits,
+            requestedCredits: input.creditsUsed,
+          });
+          throw new Error("Not enough AI credits remaining for this action.");
+        }
+
+        const retriedLedgerEntry = await tx.usageLedger.update({
+          where: { id: existing.id },
+          data: {
+            refundedCredits: 0,
+            entryType: UsageEntryType.DEBIT,
+            providerName: input.provider,
+          },
+          include: { user: true },
+        });
+
+        const refreshedCreditBalance = await tx.creditBalance.findUniqueOrThrow({
+          where: { userId: user.id },
+        });
+
+        return {
+          updatedCreditBalance: refreshedCreditBalance,
+          ledgerEntry: retriedLedgerEntry,
+          reservationState: "reserved" as const,
+        };
+      }
+
+      const existingBalance = await tx.creditBalance.findUniqueOrThrow({
+        where: { userId: user.id },
+      });
+
+      console.info("[lessonforge.ai] duplicate request reused", {
+        sellerEmail: input.sellerEmail,
+        action: input.action,
+        provider: input.provider,
+      });
+
+      return {
+        updatedCreditBalance: existingBalance,
+        ledgerEntry: existing,
+        reservationState: "reused" as const,
+      };
+    }
+
     const updated = await tx.creditBalance.updateMany({
       where: {
         userId: user.id,
@@ -1665,6 +1820,16 @@ export async function prismaConsumeCredits(input: {
     });
 
     if (updated.count !== 1) {
+      const currentBalance = await tx.creditBalance.findUniqueOrThrow({
+        where: { userId: user.id },
+      });
+      console.info("[lessonforge.ai] parallel request blocked", {
+        sellerEmail: input.sellerEmail,
+        action: input.action,
+        provider: input.provider,
+        availableCredits: currentBalance.availableCredits,
+        requestedCredits: input.creditsUsed,
+      });
       throw new Error("Not enough AI credits remaining for this action.");
     }
 
@@ -1691,12 +1856,23 @@ export async function prismaConsumeCredits(input: {
     return {
       updatedCreditBalance: refreshedCreditBalance,
       ledgerEntry: createdLedgerEntry,
+      reservationState: "reserved" as const,
     };
   });
+
+  if (reservationState === "reserved") {
+    console.info("[lessonforge.ai] credit reserved", {
+      sellerEmail: input.sellerEmail,
+      action: input.action,
+      provider: input.provider,
+      creditsUsed: input.creditsUsed,
+    });
+  }
 
   return {
     subscription: toSubscriptionRecord(user, subscription, updatedCreditBalance),
     ledgerEntry: toUsageLedgerEntryRecord(ledgerEntry),
+    reservationState,
   };
 }
 

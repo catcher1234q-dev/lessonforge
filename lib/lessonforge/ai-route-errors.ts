@@ -19,6 +19,14 @@ function normalizeErrorMessage(error: unknown) {
 export function classifyAiRouteError(error: unknown): AiRouteErrorClassification {
   const message = normalizeErrorMessage(error);
 
+  if (/atomic ai credit reservation|credit reservation is temporarily unavailable/i.test(message)) {
+    return {
+      status: 503,
+      userMessage: "AI is temporarily unavailable right now.",
+      reason: "credit_reservation_unavailable",
+    };
+  }
+
   if (/signed-in seller access required/i.test(message)) {
     return {
       status: 401,

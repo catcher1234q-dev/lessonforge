@@ -3,6 +3,7 @@ import { BadgeCheck, Eye, FileText } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ProductImageGallery } from "@/components/marketplace/product-image-gallery";
 import { ProductCard } from "@/components/marketplace/product-card";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -207,48 +208,12 @@ export default async function ProductDetailPage({
                   </p>
                 </div>
 
-                <div className="mt-6 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-                  <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-100 shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
-                    {previewHeroImage ? (
-                      <img
-                        alt={`${listing.title} large preview`}
-                        className="h-full max-h-[760px] w-full bg-slate-100 object-cover object-top"
-                        decoding="async"
-                        loading="eager"
-                        sizes="(min-width: 1024px) 60vw, 100vw"
-                        src={previewHeroImage}
-                      />
-                    ) : null}
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
-                    {listing.previewAssets.slice(0, 3).map((asset, index) => (
-                      <a
-                        key={asset.id}
-                        className="group overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.10)]"
-                        href={asset.previewUrl}
-                        target="_blank"
-                      >
-                        <div className="overflow-hidden bg-slate-100">
-                          <img
-                            alt={asset.label}
-                            className="h-44 w-full bg-slate-100 object-cover object-top transition duration-300 group-hover:scale-[1.02]"
-                            decoding="async"
-                            loading="lazy"
-                            sizes="(min-width: 1024px) 28vw, (min-width: 640px) 33vw, 100vw"
-                            src={asset.previewUrl}
-                          />
-                        </div>
-                        <div className="p-4">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand">
-                            Preview page {index + 1}
-                          </p>
-                          <p className="mt-2 text-sm font-semibold leading-6 text-ink">{asset.label}</p>
-                          <p className="mt-1 text-xs leading-5 text-ink-soft">{asset.pageRangeLabel}</p>
-                        </div>
-                      </a>
-                    ))}
-                  </div>
+                <div className="mt-6">
+                  <ProductImageGallery
+                    coverImageUrl={listing.thumbnailUrl ?? null}
+                    previewImageUrls={listing.previewAssets.map((asset) => asset.previewUrl)}
+                    title={listing.title}
+                  />
                 </div>
               </section>
             </section>

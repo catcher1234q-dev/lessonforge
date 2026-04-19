@@ -46,7 +46,7 @@ test("published products require a preview", () => {
 
   assert.equal(
     error,
-    "Published listings need a preview before they can go live.",
+    "Published listings need at least two real interior preview images before they can go live.",
   );
 });
 
@@ -97,9 +97,99 @@ test("asset blockers and asset health status explain missing publish requirement
   });
 
   assert.deepEqual(getProductPublishBlockers(product), [
-    "Generate or attach preview pages",
-    "Generate or attach a thumbnail",
+    "Add at least two real interior preview images",
+    "Add a cover image",
     "Confirm rights to sell",
   ]);
   assert.equal(getProductAssetHealthStatus(product), "Needs preview");
+});
+
+test("published products still fail with only one interior preview image in the gallery", () => {
+  const error = validateProductForSave(
+    createBaseProduct({
+      productStatus: "Published",
+      fullDescription: "Ready to use fractions practice.",
+      resourceType: "Worksheet",
+      licenseType: "Single classroom",
+      rightsConfirmed: true,
+      imageGallery: [
+        {
+          id: "cover-1",
+          storagePath: "products/product-1/gallery/cover-1.jpg",
+          fileName: "cover.jpg",
+          mimeType: "image/jpeg",
+          fileSizeBytes: 1000,
+          role: "cover",
+          position: 0,
+          coverUrl: "/cover-1",
+          previewUrl: "/preview-1",
+        },
+        {
+          id: "preview-1",
+          storagePath: "products/product-1/gallery/preview-1.jpg",
+          fileName: "preview-1.jpg",
+          mimeType: "image/jpeg",
+          fileSizeBytes: 1000,
+          role: "preview",
+          position: 1,
+          coverUrl: "/cover-2",
+          previewUrl: "/preview-2",
+        },
+      ],
+    }),
+  );
+
+  assert.equal(
+    error,
+    "Published listings need at least two real interior preview images before they can go live.",
+  );
+});
+
+test("published products pass with a cover image and two preview images in the gallery", () => {
+  const error = validateProductForSave(
+    createBaseProduct({
+      productStatus: "Published",
+      fullDescription: "Ready to use fractions practice.",
+      resourceType: "Worksheet",
+      licenseType: "Single classroom",
+      rightsConfirmed: true,
+      imageGallery: [
+        {
+          id: "cover-1",
+          storagePath: "products/product-1/gallery/cover-1.jpg",
+          fileName: "cover.jpg",
+          mimeType: "image/jpeg",
+          fileSizeBytes: 1000,
+          role: "cover",
+          position: 0,
+          coverUrl: "/cover-1",
+          previewUrl: "/preview-1",
+        },
+        {
+          id: "preview-1",
+          storagePath: "products/product-1/gallery/preview-1.jpg",
+          fileName: "preview-1.jpg",
+          mimeType: "image/jpeg",
+          fileSizeBytes: 1000,
+          role: "preview",
+          position: 1,
+          coverUrl: "/cover-2",
+          previewUrl: "/preview-2",
+        },
+        {
+          id: "preview-2",
+          storagePath: "products/product-1/gallery/preview-2.jpg",
+          fileName: "preview-2.jpg",
+          mimeType: "image/jpeg",
+          fileSizeBytes: 1000,
+          role: "preview",
+          position: 2,
+          coverUrl: "/cover-3",
+          previewUrl: "/preview-3",
+        },
+      ],
+    }),
+  );
+
+  assert.equal(error, null);
 });

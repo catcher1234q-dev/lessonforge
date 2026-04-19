@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
+import { hasAppSessionForEmail } from "@/lib/auth/app-session";
+import { getCurrentViewer } from "@/lib/auth/viewer";
 import { getStripeServerClient, isStripeServerConfigured } from "@/lib/stripe/server";
+import { getSupabaseSellerProfile } from "@/lib/supabase/admin-sync";
 
 type OnboardBody = {
   email?: string;
@@ -11,6 +14,16 @@ type OnboardBody = {
 
 export async function POST(request: Request) {
   try {
+    const viewer = await getCurrentViewer();
+
+    if (!(await hasAppSessionForEmail(viewer.email))) {
+      return NextResponse.json({ error: "Signed-in seller access required." }, { status: 401 });
+    }
+
+    if (viewer.role !== "seller" && viewer.role !== "admin" && viewer.role !== "owner") {
+      return NextResponse.json({ error: "Seller access required." }, { status: 403 });
+    }
+
     if (!isStripeServerConfigured()) {
       return NextResponse.json(
         {
@@ -22,13 +35,11 @@ export async function POST(request: Request) {
     }
 
     const body = (await request.json()) as OnboardBody;
-    const email = body.email?.trim();
+    const email = body.email?.trim().toLowerCase();
     const displayName = body.displayName?.trim();
-    const requestedAccountId =
-      body.accountId?.trim() ||
-      (body.sellerAccountEnvKey
-        ? process.env[body.sellerAccountEnvKey as keyof NodeJS.ProcessEnv]
-        : undefined);
+    const viewerProfile =
+      viewer.role === "seller" ? await getSupabaseSellerProfile(viewer.email).catch(() => null) : null;
+    const requestedAccountId = body.accountId?.trim();
 
     if (!requestedAccountId && (!email || !displayName)) {
       return NextResponse.json(
@@ -38,6 +49,25 @@ export async function POST(request: Request) {
         },
         { status: 400 },
       );
+    }
+
+    if (viewer.role === "seller") {
+      if (email && email !== viewer.email.trim().toLowerCase()) {
+        return NextResponse.json(
+          { error: "You can only start Stripe onboarding for your own seller account." },
+          { status: 403 },
+        );
+      }
+
+      if (
+        requestedAccountId &&
+        requestedAccountId !== (viewerProfile?.stripeAccountId ?? null)
+      ) {
+        return NextResponse.json(
+          { error: "You can only continue Stripe onboarding for your own seller account." },
+          { status: 403 },
+        );
+      }
     }
 
     const stripe = getStripeServerClient();

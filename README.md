@@ -124,6 +124,7 @@ cp .env.example .env.local
 
 The template already uses the safest current database default:
 - placeholder `DATABASE_URL`
+- placeholder `DIRECT_URL`
 - `LESSONFORGE_PERSISTENCE_MODE=auto`
 
 That keeps local review flows on demo JSON until you intentionally move into the strict Prisma cutover.
@@ -142,6 +143,13 @@ For safer private account access in production, make sure you also set:
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `NEXT_PUBLIC_SITE_URL`
+- `DIRECT_URL`
+
+Database URL split for Supabase + Prisma:
+- `DATABASE_URL` should be the runtime connection string the app uses on Vercel
+- if you use the Supabase pooler host, add `?pgbouncer=true`
+- `DIRECT_URL` should be the direct database connection string used by Prisma CLI commands like migrations
+- when Supabase is the real database, remove or ignore old `POSTGRES_PRISMA_URL` or `POSTGRES_URL` values so Prisma does not point at the wrong database
 
 In plain language:
 - Supabase handles real sign-in
@@ -190,6 +198,7 @@ npm run verify:persistence:ops
 npm run prisma:generate
 npm run prisma:validate
 npm run prisma:migrate
+npm run prisma:migrate:deploy
 npm run prisma:seed
 npm run prisma:import-demo
 npm run prisma:preflight

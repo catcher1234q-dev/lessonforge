@@ -1,44 +1,77 @@
 import { PrismaClient } from "@prisma/client";
 
 const PLACEHOLDER_DATABASE_URL = "USER:PASSWORD@localhost:5432/lessonforge";
+const PRISMA_RUNTIME_URL_ENV_KEYS = ["DATABASE_URL", "POSTGRES_PRISMA_URL", "POSTGRES_URL"] as const;
 
 declare global {
   // eslint-disable-next-line no-var
   var __lessonforgePrisma__: PrismaClient | undefined;
 }
 
-const DATABASE_URL_ENV_KEYS = [
-  "POSTGRES_PRISMA_URL",
-  "DATABASE_URL",
-  "POSTGRES_URL",
-  "DIRECT_URL",
-] as const;
+type DatabaseEnv = Partial<Record<string, string | undefined>>;
 
-function getDatabaseUrl() {
-  for (const key of DATABASE_URL_ENV_KEYS) {
-    const value = process.env[key]?.trim();
+function readDatabaseUrl(
+  env: DatabaseEnv,
+  keys: readonly string[],
+): { value: string; source: string } | null {
+  for (const key of keys) {
+    const value = env[key]?.trim();
 
     if (value) {
-      return value;
+      return {
+        value,
+        source: key,
+      };
     }
   }
 
-  return "";
+  return null;
 }
 
-function getDatabaseUrlSource() {
-  for (const key of DATABASE_URL_ENV_KEYS) {
-    const value = process.env[key]?.trim();
+function isSupabasePoolerUrl(databaseUrl: string) {
+  try {
+    const url = new URL(databaseUrl);
+    return url.hostname.includes(".pooler.supabase.com");
+  } catch {
+    return false;
+  }
+}
 
-    if (value) {
-      return key;
-    }
+export function normalizePrismaRuntimeDatabaseUrl(databaseUrl: string) {
+  if (!databaseUrl || !isSupabasePoolerUrl(databaseUrl)) {
+    return databaseUrl;
   }
 
-  return "DATABASE_URL";
+  try {
+    const url = new URL(databaseUrl);
+
+    if (!url.searchParams.has("pgbouncer")) {
+      url.searchParams.set("pgbouncer", "true");
+    }
+
+    return url.toString();
+  } catch {
+    return databaseUrl;
+  }
 }
 
-export function hasRealDatabaseUrl(databaseUrl = getDatabaseUrl()) {
+export function getRuntimeDatabaseUrl(env: DatabaseEnv = process.env) {
+  const resolved = readDatabaseUrl(env, PRISMA_RUNTIME_URL_ENV_KEYS);
+
+  if (!resolved) {
+    return {
+      value: "",
+      source: "DATABASE_URL",
+    };
+  }
+
+  return {
+    value: normalizePrismaRuntimeDatabaseUrl(resolved.value),
+    source: resolved.source,
+  };
+}
+
+export function hasRealDatabaseUrl(databaseUrl = getRuntimeDatabaseUrl().value) {
   return Boolean(databaseUrl) && !databaseUrl.includes(PLACEHOLDER_DATABASE_URL);
 }
 
@@ -51,7 +84,7 @@ function createUnavailablePrismaClient(message: string) {
 }
 
 function createPrismaClient() {
-  const databaseUrl = getDatabaseUrl();
+  const { value: databaseUrl, source } = getRuntimeDatabaseUrl();
 
   if (!hasRealDatabaseUrl(databaseUrl)) {
     return createUnavailablePrismaClient(
@@ -59,7 +92,6 @@ function createPrismaClient() {
     );
   }
 
-  const source = getDatabaseUrlSource();
   const host = (() => {
     try {
       return new URL(databaseUrl).host;
@@ -71,6 +103,7 @@ function createPrismaClient() {
   console.info("[lessonforge.db] Prisma runtime datasource selected", {
     source,
     host,
+    pooled: isSupabasePoolerUrl(databaseUrl),
   });
 
   return new PrismaClient({

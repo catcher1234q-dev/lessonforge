@@ -19,6 +19,16 @@ test("classifyAiRouteError marks exhausted credits correctly", () => {
   assert.equal(result.userMessage, "You do not have enough AI credits for this action.");
 });
 
+test("classifyAiRouteError marks unavailable atomic credit reservation as temporary", () => {
+  const result = classifyAiRouteError(
+    new Error("Atomic AI credit reservation is temporarily unavailable."),
+  );
+
+  assert.equal(result.status, 503);
+  assert.equal(result.reason, "credit_reservation_unavailable");
+  assert.equal(result.userMessage, "AI is temporarily unavailable right now.");
+});
+
 test("classifyAiRouteError marks database failures as temporary unavailability", () => {
   const result = classifyAiRouteError(
     new Error("Can't reach database server at db.nhdlsdihxvoxzdizvjub.supabase.co:5432"),

@@ -8,6 +8,7 @@ import {
 import { getMarketplaceSellerById } from "@/lib/demo/sellers";
 import { isPublicProductStatus } from "@/lib/lessonforge/marketplace-rules";
 import { searchWeights } from "@/lib/services/marketplace/search";
+import { mergeProductRecord } from "@/lib/lessonforge/product-record-merge";
 import {
   listOrders,
   listPersistedProducts,
@@ -31,7 +32,8 @@ function mergeProductSources(
   }
 
   for (const product of syncedProducts) {
-    merged.set(product.id, product);
+    const existing = merged.get(product.id);
+    merged.set(product.id, existing ? mergeProductRecord(existing, product) : product);
   }
 
   return Array.from(merged.values());

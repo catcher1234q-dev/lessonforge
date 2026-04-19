@@ -16,6 +16,7 @@ import {
   getProductAssetHealthStatus,
   getProductPublishBlockers,
 } from "@/lib/lessonforge/product-validation";
+import { mergeProductRecord } from "@/lib/lessonforge/product-record-merge";
 import { filterMarketplaceListings } from "@/lib/lessonforge/server-catalog";
 import { buildMarketplaceListingHref } from "@/lib/lessonforge/marketplace-navigation";
 import {
@@ -59,7 +60,8 @@ function mergeProductSources(
   }
 
   for (const product of syncedProducts) {
-    merged.set(product.id, product);
+    const existing = merged.get(product.id);
+    merged.set(product.id, existing ? mergeProductRecord(existing, product) : product);
   }
 
   return Array.from(merged.values());

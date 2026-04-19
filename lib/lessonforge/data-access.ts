@@ -27,6 +27,7 @@ import {
   prismaUpdateReportStatus,
 } from "@/lib/lessonforge/repository-prisma";
 import { hasRealDatabaseUrl, prisma } from "@/lib/prisma/client";
+import type { ListingAssistResult } from "@/lib/ai/providers";
 import type {
   AdminAiSettings,
   AiActionCacheRecord,
@@ -41,7 +42,6 @@ import type {
   ViewerRole,
 } from "@/types";
 import {
-  getSupabaseProfileByEmail,
   getSupabaseSubscriptionRecord,
   listSupabaseSellerProfiles,
 } from "@/lib/supabase/admin-sync";
@@ -74,9 +74,31 @@ function logDatabaseFallback(scope: string, error: unknown) {
   );
 }
 
+function isMissingPrismaCoreTableError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return /public\.Product|public\.UsageLedger|public\.User|table `public\.(Product|UsageLedger|User)`|relation "(Product|UsageLedger|User)"/i.test(
+    message,
+  );
+}
+
+function logCriticalPrismaSchemaMismatch(scope: string, error: unknown) {
+  if (!isMissingPrismaCoreTableError(error)) {
+    return;
+  }
+
+  console.error("[lessonforge:data-access] critical Prisma schema mismatch", {
+    scope,
+    message: error instanceof Error ? error.message : String(error),
+    remediation:
+      "Confirm DATABASE_URL points at the intended production database and run prisma migrate deploy with DIRECT_URL set to the direct database host.",
+  });
+}
+
 function logAiFallbackEvent(
   event:
     | "supabase_fallback_enabled"
+    | "atomic_reservation_unavailable"
     | "seller_profile_missing"
     | "usage_duplicate_reused"
     | "credits_exhausted"
@@ -102,6 +124,7 @@ async function safeDatabaseRead<T>(
   try {
     return await operation();
   } catch (error) {
+    logCriticalPrismaSchemaMismatch(scope, error);
     logDatabaseFallback(scope, error);
     return fallbackValue;
   }
@@ -365,7 +388,58 @@ type SupabaseAiUsageMetadata = {
   idempotencyKey?: string;
 };
 
+export type AiCreditReservationState = "reserved" | "reused";
+
+type AiCreditConsumeResult = {
+  subscription: SubscriptionRecord;
+  ledgerEntry: UsageLedgerEntry;
+  reservationState: AiCreditReservationState;
+};
+
+type ConsumeCreditsInput = {
+  sellerId: string;
+  sellerEmail: string;
+  planKey: PlanKey;
+  monthlyCredits: number;
+  action: "titleSuggestion" | "descriptionRewrite" | "standardsScan";
+  creditsUsed: number;
+  provider: "openai" | "gemini";
+  idempotencyKey: string;
+};
+
 type SupabaseAiUsageRow = {
+  id?: unknown;
+  target_id?: unknown;
+  metadata_json?: unknown;
+  created_at?: unknown;
+};
+
+type SupabaseAiActionCacheMetadata = {
+  schemaVersion?: number;
+  sellerId?: string;
+  action?: AiActionCacheRecord["action"];
+  provider?: AiActionCacheRecord["provider"];
+  cacheKey?: string;
+  result?: AIProviderResult;
+};
+
+type SupabaseAiActionCacheRow = {
+  id?: unknown;
+  target_id?: unknown;
+  metadata_json?: unknown;
+  created_at?: unknown;
+};
+
+type SupabaseListingAssistCacheMetadata = {
+  schemaVersion?: number;
+  sellerId?: string;
+  action?: UsageLedgerEntry["action"];
+  provider?: UsageLedgerEntry["provider"];
+  cacheKey?: string;
+  result?: ListingAssistResult;
+};
+
+type SupabaseListingAssistCacheRow = {
   id?: unknown;
   target_id?: unknown;
   metadata_json?: unknown;
@@ -382,6 +456,21 @@ function isPrismaAiFallbackError(error: unknown) {
   return (
     /public\.User|table `public\.User`|relation "User"|Can't reach database server/i.test(message)
   );
+}
+
+function isMissingPrismaUserTableError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return /public\.User|table `public\.User`|relation "User"/i.test(message);
+}
+
+function buildAiUsageAuditLogId(idempotencyKey: string) {
+  const normalized = idempotencyKey.replace(/[^a-zA-Z0-9:_-]+/g, "-").slice(0, 80);
+  return `ai-usage-${normalized}`;
+}
+
+function getAiSellerLockKey(sellerEmail: string) {
+  return `lessonforge-ai:${sellerEmail.trim().toLowerCase()}`;
 }
 
 function getCurrentAiCycleWindow(now = new Date()) {
@@ -433,6 +522,84 @@ function coerceSupabaseAiUsageEntry(row: SupabaseAiUsageRow): UsageLedgerEntry |
   };
 }
 
+function buildAiActionCacheLogId(cacheKey: string) {
+  const normalized = cacheKey.replace(/[^a-zA-Z0-9:_-]+/g, "-").slice(0, 80);
+  return `ai-cache-${normalized}`;
+}
+
+function coerceSupabaseAiActionCacheEntry(row: SupabaseAiActionCacheRow) {
+  if (typeof row.id !== "string" || !isRecord(row.metadata_json)) {
+    return null;
+  }
+
+  const metadata = row.metadata_json as SupabaseAiActionCacheMetadata;
+
+  if (
+    typeof metadata.sellerId !== "string" ||
+    typeof metadata.action !== "string" ||
+    typeof metadata.provider !== "string" ||
+    typeof metadata.cacheKey !== "string" ||
+    !metadata.result ||
+    typeof metadata.result !== "object"
+  ) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    sellerId: metadata.sellerId,
+    action: metadata.action,
+    provider: metadata.provider,
+    cacheKey: metadata.cacheKey,
+    result: metadata.result,
+    createdAt:
+      typeof row.created_at === "string" ? row.created_at : new Date().toISOString(),
+  } satisfies AiActionCacheRecord;
+}
+
+function buildListingAssistCacheLogId(cacheKey: string) {
+  const normalized = cacheKey.replace(/[^a-zA-Z0-9:_-]+/g, "-").slice(0, 80);
+  return `listing-cache-${normalized}`;
+}
+
+function coerceSupabaseListingAssistCacheEntry(row: SupabaseListingAssistCacheRow) {
+  if (typeof row.id !== "string" || !isRecord(row.metadata_json)) {
+    return null;
+  }
+
+  const metadata = row.metadata_json as SupabaseListingAssistCacheMetadata;
+
+  if (
+    typeof metadata.sellerId !== "string" ||
+    typeof metadata.action !== "string" ||
+    typeof metadata.provider !== "string" ||
+    typeof metadata.cacheKey !== "string" ||
+    !metadata.result ||
+    typeof metadata.result !== "object"
+  ) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    sellerId: metadata.sellerId,
+    action: metadata.action,
+    provider: metadata.provider,
+    cacheKey: metadata.cacheKey,
+    result: metadata.result,
+    createdAt:
+      typeof row.created_at === "string" ? row.created_at : new Date().toISOString(),
+  } as {
+    id: string;
+    sellerId: string;
+    action: UsageLedgerEntry["action"];
+    provider: UsageLedgerEntry["provider"];
+    cacheKey: string;
+    result: ListingAssistResult;
+    createdAt: string;
+  };
+}
+
 async function listSupabaseAiUsageLedger(): Promise<UsageLedgerEntry[]> {
   if (!hasSupabaseServerEnv()) {
     return [];
@@ -456,6 +623,289 @@ async function listSupabaseAiUsageLedger(): Promise<UsageLedgerEntry[]> {
   return (data ?? [])
     .map((row) => coerceSupabaseAiUsageEntry(row))
     .filter((entry): entry is UsageLedgerEntry => Boolean(entry));
+}
+
+async function buildSupabaseSubscriptionRecordFromLedger(input: {
+  sellerId: string;
+  sellerEmail: string;
+  planKey: SubscriptionRecord["planKey"];
+  monthlyCredits: number;
+  ledger: UsageLedgerEntry[];
+}) {
+  const resolvedPlanKey = normalizePlanKey(input.planKey);
+  const monthlyCredits = getFallbackMonthlyCredits(resolvedPlanKey);
+  const sellerLedger = input.ledger.filter(
+    (entry) => entry.sellerId === input.sellerId || entry.sellerId === input.sellerEmail,
+  );
+  const cycle = calculateAvailableCredits({
+    monthlyCredits,
+    ledger: sellerLedger,
+  });
+
+  return {
+    subscription: {
+      sellerId: input.sellerId,
+      sellerEmail: input.sellerEmail,
+      planKey: resolvedPlanKey,
+      monthlyCredits,
+      availableCredits: cycle.availableCredits,
+      cycleLabel: cycle.cycleLabel,
+      rolloverPolicy: "none",
+    } satisfies SubscriptionRecord,
+    ledger: sellerLedger,
+  };
+}
+
+async function consumeCreditsWithSupabaseTablesAtomic(
+  input: ConsumeCreditsInput,
+): Promise<AiCreditConsumeResult> {
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${getAiSellerLockKey(input.sellerEmail)})::bigint)`;
+
+    const existingRows = await tx.$queryRaw<SupabaseAiUsageRow[]>`
+      SELECT id, target_id, metadata_json, created_at
+      FROM public.admin_audit_logs
+      WHERE action = 'ai.usage'
+        AND target_type = 'ai_usage'
+        AND target_id = ${input.idempotencyKey}
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+    const existingEntry = existingRows
+      .map((row) => coerceSupabaseAiUsageEntry(row))
+      .find((entry): entry is UsageLedgerEntry => Boolean(entry));
+
+    const profileRows = await tx.$queryRaw<Array<{ id: string; email: string; role: string }>>`
+      SELECT id, email, role
+      FROM public.profiles
+      WHERE lower(email) = lower(${input.sellerEmail})
+      LIMIT 1
+    `;
+    const profile = profileRows[0];
+
+    if (!profile?.id) {
+      logAiFallbackEvent("seller_profile_missing", {
+        sellerId: input.sellerId,
+        sellerEmail: input.sellerEmail,
+      });
+      throw new Error("Signed-in seller access required.");
+    }
+
+    const subscriptionRows = await tx.$queryRaw<Array<{ plan_name: string | null }>>`
+      SELECT plan_name
+      FROM public.subscriptions
+      WHERE user_id = ${profile.id}
+      LIMIT 1
+    `;
+    const resolvedPlanKey = normalizePlanKey(subscriptionRows[0]?.plan_name ?? input.planKey);
+    const monthlyCredits = getFallbackMonthlyCredits(resolvedPlanKey);
+
+    const ledgerRows = await tx.$queryRaw<SupabaseAiUsageRow[]>`
+      SELECT id, target_id, metadata_json, created_at
+      FROM public.admin_audit_logs
+      WHERE action = 'ai.usage'
+        AND target_type = 'ai_usage'
+        AND (
+          metadata_json->>'sellerId' = ${input.sellerId}
+          OR metadata_json->>'sellerId' = ${input.sellerEmail}
+        )
+      ORDER BY created_at DESC
+      LIMIT 1000
+    `;
+    const ledger = ledgerRows
+      .map((row) => coerceSupabaseAiUsageEntry(row))
+      .filter((entry): entry is UsageLedgerEntry => Boolean(entry));
+
+    const { subscription } = await buildSupabaseSubscriptionRecordFromLedger({
+      sellerId: input.sellerId,
+      sellerEmail: input.sellerEmail,
+      planKey: resolvedPlanKey,
+      monthlyCredits,
+      ledger,
+    });
+
+    if (existingEntry) {
+      if (existingEntry.refundedCredits >= existingEntry.creditsUsed) {
+        if (subscription.availableCredits < input.creditsUsed) {
+          logAiFallbackEvent("credits_exhausted", {
+            sellerId: input.sellerId,
+            provider: input.provider,
+            action: input.action,
+            availableCredits: subscription.availableCredits,
+            requestedCredits: input.creditsUsed,
+          });
+          throw new Error("Not enough AI credits remaining for this action.");
+        }
+
+        const metadata: SupabaseAiUsageMetadata = {
+          schemaVersion: 1,
+          sellerId: input.sellerId,
+          sellerEmail: input.sellerEmail,
+          planKey: resolvedPlanKey,
+          action: input.action,
+          provider: input.provider,
+          creditsUsed: input.creditsUsed,
+          refundedCredits: 0,
+          status: "applied",
+          idempotencyKey: input.idempotencyKey,
+        };
+
+        const updatedRows = await tx.$queryRaw<SupabaseAiUsageRow[]>`
+          UPDATE public.admin_audit_logs
+          SET metadata_json = ${JSON.parse(JSON.stringify(metadata)) as Prisma.InputJsonValue}::jsonb
+          WHERE id = ${buildAiUsageAuditLogId(input.idempotencyKey)}
+          RETURNING id, target_id, metadata_json, created_at
+        `;
+        const retriedEntry = updatedRows
+          .map((row) => coerceSupabaseAiUsageEntry(row))
+          .find((entry): entry is UsageLedgerEntry => Boolean(entry));
+
+        if (!retriedEntry) {
+          throw new Error("AI usage could not be recorded right now.");
+        }
+
+        logAiFallbackEvent("usage_recorded", {
+          sellerId: input.sellerId,
+          provider: input.provider,
+          action: input.action,
+          creditsUsed: input.creditsUsed,
+        });
+
+        return {
+          subscription: {
+            ...subscription,
+            availableCredits: Math.max(0, subscription.availableCredits - input.creditsUsed),
+          },
+          ledgerEntry: retriedEntry,
+          reservationState: "reserved",
+        };
+      }
+
+      logAiFallbackEvent("usage_duplicate_reused", {
+        sellerId: input.sellerId,
+        provider: input.provider,
+        action: input.action,
+      });
+      return {
+        subscription,
+        ledgerEntry: existingEntry,
+        reservationState: "reused",
+      };
+    }
+
+    if (subscription.availableCredits < input.creditsUsed) {
+      logAiFallbackEvent("credits_exhausted", {
+        sellerId: input.sellerId,
+        provider: input.provider,
+        action: input.action,
+        availableCredits: subscription.availableCredits,
+        requestedCredits: input.creditsUsed,
+      });
+      throw new Error("Not enough AI credits remaining for this action.");
+    }
+
+    const metadata: SupabaseAiUsageMetadata = {
+      schemaVersion: 1,
+      sellerId: input.sellerId,
+      sellerEmail: input.sellerEmail,
+      planKey: resolvedPlanKey,
+      action: input.action,
+      provider: input.provider,
+      creditsUsed: input.creditsUsed,
+      refundedCredits: 0,
+      status: "applied",
+      idempotencyKey: input.idempotencyKey,
+    };
+
+    const insertedRows = await tx.$queryRaw<SupabaseAiUsageRow[]>`
+      INSERT INTO public.admin_audit_logs (id, actor_user_id, action, target_type, target_id, metadata_json)
+      VALUES (
+        ${buildAiUsageAuditLogId(input.idempotencyKey)},
+        ${profile.id},
+        'ai.usage',
+        'ai_usage',
+        ${input.idempotencyKey},
+        ${JSON.parse(JSON.stringify(metadata)) as Prisma.InputJsonValue}::jsonb
+      )
+      RETURNING id, target_id, metadata_json, created_at
+    `;
+    const ledgerEntry = insertedRows
+      .map((row) => coerceSupabaseAiUsageEntry(row))
+      .find((entry): entry is UsageLedgerEntry => Boolean(entry));
+
+    if (!ledgerEntry) {
+      throw new Error("AI usage could not be recorded right now.");
+    }
+
+    logAiFallbackEvent("usage_recorded", {
+      sellerId: input.sellerId,
+      provider: input.provider,
+      action: input.action,
+      creditsUsed: input.creditsUsed,
+    });
+
+    return {
+      subscription: {
+        ...subscription,
+        availableCredits: Math.max(0, subscription.availableCredits - input.creditsUsed),
+      },
+      ledgerEntry,
+      reservationState: "reserved",
+    };
+  });
+}
+
+async function refundCreditsWithSupabaseTablesAtomic(idempotencyKey: string) {
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`lessonforge-ai-refund:${idempotencyKey}`})::bigint)`;
+
+    const rows = await tx.$queryRaw<SupabaseAiUsageRow[]>`
+      SELECT id, target_id, metadata_json, created_at
+      FROM public.admin_audit_logs
+      WHERE action = 'ai.usage'
+        AND target_type = 'ai_usage'
+        AND target_id = ${idempotencyKey}
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+    const entry = rows
+      .map((row) => coerceSupabaseAiUsageEntry(row))
+      .find((value): value is UsageLedgerEntry => Boolean(value));
+
+    if (!entry || entry.refundedCredits > 0) {
+      return entry ?? null;
+    }
+
+    const nextMetadata: SupabaseAiUsageMetadata = {
+      schemaVersion: 1,
+      sellerId: entry.sellerId,
+      action: entry.action,
+      provider: entry.provider,
+      creditsUsed: entry.creditsUsed,
+      refundedCredits: entry.creditsUsed,
+      status: "refunded",
+      idempotencyKey: entry.idempotencyKey,
+    };
+
+    const updatedRows = await tx.$queryRaw<SupabaseAiUsageRow[]>`
+      UPDATE public.admin_audit_logs
+      SET metadata_json = ${JSON.parse(JSON.stringify(nextMetadata)) as Prisma.InputJsonValue}::jsonb
+      WHERE id = ${buildAiUsageAuditLogId(idempotencyKey)}
+      RETURNING id, target_id, metadata_json, created_at
+    `;
+    const updatedEntry = updatedRows
+      .map((row) => coerceSupabaseAiUsageEntry(row))
+      .find((value): value is UsageLedgerEntry => Boolean(value));
+
+    if (updatedEntry) {
+      logAiFallbackEvent("usage_refunded", {
+        idempotencyKey,
+        refundedCredits: entry.creditsUsed,
+      });
+    }
+
+    return updatedEntry ?? null;
+  });
 }
 
 function calculateAvailableCredits(input: {
@@ -632,16 +1082,7 @@ export async function getOrCreateSubscription(
   }
 }
 
-export async function consumeCredits(input: {
-  sellerId: string;
-  sellerEmail: string;
-  planKey: PlanKey;
-  monthlyCredits: number;
-  action: "titleSuggestion" | "descriptionRewrite" | "standardsScan";
-  creditsUsed: number;
-  provider: "openai" | "gemini";
-  idempotencyKey: string;
-}) {
+export async function consumeCredits(input: ConsumeCreditsInput): Promise<AiCreditConsumeResult> {
   try {
     return await prismaConsumeCredits(input);
   } catch (error) {
@@ -657,102 +1098,17 @@ export async function consumeCredits(input: {
       message: error instanceof Error ? error.message : String(error),
     });
 
-    const profile = await getSupabaseProfileByEmail(input.sellerEmail);
-
-    if (!profile?.id) {
-      logAiFallbackEvent("seller_profile_missing", {
-        sellerId: input.sellerId,
-        sellerEmail: input.sellerEmail,
-      });
-      throw new Error("Signed-in seller access required.");
+    if (isMissingPrismaUserTableError(error) && hasRealDatabaseUrl()) {
+      return consumeCreditsWithSupabaseTablesAtomic(input);
     }
 
-    const existingLedger = await listSupabaseAiUsageLedger();
-    const existingEntry = existingLedger.find(
-      (entry) => entry.idempotencyKey === input.idempotencyKey,
-    );
-
-    const { subscription } = await buildSupabaseSubscriptionRecord({
+    logAiFallbackEvent("atomic_reservation_unavailable", {
       sellerId: input.sellerId,
       sellerEmail: input.sellerEmail,
-      planKey: normalizePlanKey(input.planKey),
-      monthlyCredits: input.monthlyCredits,
-    });
-
-    if (existingEntry) {
-      logAiFallbackEvent("usage_duplicate_reused", {
-        sellerId: input.sellerId,
-        provider: input.provider,
-        action: input.action,
-      });
-      return {
-        subscription,
-        ledgerEntry: existingEntry,
-      };
-    }
-
-    if (subscription.availableCredits < input.creditsUsed) {
-      logAiFallbackEvent("credits_exhausted", {
-        sellerId: input.sellerId,
-        provider: input.provider,
-        action: input.action,
-        availableCredits: subscription.availableCredits,
-        requestedCredits: input.creditsUsed,
-      });
-      throw new Error("Not enough AI credits remaining for this action.");
-    }
-
-    const id = `ai-usage-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const metadata: SupabaseAiUsageMetadata = {
-      schemaVersion: 1,
-      sellerId: input.sellerId,
-      sellerEmail: input.sellerEmail,
-      planKey: normalizePlanKey(input.planKey),
-      action: input.action,
-      provider: input.provider,
-      creditsUsed: input.creditsUsed,
-      refundedCredits: 0,
-      status: "applied",
-      idempotencyKey: input.idempotencyKey,
-    };
-
-    const { data, error: insertError } = await getSupabaseServerAdminClient()
-      .from("admin_audit_logs")
-      .insert({
-        id,
-        actor_user_id: profile.id,
-        action: "ai.usage",
-        target_type: "ai_usage",
-        target_id: input.idempotencyKey,
-        metadata_json: metadata,
-      })
-      .select("id, target_id, metadata_json, created_at")
-      .single();
-
-    if (insertError) {
-      throw new Error(`Unable to record AI usage: ${insertError.message}`);
-    }
-
-    const ledgerEntry = data ? coerceSupabaseAiUsageEntry(data) : null;
-
-    if (!ledgerEntry) {
-      throw new Error("AI usage could not be recorded right now.");
-    }
-
-    logAiFallbackEvent("usage_recorded", {
-      sellerId: input.sellerId,
       provider: input.provider,
       action: input.action,
-      creditsUsed: input.creditsUsed,
     });
-
-    return {
-      subscription: {
-        ...subscription,
-        availableCredits: Math.max(0, subscription.availableCredits - input.creditsUsed),
-      },
-      ledgerEntry,
-    };
+    throw new Error("Atomic AI credit reservation is temporarily unavailable.");
   }
 }
 
@@ -769,6 +1125,10 @@ export async function refundCredits(idempotencyKey: string) {
       idempotencyKey,
       message: error instanceof Error ? error.message : String(error),
     });
+
+    if (isMissingPrismaUserTableError(error) && hasRealDatabaseUrl()) {
+      return refundCreditsWithSupabaseTablesAtomic(idempotencyKey);
+    }
 
     const { data, error: selectError } = await getSupabaseServerAdminClient()
       .from("admin_audit_logs")
@@ -1205,7 +1565,47 @@ export async function findAiActionCacheEntry(_input: {
   provider: AiActionCacheRecord["provider"];
   cacheKey: string;
 }): Promise<{ result: AIProviderResult } | null> {
-  return null;
+  if (!hasRealDatabaseUrl() && !hasSupabaseServerEnv()) {
+    return null;
+  }
+
+  try {
+    if (hasRealDatabaseUrl()) {
+      const rows = await prisma.$queryRaw<SupabaseAiActionCacheRow[]>`
+        SELECT id, target_id, metadata_json, created_at
+        FROM public.admin_audit_logs
+        WHERE action = 'ai.cache'
+          AND target_type = 'ai_action_cache'
+          AND target_id = ${_input.cacheKey}
+        ORDER BY created_at DESC
+        LIMIT 1
+      `;
+
+      const entry = rows
+        .map((row) => coerceSupabaseAiActionCacheEntry(row))
+        .find((value): value is AiActionCacheRecord => Boolean(value));
+
+      return entry ? { result: entry.result } : null;
+    }
+
+    const { data, error } = await getSupabaseServerAdminClient()
+      .from("admin_audit_logs")
+      .select("id, target_id, metadata_json, created_at")
+      .eq("action", "ai.cache")
+      .eq("target_type", "ai_action_cache")
+      .eq("target_id", _input.cacheKey)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const entry = data ? coerceSupabaseAiActionCacheEntry(data) : null;
+    return entry ? { result: entry.result } : null;
+  } catch (error) {
+    logDatabaseFallback("findAiActionCacheEntry", error);
+    return null;
+  }
 }
 
 export async function saveAiActionCacheEntry(input: {
@@ -1215,13 +1615,210 @@ export async function saveAiActionCacheEntry(input: {
   cacheKey: string;
   result: AIProviderResult;
 }) {
-  return {
-    id: `ai-cache-${Date.now()}`,
+  const metadata = {
+    schemaVersion: 1,
     sellerId: input.sellerId,
     action: input.action,
     provider: input.provider,
     cacheKey: input.cacheKey,
     result: input.result,
-    createdAt: new Date().toISOString(),
-  } satisfies AiActionCacheRecord;
+  } satisfies SupabaseAiActionCacheMetadata;
+
+  if (!hasRealDatabaseUrl() && !hasSupabaseServerEnv()) {
+    return {
+      id: buildAiActionCacheLogId(input.cacheKey),
+      sellerId: input.sellerId,
+      action: input.action,
+      provider: input.provider,
+      cacheKey: input.cacheKey,
+      result: input.result,
+      createdAt: new Date().toISOString(),
+    } satisfies AiActionCacheRecord;
+  }
+
+  try {
+    if (hasRealDatabaseUrl()) {
+      const rows = await prisma.$queryRaw<SupabaseAiActionCacheRow[]>`
+        INSERT INTO public.admin_audit_logs (id, actor_user_id, action, target_type, target_id, metadata_json)
+        VALUES (
+          ${buildAiActionCacheLogId(input.cacheKey)},
+          NULL,
+          'ai.cache',
+          'ai_action_cache',
+          ${input.cacheKey},
+          ${JSON.parse(JSON.stringify(metadata)) as Prisma.InputJsonValue}::jsonb
+        )
+        ON CONFLICT (id)
+        DO UPDATE SET metadata_json = EXCLUDED.metadata_json
+        RETURNING id, target_id, metadata_json, created_at
+      `;
+
+      const entry = rows
+        .map((row) => coerceSupabaseAiActionCacheEntry(row))
+        .find((value): value is AiActionCacheRecord => Boolean(value));
+
+      return entry;
+    }
+
+    const { data, error } = await getSupabaseServerAdminClient()
+      .from("admin_audit_logs")
+      .upsert({
+        id: buildAiActionCacheLogId(input.cacheKey),
+        actor_user_id: null,
+        action: "ai.cache",
+        target_type: "ai_action_cache",
+        target_id: input.cacheKey,
+        metadata_json: metadata,
+      })
+      .select("id, target_id, metadata_json, created_at")
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data ? coerceSupabaseAiActionCacheEntry(data) : null;
+  } catch (error) {
+    logDatabaseFallback("saveAiActionCacheEntry", error);
+    return {
+      id: buildAiActionCacheLogId(input.cacheKey),
+      sellerId: input.sellerId,
+      action: input.action,
+      provider: input.provider,
+      cacheKey: input.cacheKey,
+      result: input.result,
+      createdAt: new Date().toISOString(),
+    } satisfies AiActionCacheRecord;
+  }
+}
+
+export async function findListingAssistCacheEntry(input: {
+  sellerId: string;
+  action: UsageLedgerEntry["action"];
+  provider: UsageLedgerEntry["provider"];
+  cacheKey: string;
+}): Promise<{ result: ListingAssistResult } | null> {
+  if (!hasRealDatabaseUrl() && !hasSupabaseServerEnv()) {
+    return null;
+  }
+
+  try {
+    if (hasRealDatabaseUrl()) {
+      const rows = await prisma.$queryRaw<SupabaseListingAssistCacheRow[]>`
+        SELECT id, target_id, metadata_json, created_at
+        FROM public.admin_audit_logs
+        WHERE action = 'ai.cache'
+          AND target_type = 'listing_assist_cache'
+          AND target_id = ${input.cacheKey}
+        ORDER BY created_at DESC
+        LIMIT 1
+      `;
+
+      const entry = rows
+        .map((row) => coerceSupabaseListingAssistCacheEntry(row))
+        .find((value): value is NonNullable<typeof value> => Boolean(value));
+
+      return entry ? { result: entry.result } : null;
+    }
+
+    const { data, error } = await getSupabaseServerAdminClient()
+      .from("admin_audit_logs")
+      .select("id, target_id, metadata_json, created_at")
+      .eq("action", "ai.cache")
+      .eq("target_type", "listing_assist_cache")
+      .eq("target_id", input.cacheKey)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const entry = data ? coerceSupabaseListingAssistCacheEntry(data) : null;
+    return entry ? { result: entry.result } : null;
+  } catch (error) {
+    logDatabaseFallback("findListingAssistCacheEntry", error);
+    return null;
+  }
+}
+
+export async function saveListingAssistCacheEntry(input: {
+  sellerId: string;
+  action: UsageLedgerEntry["action"];
+  provider: UsageLedgerEntry["provider"];
+  cacheKey: string;
+  result: ListingAssistResult;
+}) {
+  const metadata = {
+    schemaVersion: 1,
+    sellerId: input.sellerId,
+    action: input.action,
+    provider: input.provider,
+    cacheKey: input.cacheKey,
+    result: input.result,
+  } satisfies SupabaseListingAssistCacheMetadata;
+
+  if (!hasRealDatabaseUrl() && !hasSupabaseServerEnv()) {
+    return {
+      id: buildListingAssistCacheLogId(input.cacheKey),
+      sellerId: input.sellerId,
+      action: input.action,
+      provider: input.provider,
+      cacheKey: input.cacheKey,
+      result: input.result,
+      createdAt: new Date().toISOString(),
+    };
+  }
+
+  try {
+    if (hasRealDatabaseUrl()) {
+      const rows = await prisma.$queryRaw<SupabaseListingAssistCacheRow[]>`
+        INSERT INTO public.admin_audit_logs (id, actor_user_id, action, target_type, target_id, metadata_json)
+        VALUES (
+          ${buildListingAssistCacheLogId(input.cacheKey)},
+          NULL,
+          'ai.cache',
+          'listing_assist_cache',
+          ${input.cacheKey},
+          ${JSON.parse(JSON.stringify(metadata)) as Prisma.InputJsonValue}::jsonb
+        )
+        ON CONFLICT (id)
+        DO UPDATE SET metadata_json = EXCLUDED.metadata_json
+        RETURNING id, target_id, metadata_json, created_at
+      `;
+
+      return rows
+        .map((row) => coerceSupabaseListingAssistCacheEntry(row))
+        .find((value): value is NonNullable<typeof value> => Boolean(value));
+    }
+
+    const { data, error } = await getSupabaseServerAdminClient()
+      .from("admin_audit_logs")
+      .upsert({
+        id: buildListingAssistCacheLogId(input.cacheKey),
+        actor_user_id: null,
+        action: "ai.cache",
+        target_type: "listing_assist_cache",
+        target_id: input.cacheKey,
+        metadata_json: metadata,
+      })
+      .select("id, target_id, metadata_json, created_at")
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data ? coerceSupabaseListingAssistCacheEntry(data) : null;
+  } catch (error) {
+    logDatabaseFallback("saveListingAssistCacheEntry", error);
+    return {
+      id: buildListingAssistCacheLogId(input.cacheKey),
+      sellerId: input.sellerId,
+      action: input.action,
+      provider: input.provider,
+      cacheKey: input.cacheKey,
+      result: input.result,
+      createdAt: new Date().toISOString(),
+    };
+  }
 }

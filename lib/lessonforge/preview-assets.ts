@@ -86,12 +86,13 @@ export function buildManagedPreviewAssets(input: {
   previewUrls?: string[];
 }) {
   const pageCount = inferPreviewPageCount(input.format);
+  const previewCount = Math.min(input.previewUrls?.length ?? pageCount, 5);
   const baseSlug = slugify(input.title);
   const labels =
     input.previewLabels ??
-    Array.from({ length: Math.min(pageCount, 3) }, (_, index) => `Preview page ${index + 1}`);
+    Array.from({ length: previewCount }, (_, index) => `Preview page ${index + 1}`);
 
-  return labels.slice(0, 3).map((label, index) => ({
+  return labels.slice(0, 5).map((label, index) => ({
     id: `${input.productId}-preview-${index + 1}`,
     label,
     formatLabel: input.format,
@@ -99,8 +100,8 @@ export function buildManagedPreviewAssets(input: {
       input.previewUrls?.[index] ??
       `/api/lessonforge/preview-assets/${baseSlug}?page=${index + 1}`,
     cacheKey: `preview:${input.productId}:v1:page-${index + 1}`,
-    pageCount,
-    pageRangeLabel: `Preview page ${index + 1} of ${pageCount}`,
+    pageCount: previewCount,
+    pageRangeLabel: `Preview page ${index + 1} of ${previewCount}`,
     watermarkLines: ["LessonForge Preview", "Sample Only"],
     exposurePolicy: `Only the first ${pageCount} preview pages are exposed before purchase.`,
     deliveryMode: "cached-preview" as const,
@@ -126,8 +127,8 @@ export function renderMissingPreviewSvg(input: {
       <text x="120" y="260" fill="#0F172A" font-size="66" font-family="Arial, sans-serif" font-weight="800">${safeTitle}</text>
       <text x="120" y="336" fill="#475569" font-size="34" font-family="Arial, sans-serif">${safeMessage}</text>
       <rect x="120" y="420" width="960" height="420" rx="28" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="4" stroke-dasharray="16 16"/>
-      <text x="394" y="626" fill="#64748B" font-size="42" font-family="Arial, sans-serif" font-weight="700">Sample preview layout</text>
-      <text x="303" y="682" fill="#94A3B8" font-size="28" font-family="Arial, sans-serif">Preview pages will appear here after upload processing.</text>
+      <text x="360" y="626" fill="#64748B" font-size="42" font-family="Arial, sans-serif" font-weight="700">Authentic preview pages loading</text>
+      <text x="252" y="682" fill="#94A3B8" font-size="28" font-family="Arial, sans-serif">Readable lesson pages will appear here after upload processing.</text>
       <rect x="120" y="902" width="448" height="220" rx="28" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="4"/>
       <rect x="612" y="902" width="468" height="220" rx="28" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="4"/>
       <text x="154" y="980" fill="#0F172A" font-size="28" font-family="Arial, sans-serif" font-weight="700">Try again</text>
@@ -238,6 +239,206 @@ function getProductFamily(input: { title?: string; format?: string; subject: str
     return "civics";
   }
   return "inquiry";
+}
+
+function getPreviewPageContent(input: {
+  subject: string;
+  family: string;
+  pageNumber: number;
+  pageCount: number;
+  format?: string;
+}) {
+  const coverLabel = input.pageNumber === 1 ? "Cover preview" : `Preview page ${input.pageNumber}`;
+
+  if (input.subject === "Math") {
+    if (input.pageNumber === 1) {
+      return {
+        pageLabel: coverLabel,
+        mainTitle: "Small-group lesson sequence",
+        subtitle: "Warm-up, model, guided practice, and a quick independent check",
+        taskTitle: "What teachers can see",
+        taskLines: [
+          "Strong cover with grade, standard, and resource purpose",
+          "Preview pages show actual student problems and models",
+          "Answer support appears on the final preview page",
+        ],
+        infoChips: ["Visual models", "Answer key"],
+        callout: "Ready for centers, reteach, or exit tickets",
+      };
+    }
+
+    if (input.pageNumber === input.pageCount) {
+      return {
+        pageLabel: "Teacher notes",
+        mainTitle: "Answer key and support notes",
+        subtitle: "Clear worked examples and a quick reteach script",
+        taskTitle: "Teacher support",
+        taskLines: [
+          "1. Model the strategy with a visual representation.",
+          "2. Listen for precise math language during partner talk.",
+          "3. Use the quick check to decide who needs reteach.",
+        ],
+        infoChips: ["Worked examples", "Reteach cue"],
+        callout: "Teacher-facing page stays readable in preview",
+      };
+    }
+
+    return {
+      pageLabel: "Student practice",
+      mainTitle: "Solve, explain, and compare",
+      subtitle: "Students work through real questions instead of decorative filler.",
+      taskTitle: "Sample tasks",
+      taskLines: [
+        "A. Shade the model to represent 3/4.",
+        "B. Compare 2/3 and 3/4 using >, <, or =.",
+        "C. Explain your strategy in one complete sentence.",
+      ],
+      infoChips: ["Recording space", "Math talk prompt"],
+      callout: "Readable student page with actual practice",
+    };
+  }
+
+  if (input.subject === "ELA") {
+    if (input.pageNumber === 1) {
+      return {
+        pageLabel: coverLabel,
+        mainTitle: "Reading and response sequence",
+        subtitle: "Mini lesson, text evidence prompt, and a written response page",
+        taskTitle: "What buyers notice",
+        taskLines: [
+          "Authentic reading task with visible classroom language",
+          "Response organizer shows real student writing space",
+          "Teacher notes preview the discussion structure",
+        ],
+        infoChips: ["Text evidence", "Writing support"],
+        callout: "Built for reading workshop and small groups",
+      };
+    }
+
+    if (input.pageNumber === input.pageCount) {
+      return {
+        pageLabel: "Teacher notes",
+        mainTitle: "Discussion prompts and answer support",
+        subtitle: "Sentence stems, coaching notes, and sample responses",
+        taskTitle: "Conference support",
+        taskLines: [
+          "Prompt students to cite one detail before sharing a claim.",
+          "Use the revision checklist during partner feedback.",
+          "Sample response helps teachers calibrate expectations.",
+        ],
+        infoChips: ["Conference cues", "Sample response"],
+        callout: "Teacher-facing support without giving away the full file",
+      };
+    }
+
+    return {
+      pageLabel: "Student preview",
+      mainTitle: "Read, annotate, and respond",
+      subtitle: "Preview includes real prompts teachers would expect to buy.",
+      taskTitle: "Sample tasks",
+      taskLines: [
+        "1. Read the short passage closely.",
+        "2. Underline one clue that supports your thinking.",
+        "3. Write a response using evidence from the text.",
+      ],
+      infoChips: ["Annotation space", "Response frame"],
+      callout: "Authentic inside page with readable literacy tasks",
+    };
+  }
+
+  if (input.subject === "Science") {
+    if (input.pageNumber === 1) {
+      return {
+        pageLabel: coverLabel,
+        mainTitle: "Inquiry launch and lab sequence",
+        subtitle: "Observation, evidence gathering, and a written explanation page",
+        taskTitle: "What buyers see",
+        taskLines: [
+          "Cover and preview pages show the lesson flow clearly.",
+          "Students record real observations and data points.",
+          "Teacher page includes CER support and facilitation notes.",
+        ],
+        infoChips: ["Observation page", "CER support"],
+        callout: "Designed for classroom labs and notebook work",
+      };
+    }
+
+    if (input.pageNumber === input.pageCount) {
+      return {
+        pageLabel: "Teacher notes",
+        mainTitle: "CER support and debrief notes",
+        subtitle: "A quick teacher page with expected evidence and discussion cues",
+        taskTitle: "Teacher support",
+        taskLines: [
+          "Ask students to point to one observation before making a claim.",
+          "Use the evidence bank to scaffold precise vocabulary.",
+          "Close with a short reflection and partner share.",
+        ],
+        infoChips: ["Debrief prompt", "Evidence bank"],
+        callout: "Clear teacher-facing support for science instruction",
+      };
+    }
+
+    return {
+      pageLabel: "Student preview",
+      mainTitle: "Observe, record, and explain",
+      subtitle: "Students interact with data and turn it into a written explanation.",
+      taskTitle: "Sample tasks",
+      taskLines: [
+        "A. Record two observations from the model or data table.",
+        "B. Circle one pattern you notice.",
+        "C. Write a claim and support it with evidence.",
+      ],
+      infoChips: ["Data table", "Reflection prompt"],
+      callout: "Authentic student page with classroom-ready science work",
+    };
+  }
+
+  if (input.pageNumber === 1) {
+    return {
+      pageLabel: coverLabel,
+      mainTitle: "Social studies resource sequence",
+      subtitle: "Source analysis, discussion support, and a written reflection page",
+      taskTitle: "What buyers see",
+      taskLines: [
+        "A strong cover and clearly labeled preview pages.",
+        "Real questions instead of empty decorative blocks.",
+        "Teacher notes show how the lesson is used in class.",
+      ],
+      infoChips: ["Primary source", "Discussion prompts"],
+      callout: "Built for discussion, source work, and reflection",
+    };
+  }
+
+  if (input.pageNumber === input.pageCount) {
+    return {
+      pageLabel: "Teacher notes",
+      mainTitle: "Discussion notes and extension ideas",
+      subtitle: "Sample facilitation support with a short extension option",
+      taskTitle: "Teacher support",
+      taskLines: [
+        "Invite students to notice one detail before naming a claim.",
+        "Use the sentence stems for accountable talk.",
+        "Wrap up with one written reflection or exit slip.",
+      ],
+      infoChips: ["Talk stems", "Extension"],
+      callout: "Teacher-facing notes remain visible and trustworthy",
+    };
+  }
+
+  return {
+    pageLabel: "Student preview",
+    mainTitle: "Look, think, and explain",
+    subtitle: "Preview pages show real classroom-style prompts and response space.",
+    taskTitle: "Sample tasks",
+    taskLines: [
+      "1. Study the image, text, or source closely.",
+      "2. Record one piece of evidence.",
+      "3. Explain your thinking in a complete sentence.",
+    ],
+    infoChips: ["Response space", "Reflection prompt"],
+    callout: "Readable social studies preview instead of a mock layout",
+  };
 }
 
 function renderSubjectThumbnailMotif(subject: string, seed: string, family: string) {
@@ -914,12 +1115,15 @@ export function renderManagedPreviewSvg(input: {
   const summaryLines = splitTextLines(input.summary, 36, 2);
   const previewSeed = `${input.title}:${input.gradeBand}:${input.pageNumber}`;
   const family = getProductFamily(input);
-  const pageLabel =
-    input.pageNumber === 1
-      ? "Preview cover"
-      : input.pageNumber === 2
-        ? "Student preview"
-        : "Teacher notes";
+  const pageContent = getPreviewPageContent({
+    subject: input.subject,
+    family,
+    pageNumber: input.pageNumber,
+    pageCount: input.pageCount,
+    format: input.format,
+  });
+  const detailLines = splitTextLines(pageContent.subtitle, 38, 2);
+  const taskLines = pageContent.taskLines.map((line) => escapeXml(line));
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600" role="img" aria-label="${escapeXml(input.title)} preview page ${input.pageNumber}">
   <rect width="1200" height="1600" fill="#eef2f7" />
@@ -940,28 +1144,28 @@ export function renderManagedPreviewSvg(input: {
   <rect x="126" y="404" width="948" height="1062" rx="34" fill="#f8fafc" stroke="#e2e8f0" />
   <rect x="156" y="434" width="410" height="972" rx="28" fill="${theme.tertiary}" stroke="${theme.secondary}" />
   <rect x="192" y="468" width="338" height="40" rx="20" fill="${theme.badge}" />
-  <text x="222" y="494" fill="${theme.ink}" font-size="17" font-family="Arial, sans-serif" font-weight="800">${escapeXml(pageLabel)}</text>
+  <text x="222" y="494" fill="${theme.ink}" font-size="17" font-family="Arial, sans-serif" font-weight="800">${escapeXml(pageContent.pageLabel)}</text>
   ${renderFormatBadgeMotif(input.format ?? "resource", theme)}
   ${renderSubjectPreviewMotif(input.subject, previewSeed, family)}
   <rect x="612" y="448" width="426" height="232" rx="28" fill="#ffffff" stroke="#dbe4f0" />
-  <rect x="644" y="480" width="168" height="164" rx="22" fill="${theme.badge}" />
-  <rect x="840" y="488" width="164" height="36" rx="18" fill="${theme.badge}" />
-  <rect x="840" y="542" width="144" height="36" rx="18" fill="${theme.badge}" />
-  <rect x="840" y="596" width="124" height="36" rx="18" fill="${theme.badge}" />
-  <text x="868" y="511" fill="${theme.ink}" font-size="17" font-family="Arial, sans-serif" font-weight="700">Sample page</text>
-  <text x="868" y="565" fill="${theme.ink}" font-size="17" font-family="Arial, sans-serif" font-weight="700">Real layout</text>
-  <text x="868" y="619" fill="${theme.ink}" font-size="17" font-family="Arial, sans-serif" font-weight="700">Preview</text>
+  <text x="646" y="500" fill="${theme.ink}" font-size="28" font-family="Arial, sans-serif" font-weight="800">${escapeXml(pageContent.mainTitle)}</text>
+  ${renderTextLines(detailLines, 646, 544, 18, "#475569", { fontWeight: 400, lineGap: 8 })}
+  <rect x="646" y="602" width="136" height="34" rx="17" fill="${theme.badge}" />
+  <rect x="796" y="602" width="168" height="34" rx="17" fill="${theme.badge}" />
+  <text x="672" y="625" fill="${theme.ink}" font-size="15" font-family="Arial, sans-serif" font-weight="800">${escapeXml(pageContent.infoChips[0] ?? "Preview")}</text>
+  <text x="822" y="625" fill="${theme.ink}" font-size="15" font-family="Arial, sans-serif" font-weight="800">${escapeXml(pageContent.infoChips[1] ?? "Teacher notes")}</text>
   <rect x="612" y="718" width="426" height="230" rx="28" fill="#ffffff" stroke="#dbe4f0" />
-  <rect x="648" y="754" width="350" height="20" rx="10" fill="#e2e8f0" />
-  <rect x="648" y="792" width="286" height="20" rx="10" fill="#e2e8f0" />
-  <rect x="648" y="830" width="326" height="20" rx="10" fill="#e2e8f0" />
+  <text x="648" y="758" fill="${theme.ink}" font-size="22" font-family="Arial, sans-serif" font-weight="800">${escapeXml(pageContent.taskTitle)}</text>
+  <text x="648" y="804" fill="#475569" font-size="18" font-family="Arial, sans-serif">${taskLines[0]}</text>
+  <text x="648" y="844" fill="#475569" font-size="18" font-family="Arial, sans-serif">${taskLines[1]}</text>
+  <text x="648" y="884" fill="#475569" font-size="18" font-family="Arial, sans-serif">${taskLines[2]}</text>
   <rect x="648" y="878" width="154" height="48" rx="18" fill="${theme.badge}" />
   <rect x="826" y="878" width="172" height="48" rx="18" fill="${theme.badge}" />
-  <text x="684" y="907" fill="${theme.ink}" font-size="18" font-family="Arial, sans-serif" font-weight="800">Preview pages</text>
-  <text x="858" y="907" fill="${theme.ink}" font-size="18" font-family="Arial, sans-serif" font-weight="800">Teacher notes</text>
+  <text x="680" y="907" fill="${theme.ink}" font-size="18" font-family="Arial, sans-serif" font-weight="800">Readable</text>
+  <text x="862" y="907" fill="${theme.ink}" font-size="18" font-family="Arial, sans-serif" font-weight="800">Protected</text>
   <rect x="612" y="986" width="426" height="208" rx="28" fill="#ffffff" stroke="#dbe4f0" />
   <rect x="648" y="1022" width="390" height="86" rx="22" fill="${theme.primary}" opacity="0.12" />
-  <text x="680" y="1072" fill="${theme.ink}" font-size="28" font-family="Arial, sans-serif" font-weight="800">${escapeXml(coverCopy.callout)}</text>
+  <text x="680" y="1072" fill="${theme.ink}" font-size="28" font-family="Arial, sans-serif" font-weight="800">${escapeXml(pageContent.callout)}</text>
   ${renderTextLines(summaryLines, 648, 1148, 19, "#475569", { fontWeight: 400, lineGap: 8 })}
   <text x="188" y="1324" transform="rotate(-24 188 1324)" fill="rgba(147,197,253,0.2)" font-size="30" font-family="Arial, sans-serif" font-weight="800" letter-spacing="6">LESSONFORGE PREVIEW · SAMPLE ONLY</text>
   <defs>

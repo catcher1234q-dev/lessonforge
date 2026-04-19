@@ -43,9 +43,15 @@ Important behavior:
 Update `.env.local` with a real Postgres connection string:
 
 ```bash
-DATABASE_URL=postgresql://username:password@host:5432/lessonforge
+DATABASE_URL=postgresql://username:password@host:6543/lessonforge?pgbouncer=true
+DIRECT_URL=postgresql://username:password@host:5432/lessonforge
 LESSONFORGE_PERSISTENCE_MODE=auto
 ```
+
+For Supabase:
+- `DATABASE_URL` should be the pooled runtime connection string
+- `DIRECT_URL` should be the direct database connection string for Prisma CLI commands
+- do not let old `POSTGRES_PRISMA_URL` or `POSTGRES_URL` values override your intended Supabase database
 
 Why `auto` first:
 - it matches the default in `.env.example`
@@ -63,6 +69,12 @@ npm run prisma:migrate
 ```
 
 This creates the tables in your database.
+
+For production deploys, use:
+
+```bash
+npm run prisma:migrate:deploy
+```
 
 ### 4. Seed starter data
 ```bash

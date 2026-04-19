@@ -1,29 +1,38 @@
 "use client";
 
 import { useEffect, useState, type ChangeEvent } from "react";
-import { AlertCircle, ArrowRight, CheckCircle2, FileUp, Lock, WandSparkles } from "lucide-react";
+import { AlertCircle, ArrowRight, CheckCircle2, FileUp, Lock } from "lucide-react";
 import Link from "next/link";
 
 import { trackFunnelEvent } from "@/lib/analytics/events";
+import { ProductImageGalleryManager } from "@/components/seller/product-image-gallery-manager";
 import { normalizePlanKey, planConfig } from "@/lib/config/plans";
 import { ProductAssetPanel } from "@/components/seller/product-asset-panel";
+import {
+  MIN_PRODUCT_INTERIOR_PREVIEW_IMAGES,
+  normalizeProductGallery,
+} from "@/lib/lessonforge/product-gallery";
 import {
   getAiUpgradeMessage,
   getLockedFeatureMessage,
 } from "@/lib/lessonforge/plan-enforcement";
+import {
+  getListingAssistFieldPlan,
+  getSellerCreateStep1AiUiState,
+  STEP_1_AI_BUTTON_LABEL,
+} from "@/lib/lessonforge/seller-create-ai-ui";
 import { buildSellerPlanCheckoutHref } from "@/lib/stripe/seller-plan-billing";
 import { canAffordAiAction, getAiCreditCost } from "@/lib/services/ai/credits";
 import type {
   AdminAiSettings,
   AIProviderResult,
   ConnectedSeller,
+  ProductGalleryImage,
   ProductRecord,
   SellerProfileDraft,
 } from "@/types";
 
 const standardsScanCost = getAiCreditCost("standardsScan");
-const titleSuggestionCost = getAiCreditCost("titleSuggestion");
-const descriptionRewriteCost = getAiCreditCost("descriptionRewrite");
 const SELLER_FLOW_AI_PROVIDER = "gemini" as const;
 
 type CreatorAiAction = "autofill" | "title" | "description" | "tags" | "standards";
@@ -431,14 +440,6 @@ function isWeakTitleValue(value: string, uploadedTitle: string) {
   return !normalized || normalized === uploadedTitle || normalized.length < 12;
 }
 
-function isWeakShortDescriptionValue(value: string) {
-  return value.trim().length < 20;
-}
-
-function isWeakFullDescriptionValue(value: string) {
-  return value.trim().length < 60;
-}
-
 function hasUsableShortDescription(value: string) {
   return value.trim().length >= 20;
 }
@@ -447,9 +448,14 @@ function hasUsableFullDescription(value: string) {
   return value.trim().length >= 60;
 }
 
+function createDraftProductId() {
+  return `upload-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export function ProductCreator() {
   const [seller, setSeller] = useState<ConnectedSeller | null>(null);
   const [profile, setProfile] = useState<SellerProfileDraft | null>(null);
+  const [draftProductId, setDraftProductId] = useState(() => createDraftProductId());
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("Math");
   const [gradeBand, setGradeBand] = useState("K-12");
@@ -464,6 +470,7 @@ export function ProductCreator() {
   const [previewIncluded, setPreviewIncluded] = useState(false);
   const [thumbnailIncluded, setThumbnailIncluded] = useState(false);
   const [rightsConfirmed, setRightsConfirmed] = useState(false);
+  const [imageGallery, setImageGallery] = useState<ProductGalleryImage[]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [savedProduct, setSavedProduct] = useState<{
@@ -499,18 +506,28 @@ export function ProductCreator() {
     Partial<Record<AiFieldKey, AiFieldStatus>>
   >({});
   const [showAiReviewNotice, setShowAiReviewNotice] = useState(false);
+  const [aiUploadReadiness, setAiUploadReadiness] = useState<{
+    state: "idle" | "checking" | "ready" | "error";
+    message: string | null;
+  }>({
+    state: "idle",
+    message: null,
+  });
+
+  useEffect(() => {
+    const normalizedGallery = normalizeProductGallery(draftProductId, imageGallery);
+    setThumbnailIncluded(normalizedGallery.length > 0);
+    setPreviewIncluded(normalizedGallery.length > MIN_PRODUCT_INTERIOR_PREVIEW_IMAGES);
+  }, [draftProductId, imageGallery]);
   const currentPlanKey = normalizePlanKey(profile?.sellerPlanKey);
   const currentPlan = planConfig[currentPlanKey];
   const canRunStandardsScan =
     availableCredits === null ? true : canAffordAiAction(availableCredits, "standardsScan");
-  const canRunTitleSuggestion =
-    availableCredits === null ? true : canAffordAiAction(availableCredits, "titleSuggestion");
   const canRunDescriptionRewrite =
     availableCredits === null ? true : canAffordAiAction(availableCredits, "descriptionRewrite");
   const aiKillSwitchEnabled = aiSettings?.aiKillSwitchEnabled ?? false;
   const connectedAccountId = seller?.accountId || profile?.stripeAccountId || null;
-  const estimatedRemainingCredits =
-    availableCredits === null ? null : Math.max(0, availableCredits - standardsScanCost);
+  const hasAnyAiCreditsRemaining = availableCredits === null ? true : availableCredits > 0;
   const canSaveWithoutAi = status !== "Published";
   const saveBlockedByAi =
     !canSaveWithoutAi && (aiKillSwitchEnabled || !canRunStandardsScan);
@@ -601,6 +618,12 @@ export function ProductCreator() {
   const publishStepReady = missingPublishItems.length === 0;
   const currentAiAction = aiFeedback?.state === "loading" ? aiFeedback.action : null;
   const uploadedTitle = normalizeUploadedTitle(files[0]?.name);
+  const step1AiUiState = getSellerCreateStep1AiUiState({
+    aiUploadReadinessState: aiUploadReadiness.state,
+    aiKillSwitchEnabled,
+    hasAnyAiCreditsRemaining,
+    currentAiAction,
+  });
 
   function markAiUpdated(nextFields: Partial<Record<AiFieldKey, AiFieldStatus>>) {
     if (Object.keys(nextFields).length === 0) {
@@ -735,29 +758,16 @@ export function ProductCreator() {
       return null;
     }
 
-    if ((action === "title" || action === "tags") && !canRunTitleSuggestion) {
-      if (!options?.quiet) {
-        setAiFeedback({
-          state: "error",
-          action,
-          message: getAiUpgradeMessage(),
-        });
-      }
-      return null;
-    }
-
     if (!options?.quiet) {
-        setAiFeedback({
-          state: "loading",
-          action,
-          message:
+      setAiFeedback({
+        state: "loading",
+        action,
+        message:
           action === "autofill"
             ? "AI is scanning your file…"
-            : action === "title"
-              ? "AI is writing your title…"
-              : action === "description"
-                ? "AI is writing your description…"
-                : "AI is suggesting tags…",
+            : action === "description"
+              ? "AI is writing your description…"
+              : "AI is filling your listing…",
       });
     }
 
@@ -985,71 +995,47 @@ export function ProductCreator() {
     options?: { mode?: "upload" | "helper" | "manual" },
   ) {
     const mode = options?.mode ?? "upload";
-    const nextUpdatedFields: Partial<Record<AiFieldKey, AiFieldStatus>> = {};
-    const shouldHelpTitle =
-      mode === "helper"
-        ? isWeakTitleValue(title, uploadedTitle)
-        : !title.trim() || title.trim() === uploadedTitle;
-    const shouldHelpShortDescription =
-      mode === "helper"
-        ? isWeakShortDescriptionValue(shortDescription)
-        : !shortDescription.trim();
-    const shouldHelpFullDescription =
-      mode === "helper"
-        ? isWeakFullDescriptionValue(fullDescription)
-        : !fullDescription.trim();
+    const fieldPlan = getListingAssistFieldPlan({
+      action,
+      mode,
+      current: {
+        title,
+        shortDescription,
+        fullDescription,
+        subject,
+        gradeBand,
+        suggestedTags,
+      },
+      uploadedTitle,
+      suggestion,
+    });
 
-    if (action === "autofill" && shouldHelpTitle) {
-      setTitle(suggestion.title);
-      nextUpdatedFields.title = "filled";
+    if (fieldPlan.nextValues.title !== undefined) {
+      setTitle(fieldPlan.nextValues.title);
     }
 
-    if (action === "title") {
-      setTitle(suggestion.title);
-      nextUpdatedFields.title = "filled";
+    if (fieldPlan.nextValues.shortDescription !== undefined) {
+      setShortDescription(fieldPlan.nextValues.shortDescription);
     }
 
-    if ((action === "autofill" || action === "description") && shouldHelpShortDescription) {
-      setShortDescription(suggestion.shortDescription);
-      nextUpdatedFields.shortDescription = "filled";
+    if (fieldPlan.nextValues.fullDescription !== undefined) {
+      setFullDescription(fieldPlan.nextValues.fullDescription);
     }
 
-    if (action === "description") {
-      if (shortDescription.trim() !== suggestion.shortDescription.trim()) {
-        setShortDescription(suggestion.shortDescription);
-        nextUpdatedFields.shortDescription = "filled";
-      }
-      setFullDescription(suggestion.fullDescription);
-      nextUpdatedFields.fullDescription = "filled";
+    if (fieldPlan.nextValues.subject !== undefined) {
+      setSubject(fieldPlan.nextValues.subject);
     }
 
-    if (action === "autofill" && shouldHelpFullDescription) {
-      setFullDescription(suggestion.fullDescription);
-      nextUpdatedFields.fullDescription = "filled";
+    if (fieldPlan.nextValues.gradeBand !== undefined) {
+      setGradeBand(fieldPlan.nextValues.gradeBand);
     }
 
-    if (action === "autofill") {
-      if (subject === "Math" && suggestion.subject !== subject) {
-        setSubject(suggestion.subject);
-        nextUpdatedFields.subject = "filled";
-      }
-
-      if (gradeBand === "K-12" && suggestion.gradeBand !== gradeBand) {
-        setGradeBand(suggestion.gradeBand);
-        nextUpdatedFields.gradeBand = "filled";
-      }
+    if (fieldPlan.nextValues.tags !== undefined) {
+      setSuggestedTags(fieldPlan.nextValues.tags);
     }
 
-    if ((action === "autofill" || action === "tags") && suggestedTags.length === 0) {
-      setSuggestedTags(suggestion.tags);
-      nextUpdatedFields.tags = "suggested";
-    } else if (action === "tags") {
-      setSuggestedTags(suggestion.tags);
-      nextUpdatedFields.tags = "suggested";
-    }
-
-    markAiUpdated(nextUpdatedFields);
-    return nextUpdatedFields;
+    markAiUpdated(fieldPlan.nextUpdatedFields);
+    return fieldPlan.nextUpdatedFields;
   }
 
   async function handleAiFinishListing() {
@@ -1256,6 +1242,48 @@ export function ProductCreator() {
     })();
   }, [profile?.email, seller?.email]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    if (files.length === 0) {
+      setAiUploadReadiness({
+        state: "idle",
+        message: null,
+      });
+      return;
+    }
+
+    setAiUploadReadiness({
+      state: "checking",
+      message: "Checking your uploaded file for AI…",
+    });
+
+    void (async () => {
+      const uploadResult = await buildSellerAiUploadPayload(files[0]);
+
+      if (cancelled) {
+        return;
+      }
+
+      if (uploadResult.status === "ready") {
+        setAiUploadReadiness({
+          state: "ready",
+          message: "AI reads your uploaded file and fills the rest of your listing.",
+        });
+        return;
+      }
+
+      setAiUploadReadiness({
+        state: "error",
+        message: uploadResult.message,
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [files]);
+
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const nextFiles = Array.from(event.target.files ?? []);
     setFiles(nextFiles);
@@ -1263,6 +1291,10 @@ export function ProductCreator() {
     setSuggestedTags([]);
     setAiUpdatedFields({});
     setShowAiReviewNotice(false);
+    setAiUploadReadiness({
+      state: nextFiles.length > 0 ? "checking" : "idle",
+      message: nextFiles.length > 0 ? "Checking your uploaded file for AI…" : null,
+    });
 
     if (!title && nextFiles[0]) {
       setTitle(normalizeUploadedTitle(nextFiles[0].name));
@@ -1383,8 +1415,9 @@ export function ProductCreator() {
       }
     }
 
+    const normalizedGallery = normalizeProductGallery(draftProductId, imageGallery);
     const nextProduct: ProductRecord = {
-      id: `upload-${Date.now()}`,
+      id: draftProductId,
       title: title.trim(),
       subject,
       gradeBand,
@@ -1407,9 +1440,10 @@ export function ProductCreator() {
       productStatus: effectiveStatus,
       createdPath,
       licenseType,
-      previewIncluded,
-      thumbnailIncluded,
+      previewIncluded: normalizedGallery.length > MIN_PRODUCT_INTERIOR_PREVIEW_IMAGES,
+      thumbnailIncluded: normalizedGallery.length > 0,
       rightsConfirmed,
+      imageGallery: normalizedGallery,
       fileTypes: files.length ? files.map((file) => file.name.split(".").pop()?.toUpperCase() || "FILE") : ["PDF"],
       includedItems: ["Teacher-facing guide", "Student resource pages"],
     };
@@ -1444,8 +1478,8 @@ export function ProductCreator() {
         subject,
         resourceType,
         status: savedProductRecord.productStatus ?? "Draft",
-        hasPreview: previewIncluded,
-        hasThumbnail: thumbnailIncluded,
+        hasPreview: normalizedGallery.length > MIN_PRODUCT_INTERIOR_PREVIEW_IMAGES,
+        hasThumbnail: normalizedGallery.length > 0,
       },
     );
 
@@ -1457,6 +1491,8 @@ export function ProductCreator() {
     setFiles([]);
     setStatus("Draft");
     setCreatedPath("Manual upload");
+    setDraftProductId(createDraftProductId());
+    setImageGallery([]);
     setPreviewIncluded(false);
     setThumbnailIncluded(false);
     setRightsConfirmed(false);
@@ -1482,14 +1518,14 @@ export function ProductCreator() {
           Upload your resource, review the details, and publish when it looks ready.
         </h1>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-ink-soft sm:text-base">
-          Keep the first pass simple. Start with the file and core details, then add the buyer-facing preview checks when you are ready to go live.
+          Keep the first pass simple. Upload the file first, let AI build the listing if you want, then review everything before publishing.
         </p>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-3">
           {[
             {
               title: "1. Upload resource",
-              body: "Pick the file and add the title.",
+              body: "Upload your file, then let AI fill the rest.",
               ready: uploadStepReady,
             },
             {
@@ -1528,69 +1564,6 @@ export function ProductCreator() {
             Drafts are safe
           </span>
         </div>
-
-        {files.length > 0 || aiFeedback ? (
-          <div className="mt-5 rounded-[1rem] border border-brand/10 bg-brand-soft/30 p-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand">
-                  AI assist
-                </p>
-                <p className="mt-1 text-sm leading-6 text-ink-soft">
-                  Upload your file, then use Fill with AI to build the draft.
-                </p>
-              </div>
-              <span className="rounded-full bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand">
-                Fill with AI
-              </span>
-            </div>
-
-            {aiFeedback ? (
-              <div
-                className={`mt-3 rounded-[0.95rem] px-4 py-3 text-sm leading-6 ${
-                  aiFeedback.state === "loading"
-                    ? "bg-white text-ink"
-                    : aiFeedback.state === "success"
-                      ? "bg-emerald-50 text-emerald-900"
-                      : "bg-red-50 text-red-900"
-                }`}
-              >
-                {aiFeedback.message}
-              </div>
-            ) : null}
-
-            {showAiReviewNotice ? (
-              <div className="mt-3 rounded-[0.95rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
-                AI can make mistakes. Review before publishing.
-              </div>
-            ) : null}
-
-            {(title || shortDescription || fullDescription || suggestedTags.length > 0 || standardsResult) ? (
-              <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.14em]">
-                {title ? (
-                  <span className="rounded-full bg-white px-3 py-1 text-ink-soft">
-                    Title ready
-                  </span>
-                ) : null}
-                {shortDescription || fullDescription ? (
-                  <span className="rounded-full bg-white px-3 py-1 text-ink-soft">
-                    Description ready
-                  </span>
-                ) : null}
-                {suggestedTags.length > 0 ? (
-                  <span className="rounded-full bg-white px-3 py-1 text-ink-soft">
-                    Tags generated
-                  </span>
-                ) : null}
-                {standardsResult?.status === "success" ? (
-                  <span className="rounded-full bg-white px-3 py-1 text-ink-soft">
-                    Standards scanned
-                  </span>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
 
         {isCreatorReady ? (
           <p className="sr-only" data-testid="seller-creator-ready">
@@ -1646,30 +1619,106 @@ export function ProductCreator() {
                   </span>
                 ) : null}
                 <span className="mt-2 block text-xs leading-5 text-ink-soft">
-                  Upload a worksheet, slide deck, assessment, lesson page, or pack that already works in class. AI starts after upload.
+                  Upload a worksheet, slide deck, assessment, lesson page, or pack that already works in class.
                 </span>
               </label>
 
+              {files.length > 0 || aiFeedback ? (
+                <div className="rounded-[1rem] border border-brand/10 bg-brand-soft/30 p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand">
+                        Fill listing with AI
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-ink-soft">
+                        AI reads your uploaded file and fills the rest of your listing.
+                      </p>
+                    </div>
+                    {step1AiUiState.showButton ? (
+                      <button
+                        className="rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand disabled:cursor-not-allowed disabled:opacity-60"
+                        disabled={step1AiUiState.buttonDisabled}
+                        onClick={() => {
+                          void handleAiFinishListing();
+                        }}
+                        type="button"
+                      >
+                        {STEP_1_AI_BUTTON_LABEL}
+                      </button>
+                    ) : (
+                      <span className="rounded-full bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand">
+                        {aiUploadReadiness.state === "checking"
+                          ? "Checking file"
+                          : aiUploadReadiness.state === "error"
+                            ? "File not ready"
+                            : "Upload first"}
+                      </span>
+                    )}
+                  </div>
+
+                  {aiUploadReadiness.message ? (
+                    <div className="mt-3 rounded-[0.95rem] bg-white px-4 py-3 text-sm leading-6 text-ink">
+                      {aiUploadReadiness.message}
+                    </div>
+                  ) : null}
+
+                  {step1AiUiState.showZeroCreditsMessage ? (
+                    <div className="mt-3 rounded-[0.95rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+                      <p className="font-semibold">{step1AiUiState.zeroCreditsTitle}</p>
+                      <p className="mt-1">{step1AiUiState.zeroCreditsResetMessage}</p>
+                      <p className="mt-1">{getAiUpgradeMessage()}</p>
+                    </div>
+                  ) : null}
+
+                  {aiFeedback ? (
+                    <div
+                      className={`mt-3 rounded-[0.95rem] px-4 py-3 text-sm leading-6 ${
+                        aiFeedback.state === "loading"
+                          ? "bg-white text-ink"
+                          : aiFeedback.state === "success"
+                            ? "bg-emerald-50 text-emerald-900"
+                            : "bg-red-50 text-red-900"
+                      }`}
+                    >
+                      {aiFeedback.message}
+                    </div>
+                  ) : null}
+
+                  {showAiReviewNotice ? (
+                    <div className="mt-3 rounded-[0.95rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+                      AI can make mistakes. Review before publishing.
+                    </div>
+                  ) : null}
+
+                  {(title || shortDescription || fullDescription || suggestedTags.length > 0 || standardsResult) ? (
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.14em]">
+                      {title ? (
+                        <span className="rounded-full bg-white px-3 py-1 text-ink-soft">
+                          Title ready
+                        </span>
+                      ) : null}
+                      {shortDescription || fullDescription ? (
+                        <span className="rounded-full bg-white px-3 py-1 text-ink-soft">
+                          Description ready
+                        </span>
+                      ) : null}
+                      {suggestedTags.length > 0 ? (
+                        <span className="rounded-full bg-white px-3 py-1 text-ink-soft">
+                          Tags generated
+                        </span>
+                      ) : null}
+                      {standardsResult?.status === "success" ? (
+                        <span className="rounded-full bg-white px-3 py-1 text-ink-soft">
+                          Standards scanned
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
               <label className="block">
-                <span className="flex items-center justify-between gap-3 text-sm font-semibold text-ink">
-                  <span>Title</span>
-                  <button
-                    className="text-xs font-semibold uppercase tracking-[0.14em] text-brand disabled:text-ink-soft"
-                    disabled={currentAiAction !== null || aiKillSwitchEnabled || !canRunTitleSuggestion || files.length === 0}
-                    onClick={async () => {
-                      const assistResult = await runListingAssist("title");
-                      if (assistResult?.suggestion) {
-                        applyListingAssistSuggestion(assistResult.suggestion, "title", {
-                          mode: "manual",
-                        });
-                        setShowAiReviewNotice(true);
-                      }
-                    }}
-                    type="button"
-                  >
-                    Generate title
-                  </button>
-                </span>
+                <span className="text-sm font-semibold text-ink">Title</span>
                 <input
                   className={`mt-2 w-full rounded-[1rem] border px-4 py-3 text-sm text-ink outline-none transition ${getFieldClassName({
                     isMissing: missingPublishKeys.has("title"),
@@ -1755,21 +1804,9 @@ export function ProductCreator() {
                 </p>
                 <h2 className="mt-1 text-xl font-semibold text-ink">Review details</h2>
                 <p className="mt-1 text-sm leading-6 text-ink-soft">
-                  Keep this part short and useful. AI can help sharpen it later.
+                  Review what AI filled in, or enter the listing details yourself.
                 </p>
               </div>
-              <button
-                className="inline-flex items-center gap-2 rounded-full bg-brand px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
-                disabled={currentAiAction !== null || aiKillSwitchEnabled || files.length === 0}
-                onClick={() => {
-                  void handleAiFinishListing();
-                }}
-                title="Fill with AI"
-                type="button"
-              >
-                <WandSparkles className="h-4 w-4" />
-                Fill with AI
-              </button>
             </div>
 
             <div className="mt-4 grid gap-4">
@@ -1818,25 +1855,7 @@ export function ProductCreator() {
               </div>
 
               <label className="block" id="publish-target-description">
-                <span className="flex items-center justify-between gap-3 text-sm font-semibold text-ink">
-                  <span>Short description</span>
-                  <button
-                    className="text-xs font-semibold uppercase tracking-[0.14em] text-brand disabled:text-ink-soft"
-                    disabled={currentAiAction !== null || aiKillSwitchEnabled || !canRunDescriptionRewrite || files.length === 0}
-                    onClick={async () => {
-                      const assistResult = await runListingAssist("description");
-                      if (assistResult?.suggestion) {
-                        applyListingAssistSuggestion(assistResult.suggestion, "description", {
-                          mode: "manual",
-                        });
-                        setShowAiReviewNotice(true);
-                      }
-                    }}
-                    type="button"
-                  >
-                    Write description
-                  </button>
-                </span>
+                <span className="text-sm font-semibold text-ink">Short description</span>
                 <textarea
                   className={`mt-2 min-h-24 w-full rounded-[1rem] border px-4 py-3 text-sm text-ink outline-none transition ${getFieldClassName({
                     isMissing: missingPublishKeys.has("description"),
@@ -1888,25 +1907,9 @@ export function ProductCreator() {
                     <div>
                       <p className="text-sm font-semibold text-ink">Suggested tags</p>
                       <p className="mt-1 text-sm leading-6 text-ink-soft">
-                        AI builds quick browse terms from your upload.
+                        AI adds browse terms here after Fill listing with AI runs.
                       </p>
                     </div>
-                    <button
-                    className="text-xs font-semibold uppercase tracking-[0.14em] text-brand disabled:text-ink-soft"
-                    disabled={currentAiAction !== null || aiKillSwitchEnabled || !canRunTitleSuggestion || files.length === 0}
-                    onClick={async () => {
-                      const assistResult = await runListingAssist("tags");
-                      if (assistResult?.suggestion) {
-                        applyListingAssistSuggestion(assistResult.suggestion, "tags", {
-                          mode: "manual",
-                        });
-                        setShowAiReviewNotice(true);
-                      }
-                    }}
-                      type="button"
-                    >
-                      Generate tags
-                    </button>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {suggestedTags.length > 0 ? (
@@ -1938,25 +1941,9 @@ export function ProductCreator() {
                       <p className="mt-1 text-sm leading-6 text-ink-soft">
                         {standardsResult?.status === "success"
                           ? "Standards scanned from your file"
-                          : "Scan your upload for the best standards match"}
+                          : "AI will suggest standards here when confidence is high."}
                       </p>
                     </div>
-                    <button
-                      className="text-xs font-semibold uppercase tracking-[0.14em] text-brand disabled:text-ink-soft"
-                      disabled={currentAiAction !== null || aiKillSwitchEnabled || !canRunStandardsScan || files.length === 0}
-                      onClick={() => {
-                        void (async () => {
-                          const mapping = await runStandardsScan("manual");
-                          if (mapping?.status === "success") {
-                            markAiUpdated({ standards: "suggested" });
-                            setShowAiReviewNotice(true);
-                          }
-                        })();
-                      }}
-                      type="button"
-                    >
-                      {standardsResult?.status === "success" ? "Rescan standards" : "Scan standards"}
-                    </button>
                   </div>
                   <div className="mt-3 space-y-2 text-sm leading-6 text-ink-soft">
                     <p>
@@ -2082,52 +2069,48 @@ export function ProductCreator() {
               </label>
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <label
-                className={`rounded-[1rem] border p-4 text-sm leading-6 ${
-                  missingPublishKeys.has("preview")
-                    ? "border-red-300 bg-red-50/40"
-                    : "border-black/5 bg-white"
-                }`}
-                id="publish-target-preview"
-              >
-                <span className="flex items-start gap-3">
-                  <input
-                    checked={previewIncluded}
-                    className="mt-1 h-4 w-4 accent-brand"
-                    data-testid="seller-creator-preview-included"
-                    onChange={(event) => setPreviewIncluded(event.target.checked)}
-                    type="checkbox"
+            <div className="mt-4 space-y-4">
+              <div id="publish-target-thumbnail">
+                <div id="publish-target-preview">
+                  <ProductImageGalleryManager
+                    onChange={setImageGallery}
+                    productId={draftProductId}
+                    value={imageGallery}
                   />
-                  <span>
-                    <span className="block font-semibold text-ink">Preview added</span>
-                    <span className="mt-1 block text-ink-soft">Required to publish</span>
-                  </span>
-                </span>
-              </label>
+                </div>
+              </div>
 
-              <label
-                className={`rounded-[1rem] border p-4 text-sm leading-6 ${
-                  missingPublishKeys.has("thumbnail")
-                    ? "border-red-300 bg-red-50/40"
-                    : "border-black/5 bg-white"
-                }`}
-                id="publish-target-thumbnail"
-              >
-                <span className="flex items-start gap-3">
-                  <input
-                    checked={thumbnailIncluded}
-                    className="mt-1 h-4 w-4 accent-brand"
-                    data-testid="seller-creator-thumbnail-included"
-                    onChange={(event) => setThumbnailIncluded(event.target.checked)}
-                    type="checkbox"
-                  />
-                  <span>
-                    <span className="block font-semibold text-ink">Thumbnail added</span>
-                    <span className="mt-1 block text-ink-soft">Required to publish</span>
-                  </span>
-                </span>
-              </label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div
+                  className={`rounded-[1rem] border p-4 text-sm leading-6 ${
+                    missingPublishKeys.has("thumbnail")
+                      ? "border-red-300 bg-red-50/40"
+                      : "border-black/5 bg-white"
+                  }`}
+                >
+                  <p className="font-semibold text-ink">Cover image</p>
+                  <p className="mt-1 text-ink-soft">
+                    {thumbnailIncluded
+                      ? "Ready. The first image is now the marketplace thumbnail."
+                      : "Add a cover image before publishing."}
+                  </p>
+                </div>
+
+                <div
+                  className={`rounded-[1rem] border p-4 text-sm leading-6 ${
+                    missingPublishKeys.has("preview")
+                      ? "border-red-300 bg-red-50/40"
+                      : "border-black/5 bg-white"
+                  }`}
+                >
+                  <p className="font-semibold text-ink">Interior preview images</p>
+                  <p className="mt-1 text-ink-soft">
+                    {previewIncluded
+                      ? "Ready. Buyers will see watermarked preview images on the product page."
+                      : "Add at least two real interior preview images before publishing."}
+                  </p>
+                </div>
+              </div>
 
               <label
                 className={`rounded-[1rem] border p-4 text-sm leading-6 ${
@@ -2419,9 +2402,10 @@ export function ProductCreator() {
           assetVersionNumber={1}
           format={files.length ? inferFormatFromFiles(files) : "Uploaded Resource"}
           gradeBand={gradeBand}
+          imageGallery={imageGallery}
           localFiles={files}
           previewIncluded={previewIncluded}
-          productId={title ? `draft-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}` : "draft-product"}
+          productId={draftProductId}
           subject={subject}
           summary={fullDescription || shortDescription || notes}
           thumbnailIncluded={thumbnailIncluded}

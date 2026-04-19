@@ -4,9 +4,17 @@ import { hasAppSessionForEmail } from "@/lib/auth/app-session";
 import { getCurrentViewer } from "@/lib/auth/viewer";
 import { handlePurchaseRequest } from "@/lib/lessonforge/api-handlers";
 import { saveOrder } from "@/lib/lessonforge/data-access";
+import { isStripeServerConfigured } from "@/lib/stripe/server";
 
 export async function POST(request: Request) {
   const viewer = await getCurrentViewer();
+
+  if (process.env.VERCEL === "1" || isStripeServerConfigured()) {
+    return NextResponse.json(
+      { error: "Preview purchase confirmation is disabled on the live site. Use real Stripe checkout." },
+      { status: 403 },
+    );
+  }
 
   if (!(await hasAppSessionForEmail(viewer.email))) {
     return NextResponse.json({ error: "Sign in to complete this purchase." }, { status: 401 });

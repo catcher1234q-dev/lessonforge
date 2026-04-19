@@ -194,7 +194,7 @@ test("AI handler rejects missing scan details before charging credits", async ()
       getAdminAiSettings: async () => defaultAdminAiSettings,
       consumeCredits: async () => {
         consumed = true;
-        return { subscription: { availableCredits: 8 } };
+        return { subscription: { availableCredits: 8 }, reservationState: "reserved" as const };
       },
       refundCredits: async () => undefined,
       mapStandardsWithOpenAI: async () => sampleMapping,
@@ -232,7 +232,7 @@ test("AI handler returns mapping and remaining credits on success", async () => 
           action: input.action,
           creditsUsed: input.creditsUsed,
         };
-        return { subscription: { availableCredits: 8 } };
+        return { subscription: { availableCredits: 8 }, reservationState: "reserved" as const };
       },
       refundCredits: async () => undefined,
       mapStandardsWithOpenAI: async () => sampleMapping,
@@ -252,8 +252,49 @@ test("AI handler returns mapping and remaining credits on success", async () => 
   });
 });
 
+test("AI handler reuses a cached standards result without calling the provider again", async () => {
+  let providerCalled = false;
+  let consumedCount = 0;
+
+  const response = await handleStandardsScanRequest(
+    {
+      sellerId: "seller-1",
+      sellerEmail: "seller@example.com",
+      sellerPlanKey: "starter",
+      title: "Fraction number line warm-up",
+      excerpt: "Students model equivalent fractions on a number line.",
+      provider: "openai",
+      idempotencyKey: "scan-cached",
+    },
+    {
+      getAdminAiSettings: async () => defaultAdminAiSettings,
+      findAiActionCacheEntry: async () => ({ result: sampleMapping }),
+      consumeCredits: async () => {
+        consumedCount += 1;
+        return { subscription: { availableCredits: 8 }, reservationState: "reused" as const };
+      },
+      refundCredits: async () => undefined,
+      mapStandardsWithOpenAI: async () => {
+        providerCalled = true;
+        return sampleMapping;
+      },
+      mapStandardsWithGemini: async () => ({ ...sampleMapping, provider: "gemini" }),
+    },
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(consumedCount, 1);
+  assert.equal(providerCalled, false);
+  assert.deepEqual(response.body, {
+    mapping: sampleMapping,
+    availableCredits: 8,
+    cost: 2,
+  });
+});
+
 test("AI handler refunds credits when the upstream mapping call fails", async () => {
   const refundCalls: string[] = [];
+  let providerCalled = false;
 
   const response = await handleStandardsScanRequest(
     {
@@ -266,20 +307,156 @@ test("AI handler refunds credits when the upstream mapping call fails", async ()
     },
     {
       getAdminAiSettings: async () => defaultAdminAiSettings,
-      consumeCredits: async () => ({ subscription: { availableCredits: 98 } }),
+      consumeCredits: async () => ({ subscription: { availableCredits: 98 }, reservationState: "reserved" as const }),
       refundCredits: async (idempotencyKey) => {
         refundCalls.push(idempotencyKey);
       },
       mapStandardsWithOpenAI: async () => {
-        throw new Error("Provider timeout");
+        providerCalled = true;
+        throw new Error("Provider request failed");
       },
       mapStandardsWithGemini: async () => ({ ...sampleMapping, provider: "gemini" }),
     },
   );
 
-  assert.equal(response.status, 500);
-  assert.deepEqual(response.body, { error: "Provider timeout" });
+  assert.equal(response.status, 503);
+  assert.deepEqual(response.body, { error: "AI could not finish this right now. Try again." });
+  assert.equal(providerCalled, true);
   assert.deepEqual(refundCalls, ["scan-3"]);
+});
+
+test("AI handler blocks insufficient credits before the provider call starts", async () => {
+  let providerCalled = false;
+  let refundCalled = false;
+
+  const response = await handleStandardsScanRequest(
+    {
+      sellerId: "seller-1",
+      sellerEmail: "seller@example.com",
+      sellerPlanKey: "basic",
+      title: "Fraction number line warm-up",
+      provider: "openai",
+      idempotencyKey: "scan-insufficient",
+    },
+    {
+      getAdminAiSettings: async () => defaultAdminAiSettings,
+      consumeCredits: async () => {
+        throw new Error("Not enough AI credits remaining for this action.");
+      },
+      refundCredits: async () => {
+        refundCalled = true;
+      },
+      mapStandardsWithOpenAI: async () => {
+        providerCalled = true;
+        return sampleMapping;
+      },
+      mapStandardsWithGemini: async () => ({ ...sampleMapping, provider: "gemini" }),
+    },
+  );
+
+  assert.equal(response.status, 402);
+  assert.deepEqual(response.body, { error: "You do not have enough AI credits for this action." });
+  assert.equal(providerCalled, false);
+  assert.equal(refundCalled, false);
+});
+
+test("AI handler blocks provider execution when atomic credit reservation is unavailable", async () => {
+  let providerCalled = false;
+  let refundCalled = false;
+
+  const response = await handleStandardsScanRequest(
+    {
+      sellerId: "seller-1",
+      sellerEmail: "seller@example.com",
+      sellerPlanKey: "basic",
+      title: "Fraction number line warm-up",
+      provider: "openai",
+      idempotencyKey: "scan-atomic-unavailable",
+    },
+    {
+      getAdminAiSettings: async () => defaultAdminAiSettings,
+      consumeCredits: async () => {
+        throw new Error("Atomic AI credit reservation is temporarily unavailable.");
+      },
+      refundCredits: async () => {
+        refundCalled = true;
+      },
+      mapStandardsWithOpenAI: async () => {
+        providerCalled = true;
+        return sampleMapping;
+      },
+      mapStandardsWithGemini: async () => ({ ...sampleMapping, provider: "gemini" }),
+    },
+  );
+
+  assert.equal(response.status, 503);
+  assert.deepEqual(response.body, { error: "AI is temporarily unavailable right now." });
+  assert.equal(providerCalled, false);
+  assert.equal(refundCalled, false);
+});
+
+test("AI handler does not refund when an idempotent request is reused and the provider fails later", async () => {
+  const refundCalls: string[] = [];
+
+  const response = await handleStandardsScanRequest(
+    {
+      sellerId: "seller-1",
+      sellerEmail: "seller@example.com",
+      sellerPlanKey: "basic",
+      title: "Fraction number line warm-up",
+      provider: "openai",
+      idempotencyKey: "scan-reused",
+    },
+    {
+      getAdminAiSettings: async () => defaultAdminAiSettings,
+      consumeCredits: async () => ({ subscription: { availableCredits: 98 }, reservationState: "reused" as const }),
+      refundCredits: async (idempotencyKey) => {
+        refundCalls.push(idempotencyKey);
+      },
+      mapStandardsWithOpenAI: async () => {
+        throw new Error("Provider request failed");
+      },
+      mapStandardsWithGemini: async () => ({ ...sampleMapping, provider: "gemini" }),
+    },
+  );
+
+  assert.equal(response.status, 503);
+  assert.deepEqual(response.body, { error: "AI could not finish this right now. Try again." });
+  assert.deepEqual(refundCalls, []);
+});
+
+test("AI handler blocks a reused in-flight standards request before running the provider again", async () => {
+  let providerCalled = false;
+  let refundCalled = false;
+
+  const response = await handleStandardsScanRequest(
+    {
+      sellerId: "seller-1",
+      sellerEmail: "seller@example.com",
+      sellerPlanKey: "basic",
+      title: "Fraction number line warm-up",
+      provider: "openai",
+      idempotencyKey: "scan-in-flight",
+    },
+    {
+      getAdminAiSettings: async () => defaultAdminAiSettings,
+      findAiActionCacheEntry: async () => null,
+      consumeCredits: async () => ({ subscription: { availableCredits: 98 }, reservationState: "reused" as const }),
+      refundCredits: async () => {
+        refundCalled = true;
+      },
+      mapStandardsWithOpenAI: async () => {
+        providerCalled = true;
+        return sampleMapping;
+      },
+      mapStandardsWithGemini: async () => ({ ...sampleMapping, provider: "gemini" }),
+    },
+  );
+
+  assert.equal(response.status, 503);
+  assert.deepEqual(response.body, { error: "AI could not finish this right now. Try again." });
+  assert.equal(providerCalled, false);
+  assert.equal(refundCalled, false);
 });
 
 test("AI handler blocks new requests when the admin kill switch is enabled", async () => {
@@ -302,7 +479,7 @@ test("AI handler blocks new requests when the admin kill switch is enabled", asy
       }),
       consumeCredits: async () => {
         consumed = true;
-        return { subscription: { availableCredits: 98 } };
+        return { subscription: { availableCredits: 98 }, reservationState: "reserved" as const };
       },
       refundCredits: async () => undefined,
       mapStandardsWithOpenAI: async () => {

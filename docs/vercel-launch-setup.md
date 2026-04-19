@@ -47,6 +47,14 @@ These are the most important Vercel environment values for LessonForge.
   Comes from your Supabase project
 - `DATABASE_URL`
   Use your real Postgres connection string when you want live database-backed data
+- `DIRECT_URL`
+  Use the direct non-pooled Postgres connection string for Prisma migrations and other CLI database commands
+
+If Supabase is your production database:
+- `DATABASE_URL` should be the Supabase pooled runtime URL
+- add `?pgbouncer=true` when you use the pooler host
+- `DIRECT_URL` should point to the direct database host
+- remove or ignore stale `POSTGRES_PRISMA_URL` / `POSTGRES_URL` values so Prisma does not select the wrong database
 
 ### Required For Real Buyer Payments
 
