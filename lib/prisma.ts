@@ -7,8 +7,35 @@ declare global {
   var __lessonforgePrisma__: PrismaClient | undefined;
 }
 
+const DATABASE_URL_ENV_KEYS = [
+  "POSTGRES_PRISMA_URL",
+  "DATABASE_URL",
+  "POSTGRES_URL",
+  "DIRECT_URL",
+] as const;
+
 function getDatabaseUrl() {
-  return process.env.DATABASE_URL?.trim() ?? "";
+  for (const key of DATABASE_URL_ENV_KEYS) {
+    const value = process.env[key]?.trim();
+
+    if (value) {
+      return value;
+    }
+  }
+
+  return "";
+}
+
+function getDatabaseUrlSource() {
+  for (const key of DATABASE_URL_ENV_KEYS) {
+    const value = process.env[key]?.trim();
+
+    if (value) {
+      return key;
+    }
+  }
+
+  return "DATABASE_URL";
 }
 
 export function hasRealDatabaseUrl(databaseUrl = getDatabaseUrl()) {
@@ -24,13 +51,34 @@ function createUnavailablePrismaClient(message: string) {
 }
 
 function createPrismaClient() {
-  if (!hasRealDatabaseUrl()) {
+  const databaseUrl = getDatabaseUrl();
+
+  if (!hasRealDatabaseUrl(databaseUrl)) {
     return createUnavailablePrismaClient(
       "Prisma is unavailable because DATABASE_URL is missing or still using the local placeholder value.",
     );
   }
 
+  const source = getDatabaseUrlSource();
+  const host = (() => {
+    try {
+      return new URL(databaseUrl).host;
+    } catch {
+      return "unknown";
+    }
+  })();
+
+  console.info("[lessonforge.db] Prisma runtime datasource selected", {
+    source,
+    host,
+  });
+
   return new PrismaClient({
+    datasources: {
+      db: {
+        url: databaseUrl,
+      },
+    },
     log: process.env.NODE_ENV === "development" ? ["error"] : ["error"],
   });
 }
