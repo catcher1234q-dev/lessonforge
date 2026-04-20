@@ -15,19 +15,21 @@ type HeaderLink = {
 };
 
 type SiteHeaderShellProps = {
+  adminHref: string;
+  isOwner: boolean;
   productName: string;
   primaryLinks: HeaderLink[];
   secondaryLinks: HeaderLink[];
-  persistenceBadgeHref: string;
   persistenceReport: PrismaCutoverReport | null;
   persistenceSummary: string | null;
 };
 
 export function SiteHeaderShell({
+  adminHref,
+  isOwner,
   productName,
   primaryLinks,
   secondaryLinks,
-  persistenceBadgeHref,
   persistenceReport,
   persistenceSummary,
 }: SiteHeaderShellProps) {
@@ -101,7 +103,7 @@ export function SiteHeaderShell({
               ))}
               {hasPersistenceBadge ? (
                 <PersistenceHeaderBadge
-                  href={persistenceBadgeHref}
+                  href={adminHref}
                   initialReport={persistenceReport}
                   initialSummary={persistenceSummary}
                 />
@@ -112,13 +114,13 @@ export function SiteHeaderShell({
               {hasPersistenceBadge ? (
                 <div className="xl:hidden">
                   <PersistenceHeaderBadge
-                    href={persistenceBadgeHref}
+                    href={adminHref}
                     initialReport={persistenceReport}
                     initialSummary={persistenceSummary}
                   />
                 </div>
               ) : null}
-              <AuthControls />
+              <AuthControls adminHref={adminHref} isOwner={isOwner} />
             </div>
           </div>
         </div>
@@ -152,7 +154,7 @@ export function SiteHeaderShell({
         >
           {hasPersistenceBadge ? (
             <PersistenceHeaderBadge
-              href={persistenceBadgeHref}
+              href={adminHref}
               initialReport={persistenceReport}
               initialSummary={persistenceSummary}
             />

@@ -12,7 +12,12 @@ import {
 } from "@/lib/supabase/client";
 import { syncViewerCookie } from "@/lib/auth/viewer-sync";
 
-export function AuthControls() {
+type AuthControlsProps = {
+  adminHref: string;
+  isOwner: boolean;
+};
+
+export function AuthControls({ adminHref, isOwner }: AuthControlsProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showLocalDemoControls, setShowLocalDemoControls] = useState(false);
@@ -121,7 +126,7 @@ export function AuthControls() {
 
   return (
     <div className="flex items-center justify-end gap-3">
-      <AccountMenu session={session} />
+      <AccountMenu adminHref={adminHref} isOwner={isOwner} session={session} />
     </div>
   );
 }

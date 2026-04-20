@@ -1,24 +1,24 @@
 import { SiteHeaderShell } from "@/components/layout/site-header-shell";
-import { getPrivateAccessRole } from "@/lib/auth/private-access";
+import { getOwnerAccessContext } from "@/lib/auth/owner-access";
 import { getPersistenceReadiness } from "@/lib/lessonforge/persistence-readiness";
 import { getViewerContext } from "@/lib/lessonforge/server-operations";
 
 export async function SiteHeader() {
-  const [viewer, privateAccessRole] = await Promise.all([
+  const [viewer, ownerAccess] = await Promise.all([
     getViewerContext(),
-    getPrivateAccessRole(),
+    getOwnerAccessContext(),
   ]);
-  const canSeeAdmin = (privateAccessRole === "admin" || privateAccessRole === "owner") &&
-    (viewer.role === "admin" || viewer.role === "owner");
+  const canSeeAdmin = ownerAccess.isOwner;
   const persistenceReadiness =
-    canSeeAdmin && (viewer.role === "admin" || viewer.role === "owner")
+    canSeeAdmin
       ? await getPersistenceReadiness()
       : null;
-  const persistenceBadgeHref = viewer.role === "owner" ? "/founder" : "/admin";
+  const adminHref = "/founder";
 
   return (
     <SiteHeaderShell
-      persistenceBadgeHref={persistenceBadgeHref}
+      adminHref={adminHref}
+      isOwner={ownerAccess.isOwner}
       persistenceReport={persistenceReadiness?.cutoverReport ?? null}
       persistenceSummary={persistenceReadiness?.cutoverReport.summary ?? null}
       primaryLinks={[
@@ -39,7 +39,17 @@ export async function SiteHeader() {
         },
       ]}
       productName="LessonForge"
-      secondaryLinks={[]}
+      secondaryLinks={
+        ownerAccess.isOwner
+          ? [
+              {
+                description: "open the private founder dashboard",
+                href: adminHref,
+                label: "Admin",
+              },
+            ]
+          : []
+      }
     />
   );
 }

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  ShieldCheck,
   ChevronDown,
   CircleUserRound,
   Library,
@@ -18,10 +19,12 @@ import { syncViewerCookie } from "@/lib/auth/viewer-sync";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type AccountMenuProps = {
+  adminHref: string;
+  isOwner: boolean;
   session: Session;
 };
 
-export function AccountMenu({ session }: AccountMenuProps) {
+export function AccountMenu({ adminHref, isOwner, session }: AccountMenuProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -104,6 +107,12 @@ export function AccountMenu({ session }: AccountMenuProps) {
             <p className="mt-1 truncate text-sm text-ink-soft">
               {session.user.email}
             </p>
+            {isOwner ? (
+              <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-brand/15 bg-brand-soft px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-brand">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Owner
+              </div>
+            ) : null}
           </div>
 
           <div className="mt-3 rounded-[1.25rem] border border-brand/10 bg-brand-soft/60 p-4">
@@ -122,9 +131,39 @@ export function AccountMenu({ session }: AccountMenuProps) {
               <CircleUserRound className="h-4 w-4" />
               Open account overview
             </Link>
+            {isOwner ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Link
+                  className="inline-flex items-center gap-2 rounded-full border border-brand/20 bg-white px-4 py-2 text-sm font-semibold text-brand transition hover:border-brand/30 hover:bg-brand-soft/40"
+                  href={adminHref}
+                  onClick={() => setIsOpen(false)}
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  Admin
+                </Link>
+                <Link
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:border-slate-300"
+                  href="/marketplace"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <ShoppingBag className="h-4 w-4" />
+                  User view
+                </Link>
+              </div>
+            ) : null}
           </div>
 
           <div className="mt-3 grid gap-1">
+            {isOwner ? (
+              <Link
+                className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-ink transition hover:bg-surface-subtle"
+                href={adminHref}
+                onClick={() => setIsOpen(false)}
+              >
+                <ShieldCheck className="h-4 w-4 text-brand" />
+                Founder dashboard
+              </Link>
+            ) : null}
             <Link
               className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-ink transition hover:bg-surface-subtle"
               href="/sell/dashboard"

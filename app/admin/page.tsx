@@ -193,6 +193,26 @@ export default async function AdminPage() {
                     </p>
                   </div>
                 </div>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link
+                    className="inline-flex items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+                    href="/founder"
+                  >
+                    Founder dashboard
+                  </Link>
+                  <Link
+                    className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
+                    href="/marketplace"
+                  >
+                    Back to storefront
+                  </Link>
+                  <Link
+                    className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
+                    href="/account"
+                  >
+                    Open account view
+                  </Link>
+                </div>
               </div>
 
               <div className="rounded-[30px] bg-slate-950 p-7 text-white">
