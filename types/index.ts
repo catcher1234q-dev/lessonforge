@@ -13,6 +13,8 @@ export type ProductRecord = {
   subject: string;
   gradeBand: string;
   standardsTag: string;
+  tags?: string[];
+  pageCount?: number;
   updatedAt: string;
   format: string;
   summary: string;
@@ -23,6 +25,8 @@ export type ProductRecord = {
   licenseType?: string;
   fileTypes?: string[];
   includedItems?: string[];
+  previewLabels?: string[];
+  previewPages?: number[];
   thumbnailUrl?: string;
   previewAssetUrls?: string[];
   originalAssetUrl?: string;

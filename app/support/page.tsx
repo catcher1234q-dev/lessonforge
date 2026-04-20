@@ -24,13 +24,13 @@ const supportPaths = [
   },
   {
     title: "Seller setup help",
-    body: "Use seller onboarding to save your store profile, connect Stripe payouts, and understand the first listing steps before publishing.",
+    body: "Use seller onboarding to save your store profile, connect payout setup, and understand the first listing steps before publishing.",
     href: "/sell/onboarding",
     action: "Open seller setup",
   },
   {
     title: "Policy questions",
-    body: "Review terms, privacy expectations, and refund rules so you know how LessonForgeHub handles digital access, payments, support, and disputes.",
+    body: "Review terms, privacy expectations, seller rules, and refund rules so you know how LessonForgeHub handles digital access, listings, support, and disputes.",
     href: "/refund-policy",
     action: "Read refund policy",
   },
@@ -44,9 +44,12 @@ const riskNotes = [
 ] as const;
 
 const policyLinks = [
-  { label: "Terms of Use", href: "/terms" },
+  { label: "Terms of Service", href: "/terms" },
   { label: "Privacy Policy", href: "/privacy" },
   { label: "Refund Policy", href: "/refund-policy" },
+  { label: "Seller Agreement", href: "/seller-agreement" },
+  { label: "Payout Policy", href: "/payout-policy" },
+  { label: "About LessonForgeHub", href: "/about" },
 ] as const;
 
 export default function SupportPage() {
@@ -75,6 +78,9 @@ export default function SupportPage() {
                     <Mail className="h-4 w-4" />
                     {siteConfig.supportEmail}
                   </a>
+                  <p className="mt-2">
+                    We aim to respond within 24 to 48 business hours.
+                  </p>
                 </div>
               </div>
 
@@ -87,8 +93,8 @@ export default function SupportPage() {
                 </h2>
                 <div className="mt-3 grid gap-2 text-emerald-950/85">
                   <p>Buyer access should come from verified purchase records.</p>
-                  <p>Seller payouts should run through Stripe onboarding and plan-based splits.</p>
-                  <p>Policy and support paths should stay visible before and after checkout.</p>
+                  <p>Seller payouts should run through platform payout onboarding and plan-based splits.</p>
+                  <p>Policy, reporting, and support paths should stay visible before and after checkout.</p>
                 </div>
               </div>
             </div>

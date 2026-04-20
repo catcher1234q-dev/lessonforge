@@ -1,0 +1,1878 @@
+[
+  {
+    "id": "math-stripe-test-5",
+    "title": "5th Grade Math Spiral Review, 4 Weeks, Daily Warm Ups",
+    "subject": "Math",
+    "gradeBand": "Grade 5",
+    "standardsTag": "CCSS.MATH.CONTENT.5.NBT.B.7",
+    "updatedAt": "Updated this week",
+    "format": "Spiral Review Pack",
+    "summary": "A four-week spiral review set with daily fifth grade warm-ups for decimals, fractions, place value, and multi-step problem solving.",
+    "shortDescription": "Use these daily warm-ups for bell work, morning work, or quick independent review with built-in teacher support.",
+    "fullDescription": "This fifth grade spiral review pack gives teachers a month of ready-to-use math warm-ups. The pages mix decimal operations, fraction reasoning, place value, and multi-step word problems so students keep major skills fresh all month long. The file includes student practice, simple teacher pacing notes, and an answer key that supports fast daily review.",
+    "demoOnly": false,
+    "resourceType": "Warm-Up Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "8-page printable PDF with teacher overview and answer support",
+      "Student-facing spiral review pack pages tied to decimal addition and subtraction",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/math-stripe-test-5/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/math-stripe-test-5/page-1.png",
+      "/catalog-previews/math-stripe-test-5/page-2.png",
+      "/catalog-previews/math-stripe-test-5/page-4.png",
+      "/catalog-previews/math-stripe-test-5/page-8.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 3",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 12,
+    "sellerName": "Avery Johnson",
+    "sellerHandle": "@teachwithavery",
+    "sellerId": "avery-johnson",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_AVERY",
+    "priceCents": 600,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "math spiral review",
+      "daily warm ups",
+      "decimal review",
+      "fractions",
+      "Grade 5"
+    ],
+    "fileName": "5th-grade-math-spiral-review-4-weeks-daily-warm-ups.pdf",
+    "pageCount": 8
+  },
+  {
+    "id": "math-fractions-4",
+    "title": "4th Grade Fractions Practice",
+    "subject": "Math",
+    "gradeBand": "Grade 4",
+    "standardsTag": "CCSS.MATH.CONTENT.4.NF.A.1",
+    "updatedAt": "Updated 2 days ago",
+    "format": "Fractions Practice Pack",
+    "summary": "A printable fourth grade fractions resource with visual models, equivalent fractions, comparing fractions, and independent practice.",
+    "shortDescription": "Students build fraction confidence with clear models, comparison problems, and answer-supported practice pages.",
+    "fullDescription": "This fourth grade fractions practice pack is designed for classroom use right away. Teachers get printable student pages for visual fraction models, equivalent fraction practice, and fraction comparison tasks that fit whole-group lessons, partner work, small groups, or homework. The included notes and answer key make it easy to use for both instruction and review.",
+    "demoOnly": false,
+    "resourceType": "Worksheet Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "6-page printable PDF with teacher overview and answer support",
+      "Student-facing fractions practice pack pages tied to equivalent fractions",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/math-fractions-4/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/math-fractions-4/page-1.png",
+      "/catalog-previews/math-fractions-4/page-2.png",
+      "/catalog-previews/math-fractions-4/page-3.png",
+      "/catalog-previews/math-fractions-4/page-6.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 2",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 11,
+    "sellerName": "Avery Johnson",
+    "sellerHandle": "@teachwithavery",
+    "sellerId": "avery-johnson",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_AVERY",
+    "priceCents": 650,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "fractions",
+      "equivalent fractions",
+      "4th grade math",
+      "worksheet pack",
+      "fraction models"
+    ],
+    "fileName": "4th-grade-fractions-practice.pdf",
+    "pageCount": 6
+  },
+  {
+    "id": "math-multiplication-fluency-3",
+    "title": "3rd Grade Multiplication Fluency",
+    "subject": "Math",
+    "gradeBand": "Grade 3",
+    "standardsTag": "CCSS.MATH.CONTENT.3.OA.C.7",
+    "updatedAt": "Updated yesterday",
+    "format": "Fluency Worksheet Set",
+    "summary": "A third grade multiplication fluency set with equal-group models, arrays, fact families, and mixed facts to 12.",
+    "shortDescription": "Students practice multiplication facts with models and strategy reminders instead of drill-only pages.",
+    "fullDescription": "This third grade multiplication fluency resource helps students move from equal groups and arrays into more automatic fact recall. The pages are built for real classroom practice with visual support, mixed fact review, and a short teacher-friendly answer key. It works well for centers, intervention, morning work, or quick homework practice.",
+    "demoOnly": false,
+    "resourceType": "Worksheet Set",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "6-page printable PDF with teacher overview and answer support",
+      "Student-facing fluency worksheet set pages tied to equal groups",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/math-multiplication-fluency-3/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/math-multiplication-fluency-3/page-1.png",
+      "/catalog-previews/math-multiplication-fluency-3/page-2.png",
+      "/catalog-previews/math-multiplication-fluency-3/page-3.png",
+      "/catalog-previews/math-multiplication-fluency-3/page-6.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 2",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 10,
+    "sellerName": "Avery Johnson",
+    "sellerHandle": "@teachwithavery",
+    "sellerId": "avery-johnson",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_AVERY",
+    "priceCents": 500,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "multiplication fluency",
+      "arrays",
+      "equal groups",
+      "facts to 12",
+      "Grade 3"
+    ],
+    "fileName": "3rd-grade-multiplication-fluency.pdf",
+    "pageCount": 6
+  },
+  {
+    "id": "math-place-value-2",
+    "title": "2nd Grade Place Value",
+    "subject": "Math",
+    "gradeBand": "Grade 2",
+    "standardsTag": "CCSS.MATH.CONTENT.2.NBT.A.1",
+    "updatedAt": "Recently refreshed for launch",
+    "format": "Place Value Activity Pack",
+    "summary": "A second grade place value pack for hundreds, tens, and ones with base-ten visuals, number comparisons, and place value writing.",
+    "shortDescription": "Students practice building, reading, and comparing numbers to 1,000 using classroom-friendly place value pages.",
+    "fullDescription": "This second grade place value pack focuses on hundreds, tens, and ones through simple printable activities that fit math workshop, small groups, and independent review. Students build numbers with base-ten blocks, compare numbers, and explain the value of digits using clear models and teacher-supported routines.",
+    "demoOnly": false,
+    "resourceType": "Activity Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "6-page printable PDF with teacher overview and answer support",
+      "Student-facing place value activity pack pages tied to hundreds tens ones",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/math-place-value-2/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/math-place-value-2/page-1.png",
+      "/catalog-previews/math-place-value-2/page-2.png",
+      "/catalog-previews/math-place-value-2/page-3.png",
+      "/catalog-previews/math-place-value-2/page-6.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 2",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 9,
+    "sellerName": "Avery Johnson",
+    "sellerHandle": "@teachwithavery",
+    "sellerId": "avery-johnson",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_AVERY",
+    "priceCents": 475,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "place value",
+      "hundreds tens ones",
+      "base ten blocks",
+      "Grade 2",
+      "number sense"
+    ],
+    "fileName": "2nd-grade-place-value.pdf",
+    "pageCount": 6
+  },
+  {
+    "id": "math-intervention-5",
+    "title": "5th Grade Decimal Operations",
+    "subject": "Math",
+    "gradeBand": "Grade 5",
+    "standardsTag": "CCSS.MATH.CONTENT.5.NBT.B.7",
+    "updatedAt": "Updated this week",
+    "format": "Decimal Intervention Pack",
+    "summary": "A decimal operations pack with guided examples, place value support, practice pages, and a quick assessment.",
+    "shortDescription": "Use this decimal intervention file for reteach groups, targeted review, or independent decimal practice.",
+    "fullDescription": "This fifth grade decimal operations pack is built for teachers who need a clean reteach or intervention resource. The pages focus on adding, subtracting, and multiplying decimals with models, worked examples, and short practice sets that help students explain their thinking as they compute.",
+    "demoOnly": false,
+    "resourceType": "Intervention Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "6-page printable PDF with teacher overview and answer support",
+      "Student-facing decimal intervention pack pages tied to decimal addition",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/math-intervention-5/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/math-intervention-5/page-1.png",
+      "/catalog-previews/math-intervention-5/page-2.png",
+      "/catalog-previews/math-intervention-5/page-3.png",
+      "/catalog-previews/math-intervention-5/page-6.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 2",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 12,
+    "sellerName": "Avery Johnson",
+    "sellerHandle": "@teachwithavery",
+    "sellerId": "avery-johnson",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_AVERY",
+    "priceCents": 700,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "decimal operations",
+      "math intervention",
+      "Grade 5",
+      "small group",
+      "decimal practice"
+    ],
+    "fileName": "5th-grade-decimal-operations.pdf",
+    "pageCount": 6
+  },
+  {
+    "id": "math-geometry-centers-5",
+    "title": "4th Grade Geometry",
+    "subject": "Math",
+    "gradeBand": "Grade 4",
+    "standardsTag": "CCSS.MATH.CONTENT.4.G.A.1",
+    "updatedAt": "Updated 2 days ago",
+    "format": "Geometry Practice Pack",
+    "summary": "A fourth grade geometry pack covering points, lines, angles, parallel lines, and shape classification with printable practice pages.",
+    "shortDescription": "Students identify and classify geometry basics with pages that work in centers, review, or whole-group lessons.",
+    "fullDescription": "This fourth grade geometry resource helps students learn the language of points, lines, angles, and shapes through clear printable practice. The file includes vocabulary support, shape-classification prompts, and teacher notes that fit everyday classroom instruction without extra prep.",
+    "demoOnly": false,
+    "resourceType": "Practice Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "6-page printable PDF with teacher overview and answer support",
+      "Student-facing geometry practice pack pages tied to angles",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/math-geometry-centers-5/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/math-geometry-centers-5/page-1.png",
+      "/catalog-previews/math-geometry-centers-5/page-2.png",
+      "/catalog-previews/math-geometry-centers-5/page-3.png",
+      "/catalog-previews/math-geometry-centers-5/page-6.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 2",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 11,
+    "sellerName": "Avery Johnson",
+    "sellerHandle": "@teachwithavery",
+    "sellerId": "avery-johnson",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_AVERY",
+    "priceCents": 575,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "geometry",
+      "angles",
+      "shapes",
+      "Grade 4",
+      "math centers"
+    ],
+    "fileName": "4th-grade-geometry.pdf",
+    "pageCount": 6
+  },
+  {
+    "id": "reading-comprehension-passages-3",
+    "title": "3rd Grade Reading Comprehension Passages",
+    "subject": "Reading",
+    "gradeBand": "Grade 3",
+    "standardsTag": "CCSS.ELA-LITERACY.RI.3.1",
+    "updatedAt": "Updated yesterday",
+    "format": "Reading Passage Pack",
+    "summary": "A set of short third grade reading passages with text-dependent questions, vocabulary prompts, and written response practice.",
+    "shortDescription": "Teachers get readable fiction and nonfiction passages with simple comprehension routines and answer support.",
+    "fullDescription": "This third grade reading comprehension pack includes printable passages, text evidence questions, and short written responses that make it easy to run independent practice, literacy centers, or guided reading follow-up. The pages are designed to look like a real classroom resource, with clear student directions and teacher notes for discussion.",
+    "demoOnly": false,
+    "resourceType": "Passage Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "8-page printable PDF with teacher overview and answer support",
+      "Student-facing reading passage pack pages tied to text evidence",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/reading-comprehension-passages-3/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/reading-comprehension-passages-3/page-1.png",
+      "/catalog-previews/reading-comprehension-passages-3/page-2.png",
+      "/catalog-previews/reading-comprehension-passages-3/page-4.png",
+      "/catalog-previews/reading-comprehension-passages-3/page-8.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 3",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 10,
+    "sellerName": "Monica Rivera",
+    "sellerHandle": "@literacywithmonica",
+    "sellerId": "monica-rivera",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_MONICA",
+    "priceCents": 650,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "reading comprehension",
+      "third grade reading",
+      "text evidence",
+      "passages",
+      "printable literacy"
+    ],
+    "fileName": "3rd-grade-reading-comprehension-passages.pdf",
+    "pageCount": 8
+  },
+  {
+    "id": "main-idea-details-4",
+    "title": "4th Grade Main Idea and Details",
+    "subject": "Reading",
+    "gradeBand": "Grade 4",
+    "standardsTag": "CCSS.ELA-LITERACY.RI.4.2",
+    "updatedAt": "Recently refreshed for launch",
+    "format": "Main Idea Practice Pack",
+    "summary": "A fourth grade reading resource that helps students identify the main idea and choose details that best support it.",
+    "shortDescription": "Use these pages to teach students how to sort key details from extra information in informational text.",
+    "fullDescription": "This fourth grade main idea resource gives teachers short informational reading tasks with clear main idea questions, detail sorting practice, and written response support. The activities are designed for reading groups, independent work, or whole-class practice and include teacher notes that keep the routine simple.",
+    "demoOnly": false,
+    "resourceType": "Practice Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "6-page printable PDF with teacher overview and answer support",
+      "Student-facing main idea practice pack pages tied to main idea",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/main-idea-details-4/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/main-idea-details-4/page-1.png",
+      "/catalog-previews/main-idea-details-4/page-2.png",
+      "/catalog-previews/main-idea-details-4/page-3.png",
+      "/catalog-previews/main-idea-details-4/page-6.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 2",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 9,
+    "sellerName": "Monica Rivera",
+    "sellerHandle": "@literacywithmonica",
+    "sellerId": "monica-rivera",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_MONICA",
+    "priceCents": 625,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "main idea",
+      "key details",
+      "informational text",
+      "Grade 4 reading",
+      "reading response"
+    ],
+    "fileName": "4th-grade-main-idea-and-details.pdf",
+    "pageCount": 6
+  },
+  {
+    "id": "context-clues-task-cards-5",
+    "title": "5th Grade Context Clues Task Cards",
+    "subject": "Reading",
+    "gradeBand": "Grade 5",
+    "standardsTag": "CCSS.ELA-LITERACY.L.5.4",
+    "updatedAt": "Updated this week",
+    "format": "Task Card Set",
+    "summary": "A set of fifth grade context clues task cards that asks students to infer word meanings from nearby words and sentence clues.",
+    "shortDescription": "Students practice vocabulary strategies with printable task cards, a recording sheet, and an answer key sample.",
+    "fullDescription": "This fifth grade context clues task card set gives teachers a flexible vocabulary resource for literacy stations, review rotations, or partner practice. Students read short passages, infer word meanings, and explain which clue helped them decide. The file includes task card pages, a recording sheet, and teacher support notes.",
+    "demoOnly": false,
+    "resourceType": "Task Card Set",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "6-page printable PDF with teacher overview and answer support",
+      "Student-facing task card set pages tied to context clues",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/context-clues-task-cards-5/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/context-clues-task-cards-5/page-1.png",
+      "/catalog-previews/context-clues-task-cards-5/page-2.png",
+      "/catalog-previews/context-clues-task-cards-5/page-3.png",
+      "/catalog-previews/context-clues-task-cards-5/page-6.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 2",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 12,
+    "sellerName": "Monica Rivera",
+    "sellerHandle": "@literacywithmonica",
+    "sellerId": "monica-rivera",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_MONICA",
+    "priceCents": 675,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "context clues",
+      "vocabulary",
+      "task cards",
+      "Grade 5 reading",
+      "literacy center"
+    ],
+    "fileName": "5th-grade-context-clues-task-cards.pdf",
+    "pageCount": 6
+  },
+  {
+    "id": "paragraph-writing-3",
+    "title": "3rd Grade Paragraph Writing",
+    "subject": "Writing",
+    "gradeBand": "Grade 3",
+    "standardsTag": "CCSS.ELA-LITERACY.W.3.2",
+    "updatedAt": "Updated 2 days ago",
+    "format": "Writing Practice Pack",
+    "summary": "A third grade writing pack with paragraph planning pages, topic sentence practice, and simple revision support.",
+    "shortDescription": "Students learn how to build a clear paragraph with a topic sentence, supporting details, and a closing sentence.",
+    "fullDescription": "This third grade paragraph writing resource supports the basics of organized writing in a way that feels manageable for young writers. Teachers get planning organizers, guided paragraph frames, and short editing prompts that fit writing workshop, intervention, or homework. The answer support focuses on what a strong paragraph should include, not one perfect response.",
+    "demoOnly": false,
+    "resourceType": "Writing Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "6-page printable PDF with teacher overview and answer support",
+      "Student-facing writing practice pack pages tied to topic sentence",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/paragraph-writing-3/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/paragraph-writing-3/page-1.png",
+      "/catalog-previews/paragraph-writing-3/page-2.png",
+      "/catalog-previews/paragraph-writing-3/page-3.png",
+      "/catalog-previews/paragraph-writing-3/page-6.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 2",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 11,
+    "sellerName": "Monica Rivera",
+    "sellerHandle": "@literacywithmonica",
+    "sellerId": "monica-rivera",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_MONICA",
+    "priceCents": 600,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "paragraph writing",
+      "writing workshop",
+      "third grade writing",
+      "topic sentence",
+      "editing"
+    ],
+    "fileName": "3rd-grade-paragraph-writing.pdf",
+    "pageCount": 6
+  },
+  {
+    "id": "opinion-writing-4",
+    "title": "4th Grade Opinion Writing",
+    "subject": "Writing",
+    "gradeBand": "Grade 4",
+    "standardsTag": "CCSS.ELA-LITERACY.W.4.1",
+    "updatedAt": "Updated yesterday",
+    "format": "Opinion Writing Pack",
+    "summary": "A fourth grade opinion writing resource with planning pages, reason-and-example practice, and revision prompts.",
+    "shortDescription": "Students organize an opinion piece with reasons, examples, and a strong conclusion.",
+    "fullDescription": "This fourth grade opinion writing pack helps students move from a topic and opinion into a short organized writing piece. Teachers can use the pages during writing workshop, test-prep writing review, or intervention groups. The file includes planning support, sentence stems, and teacher notes that keep the process simple and usable.",
+    "demoOnly": false,
+    "resourceType": "Writing Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "8-page printable PDF with teacher overview and answer support",
+      "Student-facing opinion writing pack pages tied to state an opinion",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/opinion-writing-4/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/opinion-writing-4/page-1.png",
+      "/catalog-previews/opinion-writing-4/page-2.png",
+      "/catalog-previews/opinion-writing-4/page-4.png",
+      "/catalog-previews/opinion-writing-4/page-8.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 3",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 10,
+    "sellerName": "Monica Rivera",
+    "sellerHandle": "@literacywithmonica",
+    "sellerId": "monica-rivera",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_MONICA",
+    "priceCents": 675,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "opinion writing",
+      "writing workshop",
+      "Grade 4 writing",
+      "reasons and examples",
+      "essay organizer"
+    ],
+    "fileName": "4th-grade-opinion-writing.pdf",
+    "pageCount": 8
+  },
+  {
+    "id": "narrative-writing-5",
+    "title": "5th Grade Narrative Writing",
+    "subject": "Writing",
+    "gradeBand": "Grade 5",
+    "standardsTag": "CCSS.ELA-LITERACY.W.5.3",
+    "updatedAt": "Recently refreshed for launch",
+    "format": "Narrative Writing Pack",
+    "summary": "A fifth grade narrative writing resource with planning, scene writing practice, dialogue prompts, and revision notes.",
+    "shortDescription": "Students plan and draft a short narrative with a clear beginning, middle, end, and stronger descriptive details.",
+    "fullDescription": "This fifth grade narrative writing file is built for classrooms that need a real, simple resource for storytelling practice. The pages guide students through planning, scene building, dialogue, and revision without requiring a long unit setup. Teachers get teacher notes, student organizers, and an answer key sample that describes what strong narrative writing should include.",
+    "demoOnly": false,
+    "resourceType": "Writing Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "6-page printable PDF with teacher overview and answer support",
+      "Student-facing narrative writing pack pages tied to story structure",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/narrative-writing-5/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/narrative-writing-5/page-1.png",
+      "/catalog-previews/narrative-writing-5/page-2.png",
+      "/catalog-previews/narrative-writing-5/page-3.png",
+      "/catalog-previews/narrative-writing-5/page-6.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 2",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 9,
+    "sellerName": "Monica Rivera",
+    "sellerHandle": "@literacywithmonica",
+    "sellerId": "monica-rivera",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_MONICA",
+    "priceCents": 700,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "narrative writing",
+      "descriptive writing",
+      "Grade 5 writing",
+      "story planning",
+      "dialogue"
+    ],
+    "fileName": "5th-grade-narrative-writing.pdf",
+    "pageCount": 6
+  },
+  {
+    "id": "life-cycles-2",
+    "title": "2nd Grade Life Cycles",
+    "subject": "Science",
+    "gradeBand": "Grade 2",
+    "standardsTag": "2-LS4-1",
+    "updatedAt": "Updated this week",
+    "format": "Science Activity Pack",
+    "summary": "A second grade life cycles pack with simple diagrams, labeling practice, and short observation pages.",
+    "shortDescription": "Students study plant and animal life cycles with printable pages that fit whole-group science or centers.",
+    "fullDescription": "This second grade life cycles resource helps teachers introduce how living things grow and change over time. Students label simple diagrams, order life cycle stages, and write short observations using age-appropriate pages. The file includes teacher notes and an answer key sample for quick classroom use.",
+    "demoOnly": false,
+    "resourceType": "Activity Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "6-page printable PDF with teacher overview and answer support",
+      "Student-facing science activity pack pages tied to life cycle stages",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/life-cycles-2/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/life-cycles-2/page-1.png",
+      "/catalog-previews/life-cycles-2/page-2.png",
+      "/catalog-previews/life-cycles-2/page-3.png",
+      "/catalog-previews/life-cycles-2/page-6.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 2",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 12,
+    "sellerName": "Theo Barnes",
+    "sellerHandle": "@sciencewiththeo",
+    "sellerId": "theo-barnes",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_THEO",
+    "priceCents": 575,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "life cycles",
+      "second grade science",
+      "science worksheet",
+      "plant life cycle",
+      "animal life cycle"
+    ],
+    "fileName": "2nd-grade-life-cycles.pdf",
+    "pageCount": 6
+  },
+  {
+    "id": "weather-3",
+    "title": "3rd Grade Weather",
+    "subject": "Science",
+    "gradeBand": "Grade 3",
+    "standardsTag": "3-ESS2-1",
+    "updatedAt": "Updated 2 days ago",
+    "format": "Weather Investigation Pack",
+    "summary": "A third grade weather pack with observation charts, weather tool explanations, and short response pages.",
+    "shortDescription": "Students track weather patterns and use evidence from simple charts and forecasts.",
+    "fullDescription": "This third grade weather resource gives teachers a clean set of printable pages for introducing daily weather observations, weather tools, and simple pattern questions. The activities are classroom-ready for science notebooks, small groups, or independent stations and include teacher notes for quick prep.",
+    "demoOnly": false,
+    "resourceType": "Investigation Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "6-page printable PDF with teacher overview and answer support",
+      "Student-facing weather investigation pack pages tied to weather observations",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/weather-3/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/weather-3/page-1.png",
+      "/catalog-previews/weather-3/page-2.png",
+      "/catalog-previews/weather-3/page-3.png",
+      "/catalog-previews/weather-3/page-6.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 2",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 11,
+    "sellerName": "Theo Barnes",
+    "sellerHandle": "@sciencewiththeo",
+    "sellerId": "theo-barnes",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_THEO",
+    "priceCents": 600,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "weather",
+      "science observations",
+      "Grade 3 science",
+      "forecast",
+      "investigation pack"
+    ],
+    "fileName": "3rd-grade-weather.pdf",
+    "pageCount": 6
+  },
+  {
+    "id": "ecosystems-5",
+    "title": "5th Grade Ecosystems",
+    "subject": "Science",
+    "gradeBand": "Grade 5",
+    "standardsTag": "5-LS2-1",
+    "updatedAt": "Updated yesterday",
+    "format": "Ecosystems Study Pack",
+    "summary": "A fifth grade ecosystems resource with food chain pages, habitat questions, and ecosystem change prompts.",
+    "shortDescription": "Students explore producers, consumers, decomposers, habitats, and ecosystem balance through printable science pages.",
+    "fullDescription": "This fifth grade ecosystems pack supports a real classroom unit on how organisms interact with one another and with their environment. The file includes food chain practice, habitat analysis, and written explanation prompts that fit science stations, notebooks, or homework. Teacher notes and an answer key sample help teachers move quickly from print to instruction.",
+    "demoOnly": false,
+    "resourceType": "Study Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "8-page printable PDF with teacher overview and answer support",
+      "Student-facing ecosystems study pack pages tied to producers and consumers",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/ecosystems-5/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/ecosystems-5/page-1.png",
+      "/catalog-previews/ecosystems-5/page-2.png",
+      "/catalog-previews/ecosystems-5/page-4.png",
+      "/catalog-previews/ecosystems-5/page-8.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 3",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 10,
+    "sellerName": "Theo Barnes",
+    "sellerHandle": "@sciencewiththeo",
+    "sellerId": "theo-barnes",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_THEO",
+    "priceCents": 725,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "ecosystems",
+      "food chains",
+      "science notebook",
+      "Grade 5 science",
+      "habitats"
+    ],
+    "fileName": "5th-grade-ecosystems.pdf",
+    "pageCount": 8
+  },
+  {
+    "id": "communities-2",
+    "title": "2nd Grade Communities",
+    "subject": "Social Studies",
+    "gradeBand": "Grade 2",
+    "standardsTag": "D2.Civ.2.K-2",
+    "updatedAt": "Recently refreshed for launch",
+    "format": "Communities Activity Pack",
+    "summary": "A second grade communities resource with local community helpers, goods and services, and neighborhood discussion pages.",
+    "shortDescription": "Students learn about community roles and responsibilities through simple printable activities and short response pages.",
+    "fullDescription": "This second grade communities pack introduces community helpers, local services, and neighborhood responsibility with pages that feel familiar and easy to use. Teachers can print and teach right away using the included student practice, discussion questions, and answer support.",
+    "demoOnly": false,
+    "resourceType": "Activity Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "6-page printable PDF with teacher overview and answer support",
+      "Student-facing communities activity pack pages tied to community helpers",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/communities-2/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/communities-2/page-1.png",
+      "/catalog-previews/communities-2/page-2.png",
+      "/catalog-previews/communities-2/page-3.png",
+      "/catalog-previews/communities-2/page-6.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 2",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 9,
+    "sellerName": "Priya Ellis",
+    "sellerHandle": "@socialstudieswithpriya",
+    "sellerId": "priya-ellis",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_PRIYA",
+    "priceCents": 500,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "communities",
+      "community helpers",
+      "goods and services",
+      "second grade social studies",
+      "neighborhood"
+    ],
+    "fileName": "2nd-grade-communities.pdf",
+    "pageCount": 6
+  },
+  {
+    "id": "map-skills-3",
+    "title": "3rd Grade Map Skills",
+    "subject": "Social Studies",
+    "gradeBand": "Grade 3",
+    "standardsTag": "D2.Geo.1.3-5",
+    "updatedAt": "Updated this week",
+    "format": "Map Skills Pack",
+    "summary": "A third grade map skills resource with map keys, cardinal directions, grid questions, and simple geography practice.",
+    "shortDescription": "Students read and use maps with printable direction questions, legends, and location tasks.",
+    "fullDescription": "This third grade map skills pack is built for classrooms that need a simple, useful geography resource. Students practice reading map keys, using cardinal directions, and locating places on a basic grid map. The file includes teacher notes and answer support for quick social studies lessons or review work.",
+    "demoOnly": false,
+    "resourceType": "Practice Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "6-page printable PDF with teacher overview and answer support",
+      "Student-facing map skills pack pages tied to map key",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/map-skills-3/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/map-skills-3/page-1.png",
+      "/catalog-previews/map-skills-3/page-2.png",
+      "/catalog-previews/map-skills-3/page-3.png",
+      "/catalog-previews/map-skills-3/page-6.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 2",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 12,
+    "sellerName": "Priya Ellis",
+    "sellerHandle": "@socialstudieswithpriya",
+    "sellerId": "priya-ellis",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_PRIYA",
+    "priceCents": 575,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "map skills",
+      "cardinal directions",
+      "geography",
+      "third grade social studies",
+      "map key"
+    ],
+    "fileName": "3rd-grade-map-skills.pdf",
+    "pageCount": 6
+  },
+  {
+    "id": "government-5",
+    "title": "5th Grade Government",
+    "subject": "Social Studies",
+    "gradeBand": "Grade 5",
+    "standardsTag": "D2.Civ.1.3-5",
+    "updatedAt": "Updated 2 days ago",
+    "format": "Government Study Pack",
+    "summary": "A fifth grade government resource introducing branches of government, civic responsibilities, and short reading-response practice.",
+    "shortDescription": "Students review the three branches of government with simple reading tasks and response prompts.",
+    "fullDescription": "This fifth grade government pack helps teachers introduce core civics ideas in a way that feels clear and age-appropriate. The pages cover branches of government, checks and balances, and civic responsibility through short readings, matching tasks, and written response practice. Teacher notes make it easy to use for social studies blocks or review days.",
+    "demoOnly": false,
+    "resourceType": "Study Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "6-page printable PDF with teacher overview and answer support",
+      "Student-facing government study pack pages tied to branches of government",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/government-5/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/government-5/page-1.png",
+      "/catalog-previews/government-5/page-2.png",
+      "/catalog-previews/government-5/page-3.png",
+      "/catalog-previews/government-5/page-6.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 2",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 11,
+    "sellerName": "Priya Ellis",
+    "sellerHandle": "@socialstudieswithpriya",
+    "sellerId": "priya-ellis",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_PRIYA",
+    "priceCents": 725,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "government",
+      "civics",
+      "branches of government",
+      "Grade 5 social studies",
+      "civic responsibility"
+    ],
+    "fileName": "5th-grade-government.pdf",
+    "pageCount": 6
+  },
+  {
+    "id": "classroom-jobs-kit",
+    "title": "Classroom Jobs Kit",
+    "subject": "Classroom Management",
+    "gradeBand": "K-5",
+    "standardsTag": "Teacher support resource",
+    "updatedAt": "Updated yesterday",
+    "format": "Classroom Toolkit",
+    "summary": "A classroom jobs kit with student-friendly job cards, responsibility pages, and teacher setup notes.",
+    "shortDescription": "Help students take ownership of classroom routines with printable job descriptions and rotation support.",
+    "fullDescription": "This classroom jobs kit is built for real classrooms that want smoother routines and shared responsibility. The file includes printable job cards, simple reflection prompts, and teacher notes for setting up job rotations without extra prep. It works across elementary grade levels and supports a more organized classroom culture.",
+    "demoOnly": false,
+    "resourceType": "Toolkit",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "6-page printable PDF with teacher overview and answer support",
+      "Student-facing classroom toolkit pages tied to routine ownership",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/classroom-jobs-kit/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/classroom-jobs-kit/page-1.png",
+      "/catalog-previews/classroom-jobs-kit/page-2.png",
+      "/catalog-previews/classroom-jobs-kit/page-3.png",
+      "/catalog-previews/classroom-jobs-kit/page-6.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 2",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 10,
+    "sellerName": "Monica Rivera",
+    "sellerHandle": "@literacywithmonica",
+    "sellerId": "monica-rivera",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_MONICA",
+    "priceCents": 550,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "classroom jobs",
+      "classroom management",
+      "teacher toolkit",
+      "elementary classroom",
+      "routines"
+    ],
+    "fileName": "classroom-jobs-kit.pdf",
+    "pageCount": 6
+  },
+  {
+    "id": "behavior-reflection-sheets",
+    "title": "Behavior Reflection Sheets",
+    "subject": "Classroom Management",
+    "gradeBand": "K-5",
+    "standardsTag": "Teacher support resource",
+    "updatedAt": "Recently refreshed for launch",
+    "format": "Reflection Form Pack",
+    "summary": "A set of printable behavior reflection sheets that help students think through choices, impact, and next steps.",
+    "shortDescription": "Use simple reflection forms to support calm problem-solving after behavior issues or classroom conflicts.",
+    "fullDescription": "This behavior reflection pack gives teachers clear, calm forms for helping students think about what happened, who was affected, and what they can do next. The pages are designed for elementary classrooms and include teacher notes for using the forms as part of a supportive behavior routine.",
+    "demoOnly": false,
+    "resourceType": "Form Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "6-page printable PDF with teacher overview and answer support",
+      "Student-facing reflection form pack pages tied to self-reflection",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/behavior-reflection-sheets/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/behavior-reflection-sheets/page-1.png",
+      "/catalog-previews/behavior-reflection-sheets/page-2.png",
+      "/catalog-previews/behavior-reflection-sheets/page-3.png",
+      "/catalog-previews/behavior-reflection-sheets/page-6.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 2",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 9,
+    "sellerName": "Monica Rivera",
+    "sellerHandle": "@literacywithmonica",
+    "sellerId": "monica-rivera",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_MONICA",
+    "priceCents": 450,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "behavior reflection",
+      "classroom management",
+      "student accountability",
+      "teacher forms",
+      "elementary"
+    ],
+    "fileName": "behavior-reflection-sheets.pdf",
+    "pageCount": 6
+  },
+  {
+    "id": "morning-work-2",
+    "title": "2nd Grade Morning Work",
+    "subject": "Morning Work",
+    "gradeBand": "Grade 2",
+    "standardsTag": "CCSS.MATH.CONTENT.2.OA.B.2",
+    "updatedAt": "Updated this week",
+    "format": "Morning Work Pack",
+    "summary": "A second grade morning work pack with short math and reading review, handwriting space, and teacher-friendly routines.",
+    "shortDescription": "Use these morning pages to start the day with quick review, written response, and independent routines.",
+    "fullDescription": "This second grade morning work resource gives teachers a simple daily review routine that covers math, reading, and language review in a manageable format. Students can work independently while the teacher settles the room, and the pages include teacher notes plus an answer key sample for quick checking.",
+    "demoOnly": false,
+    "resourceType": "Morning Work Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "6-page printable PDF with teacher overview and answer support",
+      "Student-facing morning work pack pages tied to daily review routines",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/morning-work-2/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/morning-work-2/page-1.png",
+      "/catalog-previews/morning-work-2/page-2.png",
+      "/catalog-previews/morning-work-2/page-3.png",
+      "/catalog-previews/morning-work-2/page-6.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 2",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 12,
+    "sellerName": "Avery Johnson",
+    "sellerHandle": "@teachwithavery",
+    "sellerId": "avery-johnson",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_AVERY",
+    "priceCents": 575,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "morning work",
+      "daily review",
+      "second grade",
+      "math review",
+      "reading review"
+    ],
+    "fileName": "2nd-grade-morning-work.pdf",
+    "pageCount": 6
+  },
+  {
+    "id": "daily-review-4",
+    "title": "4th Grade Daily Review",
+    "subject": "Morning Work",
+    "gradeBand": "Grade 4",
+    "standardsTag": "CCSS.MATH.CONTENT.4.OA.A.3",
+    "updatedAt": "Updated 2 days ago",
+    "format": "Daily Review Pack",
+    "summary": "A fourth grade daily review pack mixing math, reading, and language review into a quick start-of-day routine.",
+    "shortDescription": "Students begin the day with focused review that fits bell work, morning work, or early finisher routines.",
+    "fullDescription": "This fourth grade daily review resource is made for busy classroom mornings. Each page blends short math, reading, and language tasks so teachers can start the day with meaningful independent work instead of filler. The file includes student pages, teacher support notes, and an answer key sample.",
+    "demoOnly": false,
+    "resourceType": "Daily Review Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "6-page printable PDF with teacher overview and answer support",
+      "Student-facing daily review pack pages tied to mixed review",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/daily-review-4/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/daily-review-4/page-1.png",
+      "/catalog-previews/daily-review-4/page-2.png",
+      "/catalog-previews/daily-review-4/page-3.png",
+      "/catalog-previews/daily-review-4/page-6.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 2",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 11,
+    "sellerName": "Avery Johnson",
+    "sellerHandle": "@teachwithavery",
+    "sellerId": "avery-johnson",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_AVERY",
+    "priceCents": 625,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "daily review",
+      "morning work",
+      "Grade 4",
+      "bell work",
+      "mixed review"
+    ],
+    "fileName": "4th-grade-daily-review.pdf",
+    "pageCount": 6
+  },
+  {
+    "id": "math-test-prep-task-cards-5",
+    "title": "5th Grade Math Test Prep Task Cards",
+    "subject": "Test Prep",
+    "gradeBand": "Grade 5",
+    "standardsTag": "CCSS.MATH.CONTENT.5.NF.B.7",
+    "updatedAt": "Updated yesterday",
+    "format": "Task Card Set",
+    "summary": "A fifth grade math test prep task card set with mixed review, recording pages, and answer support for classroom rotations.",
+    "shortDescription": "Teachers get printable mixed-review task cards that fit review week, stations, or small-group prep.",
+    "fullDescription": "This fifth grade math test prep resource gives teachers a classroom-ready set of mixed review task cards that can be used in stations, partner review, or whole-class practice. The file includes sample task card pages, a recording sheet, and teacher notes for pacing and discussion during review season.",
+    "demoOnly": false,
+    "resourceType": "Task Card Set",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "8-page printable PDF with teacher overview and answer support",
+      "Student-facing task card set pages tied to mixed math review",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/math-test-prep-task-cards-5/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/math-test-prep-task-cards-5/page-1.png",
+      "/catalog-previews/math-test-prep-task-cards-5/page-2.png",
+      "/catalog-previews/math-test-prep-task-cards-5/page-4.png",
+      "/catalog-previews/math-test-prep-task-cards-5/page-8.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 3",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 10,
+    "sellerName": "Avery Johnson",
+    "sellerHandle": "@teachwithavery",
+    "sellerId": "avery-johnson",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_AVERY",
+    "priceCents": 725,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "test prep",
+      "task cards",
+      "fifth grade math",
+      "mixed review",
+      "recording sheet"
+    ],
+    "fileName": "5th-grade-math-test-prep-task-cards.pdf",
+    "pageCount": 8
+  },
+  {
+    "id": "reading-test-prep-3",
+    "title": "3rd Grade Reading Test Prep",
+    "subject": "Test Prep",
+    "gradeBand": "Grade 3",
+    "standardsTag": "CCSS.ELA-LITERACY.RL.3.1",
+    "updatedAt": "Recently refreshed for launch",
+    "format": "Reading Review Pack",
+    "summary": "A third grade reading test prep resource with short passages, multiple-choice practice, and text evidence writing support.",
+    "shortDescription": "Students practice test-style reading questions while still reading real passages and writing short evidence-based responses.",
+    "fullDescription": "This third grade reading test prep pack gives teachers a focused but teacher-friendly resource for passage reading, multiple-choice review, and short written response practice. It is designed to support test readiness without turning literacy time into drill-only work. The file includes printable pages, teacher notes, and answer support.",
+    "demoOnly": false,
+    "resourceType": "Review Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "6-page printable PDF with teacher overview and answer support",
+      "Student-facing reading review pack pages tied to passage reading",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/reading-test-prep-3/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/reading-test-prep-3/page-1.png",
+      "/catalog-previews/reading-test-prep-3/page-2.png",
+      "/catalog-previews/reading-test-prep-3/page-3.png",
+      "/catalog-previews/reading-test-prep-3/page-6.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 2",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 9,
+    "sellerName": "Monica Rivera",
+    "sellerHandle": "@literacywithmonica",
+    "sellerId": "monica-rivera",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_MONICA",
+    "priceCents": 650,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "reading test prep",
+      "third grade reading",
+      "text evidence",
+      "multiple choice practice",
+      "test readiness"
+    ],
+    "fileName": "3rd-grade-reading-test-prep.pdf",
+    "pageCount": 6
+  },
+  {
+    "id": "phonics-intervention-1",
+    "title": "1st Grade Phonics Intervention",
+    "subject": "Intervention",
+    "gradeBand": "Grade 1",
+    "standardsTag": "CCSS.ELA-LITERACY.RF.1.3",
+    "updatedAt": "Updated this week",
+    "format": "Phonics Intervention Pack",
+    "summary": "A first grade phonics intervention resource with short vowel practice, word building, and simple decoding pages.",
+    "shortDescription": "Use these printable phonics pages in small groups, intervention folders, or take-home review.",
+    "fullDescription": "This first grade phonics intervention pack gives teachers a simple decoding resource built for small groups and targeted review. Students practice short vowels, word building, and reading simple words in context with pages that are easy to print and use. Teacher notes and answer support are included for quick implementation.",
+    "demoOnly": false,
+    "resourceType": "Intervention Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "8-page printable PDF with teacher overview and answer support",
+      "Student-facing phonics intervention pack pages tied to short vowels",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/phonics-intervention-1/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/phonics-intervention-1/page-1.png",
+      "/catalog-previews/phonics-intervention-1/page-2.png",
+      "/catalog-previews/phonics-intervention-1/page-4.png",
+      "/catalog-previews/phonics-intervention-1/page-8.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 3",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 12,
+    "sellerName": "Monica Rivera",
+    "sellerHandle": "@literacywithmonica",
+    "sellerId": "monica-rivera",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_MONICA",
+    "priceCents": 550,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "phonics intervention",
+      "first grade reading",
+      "short vowels",
+      "word building",
+      "small group"
+    ],
+    "fileName": "1st-grade-phonics-intervention.pdf",
+    "pageCount": 8
+  },
+  {
+    "id": "math-small-group-pack-4",
+    "title": "4th Grade Math Small Group Pack",
+    "subject": "Intervention",
+    "gradeBand": "Grade 4",
+    "standardsTag": "CCSS.MATH.CONTENT.4.NBT.B.4",
+    "updatedAt": "Updated 2 days ago",
+    "format": "Small Group Pack",
+    "summary": "A fourth grade math small group pack with place value review, multi-digit addition and subtraction, and guided reteach pages.",
+    "shortDescription": "Teachers get focused reteach pages that work during intervention blocks or small-group rotations.",
+    "fullDescription": "This fourth grade math small group pack is built for intervention time and reteach groups. The printable pages focus on place value, multi-digit operations, and error analysis with enough structure for teacher-led small groups but enough independence for follow-up practice. The file includes teacher notes and answer support.",
+    "demoOnly": false,
+    "resourceType": "Intervention Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "6-page printable PDF with teacher overview and answer support",
+      "Student-facing small group pack pages tied to place value review",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/math-small-group-pack-4/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/math-small-group-pack-4/page-1.png",
+      "/catalog-previews/math-small-group-pack-4/page-2.png",
+      "/catalog-previews/math-small-group-pack-4/page-3.png",
+      "/catalog-previews/math-small-group-pack-4/page-6.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 2",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 11,
+    "sellerName": "Avery Johnson",
+    "sellerHandle": "@teachwithavery",
+    "sellerId": "avery-johnson",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_AVERY",
+    "priceCents": 675,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "math intervention",
+      "small group",
+      "fourth grade math",
+      "reteach",
+      "multi-digit operations"
+    ],
+    "fileName": "4th-grade-math-small-group-pack.pdf",
+    "pageCount": 6
+  },
+  {
+    "id": "back-to-school-procedures-pack",
+    "title": "Back to School Procedures Pack",
+    "subject": "Seasonal",
+    "gradeBand": "K-5",
+    "standardsTag": "Teacher support resource",
+    "updatedAt": "Updated yesterday",
+    "format": "Procedures Pack",
+    "summary": "A back-to-school procedures pack with routine posters, student practice pages, and teacher planning notes.",
+    "shortDescription": "Set classroom expectations early with simple printables for routines, transitions, and student reflection.",
+    "fullDescription": "This back-to-school procedures pack is designed for a real classroom launch. Teachers get printable routine pages, quick student practice sheets, and planning notes that help introduce transitions, supply routines, line expectations, and independent work behavior. It is practical, clean, and easy to use during the first weeks of school.",
+    "demoOnly": false,
+    "resourceType": "Toolkit",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "8-page printable PDF with teacher overview and answer support",
+      "Student-facing procedures pack pages tied to routine building",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/back-to-school-procedures-pack/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/back-to-school-procedures-pack/page-1.png",
+      "/catalog-previews/back-to-school-procedures-pack/page-2.png",
+      "/catalog-previews/back-to-school-procedures-pack/page-4.png",
+      "/catalog-previews/back-to-school-procedures-pack/page-8.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 3",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 10,
+    "sellerName": "Monica Rivera",
+    "sellerHandle": "@literacywithmonica",
+    "sellerId": "monica-rivera",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_MONICA",
+    "priceCents": 650,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "back to school",
+      "procedures",
+      "classroom routines",
+      "teacher toolkit",
+      "seasonal resource"
+    ],
+    "fileName": "back-to-school-procedures-pack.pdf",
+    "pageCount": 8
+  },
+  {
+    "id": "end-of-year-memory-book",
+    "title": "End of Year Memory Book",
+    "subject": "Seasonal",
+    "gradeBand": "K-5",
+    "standardsTag": "Teacher support resource",
+    "updatedAt": "Recently refreshed for launch",
+    "format": "Memory Book Pack",
+    "summary": "An end-of-year memory book with reflection pages, class favorites, goal setting, and printable keepsake pages.",
+    "shortDescription": "Students reflect on the school year with writing and drawing pages that can become a simple memory book.",
+    "fullDescription": "This end-of-year memory book gives classrooms a clean, useful way to close the school year. The printable pages include reflection prompts, favorite memories, class highlights, and a look-ahead page for future goals. The file is simple enough for busy spring weeks but polished enough to feel like a real keepsake resource.",
+    "demoOnly": false,
+    "resourceType": "Writing Pack",
+    "licenseType": "Single classroom",
+    "fileTypes": [
+      "PDF"
+    ],
+    "includedItems": [
+      "8-page printable PDF with teacher overview and answer support",
+      "Student-facing memory book pack pages tied to reflection writing",
+      "Answer key support and teacher notes for quick classroom use",
+      "Teacher notes with setup, pacing, and differentiation ideas",
+      "Real preview pages pulled directly from the downloadable file"
+    ],
+    "thumbnailUrl": "/catalog-previews/end-of-year-memory-book/page-1.png",
+    "previewAssetUrls": [
+      "/catalog-previews/end-of-year-memory-book/page-1.png",
+      "/catalog-previews/end-of-year-memory-book/page-2.png",
+      "/catalog-previews/end-of-year-memory-book/page-4.png",
+      "/catalog-previews/end-of-year-memory-book/page-8.png"
+    ],
+    "previewLabels": [
+      "Teacher overview",
+      "Student page 1",
+      "Student page 3",
+      "Answer key sample"
+    ],
+    "previewPages": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "originalAssetUrl": "/api/lessonforge/library-delivery",
+    "assetVersionNumber": 1,
+    "previewIncluded": true,
+    "thumbnailIncluded": true,
+    "rightsConfirmed": true,
+    "freshnessScore": 9,
+    "sellerName": "Monica Rivera",
+    "sellerHandle": "@literacywithmonica",
+    "sellerId": "monica-rivera",
+    "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_MONICA",
+    "priceCents": 600,
+    "isPurchasable": true,
+    "productStatus": "Published",
+    "createdPath": "Manual upload",
+    "tags": [
+      "end of year",
+      "memory book",
+      "student reflection",
+      "writing activity",
+      "seasonal resource"
+    ],
+    "fileName": "end-of-year-memory-book.pdf",
+    "pageCount": 8
+  }
+]

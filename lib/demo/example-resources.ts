@@ -3,568 +3,251 @@ import type {
   StandardsMappingExample,
   SubjectHub,
 } from "@/types";
+import { launchProductAssetSeeds } from "@/lib/lessonforge/launch-product-assets";
 
-const baseDemoResources: DemoResource[] = [
+const demoPreviewResources: DemoResource[] = [
   {
-    id: "math-stripe-test-5",
-    title: "Stripe Test Math Warm-Up Pack",
-    subject: "Math",
-    gradeBand: "Grade 5",
-    standardsTag: "CCSS.MATH.CONTENT.5.NF.B.4",
-    updatedAt: "Ready for payment testing",
-    format: "Warm-Up Pack",
-    summary: "A simple published math listing created for checkout and Stripe test purchases.",
+    id: "demo-civics-discussion-kit",
+    title: "Civics Discussion Kit",
+    subject: "Social Studies",
+    gradeBand: "Grades 3-5",
+    standardsTag: "D2.Civ.4.3-5",
+    tags: ["demo preview", "civics", "discussion prompts"],
+    updatedAt: "Preview catalog only",
+    format: "Discussion Toolkit",
+    summary: "A preview-only civics discussion sample used to show the separate public preview path without affecting the live marketplace catalog.",
     shortDescription:
-      "Use this listing to test buyer checkout, Stripe payment confirmation, and library delivery.",
+      "This preview-only listing stays outside the live marketplace so we can keep a safe public preview surface for internal demos.",
     fullDescription:
-      "This published math product is intentionally simple so it is easy to use during Stripe test mode. It gives you one clear product page, one clear price, and one clear buyer path for checking checkout creation, webhook confirmation, and post-purchase library access.",
-    demoOnly: false,
-    sellerName: "Avery Johnson",
-    sellerHandle: "@teachwithavery",
-    sellerId: "avery-johnson",
-    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_AVERY",
-    priceCents: 600,
-    isPurchasable: true,
+      "This listing exists only for the separate preview surface and is intentionally not part of the live marketplace catalog. Buyers do not see it in the main marketplace, and it does not participate in the protected seeded download flow.",
+    demoOnly: true,
+    resourceType: "Discussion Toolkit",
+    licenseType: "Single classroom",
+    fileTypes: ["PDF"],
+    includedItems: [
+      "Preview-only sample card",
+      "Teacher discussion prompts",
+      "Seller-facing preview notes",
+      "Non-purchasable demo surface",
+    ],
     previewIncluded: true,
     thumbnailIncluded: true,
     rightsConfirmed: true,
     assetVersionNumber: 1,
-    resourceType: "Warm-Up Pack",
-    licenseType: "Single classroom",
-    fileTypes: ["PDF", "DOCX"],
-    includedItems: [
-      "10 math warm-up pages",
-      "teacher answer key",
-      "quick reteach notes",
-      "print-ready PDF and editable file",
-    ],
-  },
-  {
-    id: "math-intervention-5",
-    title: "Math Intervention Studio",
-    subject: "Math",
-    gradeBand: "Grade 5",
-    standardsTag: "CCSS.MATH.CONTENT.5.NBT.B.7",
-    updatedAt: "Updated 2 hours ago",
-    format: "Intervention Pack",
-    summary: "Decimal operations mini-lessons, guided practice, and small-group checks.",
-    demoOnly: false,
-    sellerName: "Avery Johnson",
-    sellerHandle: "@teachwithavery",
-    sellerId: "avery-johnson",
-    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_AVERY",
-    priceCents: 1200,
-    isPurchasable: true,
-  },
-  {
-    id: "ela-inference-4",
-    title: "Inference Mini-Lessons Library",
-    subject: "ELA",
-    gradeBand: "Grade 4",
-    standardsTag: "CCSS.ELA-LITERACY.RL.4.1",
-    updatedAt: "Updated yesterday",
-    format: "Workshop Slides",
-    summary: "Short read-aloud prompts, modeling notes, and partner talk routines.",
-    demoOnly: false,
-    sellerName: "Monica Rivera",
-    sellerHandle: "@ela.with.monica",
-    sellerId: "monica-rivera",
-    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_MONICA",
-    priceCents: 900,
-    isPurchasable: true,
-  },
-  {
-    id: "science-ecosystems-6",
-    title: "Science Lab Slides Collection",
-    subject: "Science",
-    gradeBand: "Grade 6",
-    standardsTag: "MS-LS2-3",
-    updatedAt: "Updated this week",
-    format: "Lab Deck",
-    summary: "Observation slides and claims-evidence-reasoning prompts for ecosystems.",
-    demoOnly: false,
-    sellerName: "Theo Barnes",
-    sellerHandle: "@sciencewiththeo",
-    sellerId: "theo-barnes",
-    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_THEO",
-    priceCents: 1500,
-    isPurchasable: true,
-  },
-  {
-    id: "social-studies-civics-5",
-    title: "Civics Debate Toolkit",
-    subject: "Social Studies",
-    gradeBand: "Grades 3-5",
-    standardsTag: "D2.Civ.4.3-5",
-    updatedAt: "New in demo mode",
-    format: "Discussion Toolkit",
-    summary: "Primary sources, debate sentence stems, and reflection pages.",
-    demoOnly: true,
+    freshnessScore: 4,
     sellerName: "Priya Ellis",
-    sellerHandle: "@historywithpriya",
+    sellerHandle: "@socialstudieswithpriya",
     sellerId: "priya-ellis",
     sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_PRIYA",
-    priceCents: 1100,
-    isPurchasable: true,
-  },
-  {
-    id: "math-fractions-4",
-    title: "Fraction Strategy Studio",
-    subject: "Math",
-    gradeBand: "Grade 4",
-    standardsTag: "CCSS.MATH.CONTENT.4.NF.A.1",
-    updatedAt: "Demo preview",
-    format: "Practice Center",
-    summary: "Visual fraction models, station cards, and independent practice sheets.",
-    demoOnly: true,
-    sellerName: "Avery Johnson",
-    sellerHandle: "@teachwithavery",
-    sellerId: "avery-johnson",
-    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_AVERY",
-    priceCents: 800,
-    isPurchasable: true,
-  },
-  {
-    id: "math-algebra-toolkit",
-    title: "Algebra Warm-Up Toolkit",
-    subject: "Math",
-    gradeBand: "Algebra 1",
-    standardsTag: "CCSS.MATH.CONTENT.HSA.CED.A.1",
-    updatedAt: "Uploaded by a teacher this week",
-    format: "Warm-Up Pack",
-    summary: "Bell ringers, mini whiteboard prompts, and scaffolded checks for algebraic thinking.",
-    demoOnly: false,
-    sellerName: "Nina Brooks",
-    sellerHandle: "@numbers.with.nina",
-    sellerId: "nina-brooks",
-    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_AVERY",
-    priceCents: 1000,
-    isPurchasable: true,
-  },
-  {
-    id: "math-multiplication-fluency-3",
-    title: "Multiplication Fluency Sprint",
-    subject: "Math",
-    gradeBand: "Grade 3",
-    standardsTag: "CCSS.MATH.CONTENT.3.OA.C.7",
-    updatedAt: "Updated this week",
-    format: "Fact Fluency Pack",
-    summary: "Timed practice pages, strategy mats, and quick checks for multiplication fluency.",
-    demoOnly: false,
-    sellerName: "Avery Johnson",
-    sellerHandle: "@teachwithavery",
-    sellerId: "avery-johnson",
-    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_AVERY",
     priceCents: 700,
-    isPurchasable: true,
+    isPurchasable: false,
+    productStatus: "Published",
+    createdPath: "Manual upload",
   },
   {
-    id: "math-geometry-centers-5",
-    title: "Geometry Centers Toolkit",
-    subject: "Math",
-    gradeBand: "Grade 5",
-    standardsTag: "CCSS.MATH.CONTENT.5.G.B.4",
-    updatedAt: "Fresh teacher upload",
-    format: "Centers Pack",
-    summary: "Hands-on geometry task cards, vocabulary support, and station recording sheets.",
-    demoOnly: true,
-    sellerName: "Nina Brooks",
-    sellerHandle: "@numbers.with.nina",
-    sellerId: "nina-brooks",
-    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_AVERY",
-    priceCents: 1100,
-    isPurchasable: true,
-  },
-  {
-    id: "ela-writing-conference-kit",
-    title: "Writing Conference Toolkit",
-    subject: "ELA",
-    gradeBand: "Grade 5",
-    standardsTag: "CCSS.ELA-LITERACY.W.5.4",
-    updatedAt: "Teacher upload",
-    format: "Conference Toolkit",
-    summary: "Conferring prompts, revision trackers, and student reflection sheets for writing workshop.",
-    demoOnly: false,
-    sellerName: "Monica Rivera",
-    sellerHandle: "@ela.with.monica",
-    sellerId: "monica-rivera",
-    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_MONICA",
-    priceCents: 1300,
-    isPurchasable: true,
-  },
-  {
-    id: "ela-close-reading-routines",
-    title: "Close Reading Routines Set",
-    subject: "ELA",
-    gradeBand: "Grade 6",
-    standardsTag: "CCSS.ELA-LITERACY.RI.6.1",
-    updatedAt: "Fresh teacher listing",
-    format: "Routine Pack",
-    summary: "Annotation templates, evidence stems, and repeatable close-reading structures.",
-    demoOnly: true,
-    sellerName: "Leah Patel",
-    sellerHandle: "@readwithleah",
-    sellerId: "leah-patel",
-    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_MONICA",
-    priceCents: 950,
-    isPurchasable: true,
-  },
-  {
-    id: "ela-vocabulary-routines-3",
-    title: "Vocabulary Routine Builder",
-    subject: "ELA",
-    gradeBand: "Grade 3",
-    standardsTag: "CCSS.ELA-LITERACY.L.3.4",
-    updatedAt: "Updated yesterday",
-    format: "Routine Pack",
-    summary: "Word-study mini lessons, context clue tasks, and partner talk cards for vocabulary practice.",
-    demoOnly: false,
-    sellerName: "Leah Patel",
-    sellerHandle: "@readwithleah",
-    sellerId: "leah-patel",
-    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_MONICA",
-    priceCents: 850,
-    isPurchasable: true,
-  },
-  {
-    id: "ela-poetry-response-5",
-    title: "Poetry Response Mini Unit",
-    subject: "ELA",
-    gradeBand: "Grade 5",
-    standardsTag: "CCSS.ELA-LITERACY.RL.5.5",
-    updatedAt: "New in demo mode",
-    format: "Mini Unit",
-    summary: "Poem response pages, annotation prompts, and writing stems for poetry discussions.",
-    demoOnly: true,
-    sellerName: "Monica Rivera",
-    sellerHandle: "@ela.with.monica",
-    sellerId: "monica-rivera",
-    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_MONICA",
-    priceCents: 1200,
-    isPurchasable: true,
-  },
-  {
-    id: "science-claim-evidence-routines",
-    title: "Claim Evidence Reasoning Routines",
+    id: "demo-science-slide-preview",
+    title: "Weather Discussion Slides Preview",
     subject: "Science",
-    gradeBand: "Grade 7",
-    standardsTag: "MS-ETS1-3",
-    updatedAt: "Teacher upload",
-    format: "CER Toolkit",
-    summary: "Sentence stems, notebook organizers, and lab debrief structures for CER writing.",
-    demoOnly: false,
-    sellerName: "Theo Barnes",
-    sellerHandle: "@sciencewiththeo",
-    sellerId: "theo-barnes",
-    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_THEO",
-    priceCents: 1400,
-    isPurchasable: true,
-  },
-  {
-    id: "science-stem-lab-starters",
-    title: "STEM Lab Starter Bundle",
-    subject: "Science",
-    gradeBand: "High School",
-    standardsTag: "HS-ETS1-2",
-    updatedAt: "New seller resource",
-    format: "Starter Bundle",
-    summary: "Launch slides, planning sheets, and reflection prompts for hands-on STEM tasks.",
-    demoOnly: true,
-    sellerName: "Camila Torres",
-    sellerHandle: "@stemwithcamila",
-    sellerId: "camila-torres",
-    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_THEO",
-    priceCents: 1600,
-    isPurchasable: true,
-  },
-  {
-    id: "science-weather-patterns-4",
-    title: "Weather Patterns Inquiry Pack",
-    subject: "Science",
-    gradeBand: "Grade 4",
-    standardsTag: "4-ESS2-1",
-    updatedAt: "Teacher upload",
-    format: "Inquiry Pack",
-    summary: "Observation charts, weather data pages, and claim-writing prompts for pattern spotting.",
-    demoOnly: false,
-    sellerName: "Theo Barnes",
-    sellerHandle: "@sciencewiththeo",
-    sellerId: "theo-barnes",
-    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_THEO",
-    priceCents: 1150,
-    isPurchasable: true,
-  },
-  {
-    id: "science-physical-changes-3",
-    title: "Physical Changes Lab Set",
-    subject: "Science",
-    gradeBand: "Grade 3",
-    standardsTag: "3-PS2-3",
-    updatedAt: "Recently uploaded",
-    format: "Lab Set",
-    summary: "Hands-on lab pages, prediction sheets, and observation prompts for physical change lessons.",
-    demoOnly: true,
-    sellerName: "Camila Torres",
-    sellerHandle: "@stemwithcamila",
-    sellerId: "camila-torres",
-    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_THEO",
-    priceCents: 1250,
-    isPurchasable: true,
-  },
-  {
-    id: "social-studies-primary-source-kit",
-    title: "Primary Source Analysis Kit",
-    subject: "Social Studies",
     gradeBand: "Grades 3-5",
-    standardsTag: "D2.His.1.3-5",
-    updatedAt: "Teacher upload",
-    format: "Source Analysis Pack",
-    summary: "Observation guides, sourcing questions, and evidence trackers for primary source study.",
-    demoOnly: false,
-    sellerName: "Priya Ellis",
-    sellerHandle: "@historywithpriya",
-    sellerId: "priya-ellis",
-    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_PRIYA",
-    priceCents: 1250,
-    isPurchasable: true,
-  },
-  {
-    id: "social-studies-geography-studio",
-    title: "Geography Inquiry Studio",
-    subject: "Social Studies",
-    gradeBand: "Grades K-2",
-    standardsTag: "D2.Geo.4.K-2",
-    updatedAt: "Recently uploaded",
-    format: "Inquiry Pack",
-    summary: "Map questions, region comparisons, and inquiry boards for geography lessons.",
+    standardsTag: "3-ESS2-1",
+    tags: ["demo preview", "science", "slide sample"],
+    updatedAt: "Preview catalog only",
+    format: "Slide Deck",
+    summary: "A non-purchasable science preview listing that keeps the dedicated preview routes working without crossing into the live store catalog.",
+    shortDescription:
+      "This listing is reserved for the separate preview flow and does not appear in the launch-ready marketplace catalog.",
+    fullDescription:
+      "This slide preview remains useful for internal testing of the preview-only experience, while the live marketplace now uses real product files and real preview pages pulled from those files.",
     demoOnly: true,
-    sellerName: "Owen Carter",
-    sellerHandle: "@mapswithowen",
-    sellerId: "owen-carter",
-    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_PRIYA",
-    priceCents: 1050,
-    isPurchasable: true,
-  },
-  {
-    id: "social-studies-community-helpers-k2",
-    title: "Community Helpers Inquiry Pack",
-    subject: "Social Studies",
-    gradeBand: "Grades K-2",
-    standardsTag: "D2.Civ.6.K-2",
-    updatedAt: "Updated this week",
-    format: "Inquiry Pack",
-    summary: "Sorting mats, discussion cards, and neighborhood helper activities for early elementary classrooms.",
-    demoOnly: false,
-    sellerName: "Owen Carter",
-    sellerHandle: "@mapswithowen",
-    sellerId: "owen-carter",
-    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_PRIYA",
+    resourceType: "Slide Deck",
+    licenseType: "Single classroom",
+    fileTypes: ["PDF"],
+    includedItems: [
+      "Preview-only slide sample",
+      "Teacher-facing discussion prompt notes",
+      "Internal preview testing coverage",
+      "No live checkout or protected delivery mapping",
+    ],
+    previewIncluded: true,
+    thumbnailIncluded: true,
+    rightsConfirmed: true,
+    assetVersionNumber: 1,
+    freshnessScore: 4,
+    sellerName: "Theo Barnes",
+    sellerHandle: "@sciencewiththeo",
+    sellerId: "theo-barnes",
+    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_THEO",
     priceCents: 900,
-    isPurchasable: true,
+    isPurchasable: false,
+    productStatus: "Published",
+    createdPath: "Manual upload",
   },
   {
-    id: "social-studies-government-4",
-    title: "Branches of Government Mini Unit",
-    subject: "Social Studies",
-    gradeBand: "Grade 4",
-    standardsTag: "D2.Civ.12.3-5",
-    updatedAt: "New seller resource",
-    format: "Mini Unit",
-    summary: "Anchor charts, reading pages, and sorting tasks for understanding local and national government.",
+    id: "demo-writing-preview-pack",
+    title: "Narrative Prompt Preview Pack",
+    subject: "Writing",
+    gradeBand: "Grades 3-5",
+    standardsTag: "CCSS.ELA-LITERACY.W.4.3",
+    tags: ["demo preview", "writing", "prompt pack"],
+    updatedAt: "Preview catalog only",
+    format: "Prompt Pack",
+    summary: "A preview-only writing sample preserved for the separate public preview surface.",
+    shortDescription:
+      "This listing keeps a non-live preview route available without putting placeholder content into the real marketplace.",
+    fullDescription:
+      "The live marketplace catalog now uses real files, real preview pages, and protected delivery. This preview-only writing sample is kept only so the dedicated preview surface still has a safe non-live listing to show.",
     demoOnly: true,
-    sellerName: "Priya Ellis",
-    sellerHandle: "@historywithpriya",
-    sellerId: "priya-ellis",
-    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_PRIYA",
-    priceCents: 1350,
-    isPurchasable: true,
+    resourceType: "Prompt Pack",
+    licenseType: "Single classroom",
+    fileTypes: ["PDF"],
+    includedItems: [
+      "Preview-only prompt sample",
+      "Internal demo coverage",
+      "Teacher-facing note card",
+      "No live product file mapping",
+    ],
+    previewIncluded: true,
+    thumbnailIncluded: true,
+    rightsConfirmed: true,
+    assetVersionNumber: 1,
+    freshnessScore: 4,
+    sellerName: "Monica Rivera",
+    sellerHandle: "@literacywithmonica",
+    sellerId: "monica-rivera",
+    sellerStripeAccountEnvKey: "STRIPE_CONNECTED_ACCOUNT_MONICA",
+    priceCents: 650,
+    isPurchasable: false,
+    productStatus: "Published",
+    createdPath: "Manual upload",
   },
 ];
 
-function inferResourceType(format: string) {
-  if (format.includes("Slide") || format.includes("Deck")) {
-    return "Slide lesson screenshots";
-  }
-  if (format.includes("Center")) {
-    return "Math center";
-  }
-  if (format.includes("Toolkit") || format.includes("Bundle")) {
-    return "Printable activity bundle";
-  }
-  if (format.includes("Lab") || format.includes("Inquiry")) {
-    return "Printable activity";
-  }
-  if (format.includes("Routine")) {
-    return "Worksheet set";
-  }
-  return format;
-}
+const seededLaunchResources: DemoResource[] = launchProductAssetSeeds.map((seed) => ({
+  id: seed.id,
+  title: seed.title,
+  subject: seed.subject,
+  gradeBand: seed.gradeBand,
+  standardsTag: seed.standardsTag,
+  tags: seed.tags,
+  pageCount: seed.pageCount,
+  updatedAt: seed.updatedAt,
+  format: seed.format,
+  summary: seed.summary,
+  shortDescription: seed.shortDescription,
+  fullDescription: seed.fullDescription,
+  demoOnly: false,
+  resourceType: seed.resourceType,
+  licenseType: seed.licenseType,
+  fileTypes: seed.fileTypes,
+  includedItems: seed.includedItems,
+  previewLabels: seed.previewLabels,
+  previewPages: seed.previewPages,
+  thumbnailUrl: seed.thumbnailUrl,
+  previewAssetUrls: seed.previewAssetUrls,
+  originalAssetUrl: seed.originalAssetUrl,
+  assetVersionNumber: seed.assetVersionNumber,
+  previewIncluded: seed.previewIncluded,
+  thumbnailIncluded: seed.thumbnailIncluded,
+  rightsConfirmed: seed.rightsConfirmed,
+  freshnessScore: seed.freshnessScore,
+  sellerName: seed.sellerName,
+  sellerHandle: seed.sellerHandle,
+  sellerId: seed.sellerId,
+  sellerStripeAccountEnvKey: seed.sellerStripeAccountEnvKey,
+  priceCents: seed.priceCents,
+  isPurchasable: seed.isPurchasable,
+  productStatus: seed.productStatus,
+  createdPath: seed.createdPath,
+}));
 
-function inferFileTypes(format: string) {
-  const lower = format.toLowerCase();
-
-  if (lower.includes("slide") || lower.includes("deck")) {
-    return ["PPTX", "PDF"];
-  }
-
-  if (lower.includes("toolkit") || lower.includes("bundle")) {
-    return ["PDF", "PPTX", "DOCX"];
-  }
-
-  if (lower.includes("center") || lower.includes("pack") || lower.includes("unit")) {
-    return ["PDF", "DOCX"];
-  }
-
-  return ["PDF"];
-}
-
-function buildIncludedItems(resource: DemoResource) {
-  const subject = resource.subject;
-  const format = resource.format;
-
-  if (subject === "Math") {
-    return [
-      `${format} cover and teacher overview`,
-      "2 student practice pages with worked models",
-      "recording sheet or exit ticket",
-      "teacher answer key and small-group notes",
-    ];
-  }
-
-  if (subject === "ELA") {
-    return [
-      `${format} cover and pacing notes`,
-      "readable student pages with text evidence prompts",
-      "annotation or response organizer",
-      "teacher support page with discussion cues",
-    ];
-  }
-
-  if (subject === "Science") {
-    return [
-      `${format} launch page and lesson objective`,
-      "student observation or lab recording sheet",
-      "claim-evidence-reasoning response page",
-      "teacher notes and answer support",
-    ];
-  }
-
-  return [
-    `${format} cover and teacher guide`,
-    "student-facing printable pages",
-    "discussion or reflection sheet",
-    "teacher notes and answer support",
-  ];
-}
-
-function buildShortDescription(resource: DemoResource) {
-  if (resource.shortDescription) {
-    return resource.shortDescription;
-  }
-
-  return `${resource.summary} Designed as a polished classroom-ready ${resource.format.toLowerCase()} with real preview pages.`;
-}
-
-function buildFullDescription(resource: DemoResource) {
-  if (resource.fullDescription) {
-    return resource.fullDescription;
-  }
-
-  const demoLine = resource.demoOnly
-    ? "This listing is marked demo only, but the preview pages are intentionally built to look like a real teacher resource."
-    : "This preview is designed to show what a strong classroom listing can look like when a seller uploads a polished resource.";
-
-  return `${resource.summary} Buyers can see a strong cover, readable inside pages, and a clear sense of what is included before purchase. ${demoLine}`;
-}
-
-function withMarketplaceDefaults(resource: DemoResource): DemoResource {
-  return {
-    ...resource,
-    shortDescription: buildShortDescription(resource),
-    fullDescription: buildFullDescription(resource),
-    resourceType: resource.resourceType ?? inferResourceType(resource.format),
-    licenseType: resource.licenseType ?? "Single classroom",
-    fileTypes: resource.fileTypes?.length ? resource.fileTypes : inferFileTypes(resource.format),
-    includedItems:
-      resource.includedItems?.length ? resource.includedItems : buildIncludedItems(resource),
-    previewIncluded: resource.previewIncluded ?? true,
-    thumbnailIncluded: resource.thumbnailIncluded ?? true,
-    rightsConfirmed: resource.rightsConfirmed ?? true,
-    assetVersionNumber: resource.assetVersionNumber ?? 1,
-    productStatus: resource.productStatus ?? "Published",
-    createdPath: resource.createdPath ?? "Manual upload",
-  };
-}
-
-export const demoResources: DemoResource[] = baseDemoResources.map(withMarketplaceDefaults);
+export const demoResources: DemoResource[] = [
+  ...seededLaunchResources,
+  ...demoPreviewResources,
+];
 
 export const subjectHubs: SubjectHub[] = [
   {
     name: "Math",
-    description: "Intervention sets, spiral review, and number talks adaptable across K-12 classrooms.",
-    resourceCount: "148 resources",
-    spotlight: "Intervention units and number sense routines for any grade level",
-    gradeBand: "K-12",
+    description: "Spiral review, number sense, fractions, geometry, and intervention resources for K-5 classrooms.",
+    resourceCount: "8 live products",
+    spotlight: "Daily review, intervention, and printable math practice",
+    gradeBand: "K-5",
     colorClass: "bg-blue-50 text-blue-700",
   },
   {
-    name: "ELA",
-    description: "Workshop units, close reads, and vocabulary packs adaptable across K-12 literacy blocks.",
-    resourceCount: "203 resources",
-    spotlight: "Reading workshops and writing conferences for all grade bands",
-    gradeBand: "K-12",
+    name: "Reading",
+    description: "Passages, main idea practice, context clues, and reading test prep for upper elementary readers.",
+    resourceCount: "4 live products",
+    spotlight: "Readable passages and text evidence practice",
+    gradeBand: "Grades 3-5",
+    colorClass: "bg-rose-50 text-rose-700",
+  },
+  {
+    name: "Writing",
+    description: "Paragraph, opinion, and narrative writing resources with teacher support and printable student pages.",
+    resourceCount: "3 live products",
+    spotlight: "Writing workshop tools and structured drafting practice",
+    gradeBand: "Grades 3-5",
     colorClass: "bg-amber-50 text-amber-700",
   },
   {
     name: "Science",
-    description: "Labs, CER routines, and standards-linked observation templates for K-12 science instruction.",
-    resourceCount: "92 resources",
-    spotlight: "Labs, CER writing, and inquiry prompts across K-12 science",
-    gradeBand: "K-12",
+    description: "Life cycles, weather, and ecosystems resources with observation pages and written response support.",
+    resourceCount: "3 live products",
+    spotlight: "Simple investigations and notebook-ready science pages",
+    gradeBand: "Grades 2-5",
     colorClass: "bg-emerald-50 text-emerald-700",
   },
   {
     name: "Social Studies",
-    description: "Primary source sets, map work, and discussion prompts adaptable across K-12 social studies.",
-    resourceCount: "76 resources",
-    spotlight: "Primary sources and civic discussion kits for any grade level",
-    gradeBand: "K-12",
+    description: "Communities, map skills, and government resources designed for clear elementary social studies instruction.",
+    resourceCount: "3 live products",
+    spotlight: "Civics, geography, and community-building pages",
+    gradeBand: "Grades 2-5",
     colorClass: "bg-violet-50 text-violet-700",
+  },
+  {
+    name: "Classroom Tools",
+    description: "Classroom management, morning work, intervention, and seasonal resources that support daily routines.",
+    resourceCount: "7 live products",
+    spotlight: "Teacher-ready routines, reflection pages, and seasonal supports",
+    gradeBand: "K-5",
+    colorClass: "bg-slate-100 text-slate-700",
   },
 ];
 
 export const standardsMappingExamples: StandardsMappingExample[] = [
   {
     id: "math-decimals",
-    title: "Decimal Operations Exit Ticket",
+    title: "5th Grade Decimal Operations",
     subject: "Math",
     gradeBand: "Grade 5",
     excerpt:
-      "Students solve decimal addition and subtraction problems using visual models and explain each step in writing.",
+      "Students solve decimal addition, subtraction, and multiplication problems while explaining how place value supports each step.",
     suggestedStandard: "CCSS.MATH.CONTENT.5.NBT.B.7",
     rationale:
-      "The lesson focuses on adding and subtracting decimals to hundredths using concrete models and written explanation.",
+      "The resource asks students to compute with decimals to hundredths and explain their strategy with place value language.",
   },
   {
-    id: "ela-theme",
-    title: "Theme and Evidence Quick Check",
-    subject: "ELA",
+    id: "reading-main-idea",
+    title: "4th Grade Main Idea and Details",
+    subject: "Reading",
     gradeBand: "Grade 4",
     excerpt:
-      "Students identify a theme in a short story and cite two details that support their thinking during partner discussion.",
-    suggestedStandard: "CCSS.ELA-LITERACY.RL.4.2",
+      "Students identify the main idea of a short informational text and choose details that best support it.",
+    suggestedStandard: "CCSS.ELA-LITERACY.RI.4.2",
     rationale:
-      "The task asks students to determine theme and support it with text details from literature.",
+      "The reading task focuses on determining the main idea and explaining how details support that central point.",
   },
   {
     id: "science-ecosystems",
-    title: "Ecosystem Interaction Notebook",
+    title: "5th Grade Ecosystems",
     subject: "Science",
-    gradeBand: "Grade 6",
+    gradeBand: "Grade 5",
     excerpt:
-      "Students analyze how changes in a local pond ecosystem affect organisms and build a written explanation from observations.",
-    suggestedStandard: "MS-LS2-4",
+      "Students build a simple food chain, explain how a population change affects the system, and support a claim with evidence.",
+    suggestedStandard: "5-LS2-1",
     rationale:
-      "The notebook asks students to explain ecosystem changes and their impact on populations based on evidence.",
+      "The pages ask students to model movement of matter and explain how changes in one part of an ecosystem affect the whole.",
   },
 ];

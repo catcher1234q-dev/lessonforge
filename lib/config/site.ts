@@ -4,14 +4,14 @@ export const siteConfig = {
   productName: "LessonForge",
   legacyName: "TeachReady",
   description:
-    "LessonForge helps teachers create, upload, optimize, and sell classroom resources with optional AI assistance.",
+    "LessonForgeHub is a digital marketplace where teachers sell original classroom resources and buyers purchase ready-to-download teaching materials.",
   founderHubPath: "/founder",
   productionUrl: "https://lessonforgehub.com",
-  supportEmail: "hello@lessonforgehub.com",
+  supportEmail: "support@lessonforgehub.com",
   authFromEmail: "no-reply@lessonforgehub.com",
-  homepageHeadline: "Build lessons. Sell smarter. Earn more.",
+  homepageHeadline: "Buy and sell teacher-made classroom resources.",
   homepageSubheadline:
-    "Create, upload, and sell K-12 resources your way. Use AI when you want it.",
+    "LessonForgeHub helps teacher creators upload original resources, helps buyers download digital materials quickly, and keeps marketplace rules visible.",
 } as const;
 
 export type SiteConfig = typeof siteConfig;

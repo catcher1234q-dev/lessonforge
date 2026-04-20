@@ -7,7 +7,7 @@ const questions = [
   {
     question: "Are payments secure?",
     answer:
-      "Yes. Payments are handled through Stripe. After a purchase is confirmed, the resource appears in the buyer library.",
+      "Yes. Payments are processed through a payment provider and, after a purchase is confirmed, the resource appears in the buyer library.",
   },
   {
     question: "What happens after I buy a resource?",
@@ -22,12 +22,12 @@ const questions = [
   {
     question: "How do sellers get paid?",
     answer:
-      "Sellers connect Stripe, choose a plan, and see the payout percentage before they start selling. Refunds, disputes, or rights issues can affect payout timing.",
+      "Sellers complete payout onboarding, choose a plan, and see the payout percentage before they start selling. Refunds, disputes, or rights issues can affect payout timing.",
   },
   {
     question: "Where do I go if something looks wrong?",
     answer:
-      "Start with the Support page. Refund, privacy, and terms pages are linked in the footer.",
+      "Start with the Support page or use the report path on a product or purchase. Refund, privacy, seller agreement, and terms pages are linked in the footer.",
   },
 ];
 

@@ -4,9 +4,9 @@ import { LegalPageShell } from "@/components/legal/legal-page-shell";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "Terms of Use",
+  title: "Terms of Service",
   description:
-    "Plain-language LessonForgeHub terms for marketplace buyers, sellers, admins, payments, product access, and listings.",
+    "Plain-language LessonForgeHub terms for a digital teacher marketplace, including listings, payments, content rules, removals, and digital access.",
   path: "/terms",
 });
 
@@ -14,8 +14,8 @@ const sections = [
   {
     title: "Using LessonForge",
     body: [
-      "LessonForge is a marketplace for K-12 teaching resources. By using the site, you agree to use it for lawful classroom, publishing, and purchasing activity.",
-      "You should not use LessonForge to upload content you do not own, attempt to bypass access controls, misuse private admin or owner areas, or interfere with the website.",
+      "LessonForgeHub is a digital marketplace for teacher-created classroom resources. Buyers use the platform to purchase digital downloads, and sellers use the platform to upload and sell original teaching materials.",
+      "By using the site, you agree to use it for lawful classroom, publishing, and purchasing activity. You should not upload content you do not own, attempt to bypass access controls, misuse private admin or owner areas, or interfere with the website.",
     ],
   },
   {
@@ -23,7 +23,7 @@ const sections = [
     body: [
       "Sellers are responsible for making sure they own or have rights to sell what they publish. Listings should be accurate, classroom-appropriate, and include the preview and thumbnail requirements needed for publication.",
       "LessonForgeHub may review, flag, remove, or hold listings that appear misleading, broken, unsafe, copied without rights, or otherwise unfit for the marketplace.",
-      "Sellers are responsible for the quality, accuracy, file access, license terms, and rights-to-sell confirmation for their resources.",
+      "Sellers are responsible for the quality, accuracy, file access, license terms, copyright compliance, and rights-to-sell confirmation for their resources.",
     ],
   },
   {
@@ -45,7 +45,7 @@ const sections = [
   {
     title: "Payments, payouts, and disputes",
     body: [
-      "Stripe processes checkout, subscription billing, and seller payout setup. LessonForgeHub records the order, access, fee, plan, and seller payout information needed to support each sale.",
+      "Payments are processed through a third-party payment provider. LessonForgeHub records the order, access, fee, plan, and seller payout information needed to support each sale.",
       "Seller payouts may be delayed, adjusted, held, reversed, or reduced when a sale is refunded, disputed, charged back, suspected of fraud, or tied to a rights or file-access problem.",
       "LessonForgeHub may use order records, access records, listing details, support messages, and refund history to review payment disputes and protect the marketplace.",
     ],
@@ -73,7 +73,7 @@ export default function TermsPage() {
       eyebrow="Terms"
       intro="These terms explain the basic rules for buying, selling, digital access, payments, refunds, and marketplace safety on LessonForgeHub."
       sections={[...sections]}
-      title="Terms of Use"
+      title="Terms of Service"
       updatedLabel="Last updated: April 17, 2026"
     />
   );

@@ -1,6 +1,9 @@
+import fs from "node:fs/promises";
+
 import { NextResponse } from "next/server";
 
 import { getCurrentViewer } from "@/lib/auth/viewer";
+import { getLaunchProductFile } from "@/lib/lessonforge/launch-product-files";
 import {
   findOrderById,
   orderBelongsToBuyer,
@@ -52,6 +55,33 @@ export async function GET(request: Request) {
       { error: "This order does not belong to the current buyer." },
       { status: 403 },
     );
+  }
+
+  const launchAsset = getLaunchProductFile(order.productId);
+
+  if (launchAsset) {
+    try {
+      const bytes = await fs.readFile(launchAsset.filePath);
+
+      return new NextResponse(bytes, {
+        status: 200,
+        headers: {
+          "Content-Type": launchAsset.mimeType,
+          "Content-Disposition": `attachment; filename="${launchAsset.fileName}"`,
+          "Cache-Control": "private, no-store",
+        },
+      });
+    } catch (error) {
+      return NextResponse.json(
+        {
+          error:
+            error instanceof Error
+              ? `Launch asset is not available yet: ${error.message}`
+              : "Launch asset is not available yet.",
+        },
+        { status: 500 },
+      );
+    }
   }
 
   const fileContents = [

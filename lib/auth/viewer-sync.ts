@@ -52,6 +52,7 @@ export async function syncViewerCookie(options?: {
     options?.session && (resolvedRole === "buyer" || resolvedRole === "seller")
       ? getViewerIdentity(options.session)
       : null;
+  const accessToken = options?.session?.access_token ?? null;
 
   const response = await fetch("/api/session/viewer", {
     method: "POST",
@@ -61,6 +62,7 @@ export async function syncViewerCookie(options?: {
     body: JSON.stringify({
       role: resolvedRole,
       ...(identity ?? {}),
+      ...(accessToken ? { accessToken } : {}),
     }),
   });
 

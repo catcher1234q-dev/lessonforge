@@ -7,13 +7,13 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { FilterBar } from "@/components/marketplace/filter-bar";
 import { ProductCard } from "@/components/marketplace/product-card";
 import { SearchEmptyState } from "@/components/marketplace/search-empty-state";
-import { filterPublicMarketplaceListings } from "@/lib/lessonforge/server-catalog";
+import { filterMarketplaceListings } from "@/lib/lessonforge/server-catalog";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "Marketplace Preview",
+  title: "Marketplace",
   description:
-    "Browse a clean preview of LessonForgeHub demo listings and see how classroom resources can look before sellers go live.",
+    "Browse LessonForgeHub classroom resources, review previews, and buy digital teacher downloads from original seller listings.",
   path: "/marketplace",
 });
 
@@ -41,14 +41,14 @@ function buildMarketplaceReturnTo(params: Record<string, string | string[] | und
 
 function getResultLabel(count: number, subject: string, query: string) {
   if (query) {
-    return `${count} demo listing${count === 1 ? "" : "s"} for "${query}"`;
+    return `${count} listing${count === 1 ? "" : "s"} for "${query}"`;
   }
 
   if (subject !== "All") {
-    return `${count} ${subject} demo listing${count === 1 ? "" : "s"}`;
+    return `${count} ${subject} listing${count === 1 ? "" : "s"}`;
   }
 
-  return `${count} demo listing${count === 1 ? "" : "s"} in the preview`;
+  return `${count} listing${count === 1 ? "" : "s"} in the marketplace`;
 }
 
 export default async function MarketplacePage({
@@ -64,7 +64,7 @@ export default async function MarketplacePage({
   const subject = typeof rawSubject === "string" ? rawSubject : "All";
   const sort = typeof rawSort === "string" ? rawSort : "best-match";
   const returnTo = buildMarketplaceReturnTo(params);
-  const listings = await filterPublicMarketplaceListings(
+  const listings = await filterMarketplaceListings(
     query,
     subject,
     undefined,
@@ -84,21 +84,20 @@ export default async function MarketplacePage({
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-3xl">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand">
-                  Marketplace Preview
+                  Marketplace
                 </p>
                 <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl leading-tight text-ink sm:text-5xl">
-                  See how classroom listings can look on LessonForge.
+                  Browse real teacher-created classroom resources.
                 </h1>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-ink-soft sm:text-base">
-                  Demo listings only for now. These examples are here to show the kind of polished
-                  preview sellers can create before the marketplace opens fully.
+                  LessonForgeHub is a digital marketplace for teacher resources. Buyers can review previews before buying, and sellers upload original materials through the platform.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.14em]">
-                  <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-800">
-                    Demo listings only
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-800">
+                    Digital downloads
                   </span>
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-ink-soft">
-                    Preview only, not for sale
+                    Reviewed listings with preview access
                   </span>
                 </div>
               </div>
@@ -114,7 +113,7 @@ export default async function MarketplacePage({
                   AI-powered setup in under 60 seconds
                 </p>
                 <p className="mt-2 text-center text-sm leading-6 text-ink-soft">
-                  Be among the first to upload and start selling on LessonForge.
+                  Upload original teaching resources and start building your seller storefront.
                 </p>
               </div>
             </div>
@@ -134,7 +133,7 @@ export default async function MarketplacePage({
                   className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-soft"
                   defaultValue={query}
                   name="q"
-                  placeholder="Search demo listings"
+                  placeholder="Search teacher resources"
                   type="search"
                 />
               </label>
@@ -145,7 +144,7 @@ export default async function MarketplacePage({
                 Search
               </button>
               <select
-                aria-label="Sort demo listings"
+                aria-label="Sort marketplace listings"
                 className="min-h-11 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
                 defaultValue={sort}
                 name="sort"
@@ -165,7 +164,7 @@ export default async function MarketplacePage({
             <p>
               <span className="font-semibold text-ink">{getResultLabel(listings.length, subject, query)}</span>
             </p>
-            <p>Large previews first, minimal details, and no live checkout on these examples.</p>
+            <p>Buyers can review previews, report products, and check out securely from eligible listings.</p>
           </section>
 
           {listings.length ? (
@@ -173,7 +172,6 @@ export default async function MarketplacePage({
               {listings.map((listing) => (
                 <ProductCard
                   key={listing.id}
-                  demoPreview
                   listing={listing}
                   returnTo={returnTo}
                 />
@@ -190,8 +188,7 @@ export default async function MarketplacePage({
                   Ready to upload your own?
                 </p>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-soft">
-                  These previews are examples only. Your first real listing can use the same clean
-                  layout, protected preview, and seller setup flow.
+                  Every seller listing is expected to show real classroom value, clear previews, and policy-safe details before it stays live.
                 </p>
               </div>
               <Link

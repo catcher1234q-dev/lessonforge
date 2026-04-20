@@ -1,6 +1,5 @@
 import { demoResources } from "@/lib/demo/example-resources";
 import { marketplaceConfig } from "@/lib/config/marketplace";
-import { calculateMarketplaceSplit } from "@/lib/domain/marketplace";
 import {
   buildManagedPreviewAssets,
   type ManagedPreviewAsset,
@@ -20,6 +19,8 @@ export type MarketplaceListing = {
   subject: string;
   gradeBand: string;
   standardsTag: string;
+  tags: string[];
+  pageCount: number;
   updatedAtLabel: string;
   format: string;
   summary: string;
@@ -150,8 +151,8 @@ function buildPreviewSlides(title: string, subject: string, format: string) {
 
 function buildReviewSummary(index: number): MarketplaceReviewSummary {
   return {
-    averageRating: Number((4.7 + ((index % 3) * 0.1)).toFixed(1)),
-    reviewCount: 18 + index * 7,
+    averageRating: 0,
+    reviewCount: 0,
     verifiedPurchaseOnly: true,
   };
 }
@@ -166,7 +167,6 @@ export function toMarketplaceListing(
   overrides?: MarketplaceListingOverrides,
 ): MarketplaceListing {
   const priceCents = resource.priceCents ?? 0;
-  const split = calculateMarketplaceSplit(priceCents);
   const fileTypes = resource.fileTypes?.length ? resource.fileTypes : inferFileTypes(resource.format);
   const previewSlides = buildPreviewSlides(resource.title, resource.subject, resource.format);
   const slug = slugify(resource.title);
@@ -178,6 +178,8 @@ export function toMarketplaceListing(
     subject: resource.subject,
     gradeBand: resource.gradeBand,
     standardsTag: resource.standardsTag,
+    tags: resource.tags?.length ? resource.tags : [resource.subject, resource.gradeBand],
+    pageCount: resource.pageCount ?? 0,
     updatedAtLabel: overrides?.updatedAtLabel ?? resource.updatedAt,
     format: resource.format,
     summary: resource.summary,
@@ -192,7 +194,7 @@ export function toMarketplaceListing(
     sellerListingCount: 1,
     sellerAverageRating: buildReviewSummary(index).averageRating,
     sellerTotalReviewCount: buildReviewSummary(index).reviewCount,
-    sellerTrustLabel: "Growing storefront",
+    sellerTrustLabel: "Original teacher-created listing",
     priceCents,
     demoOnly: resource.demoOnly,
     freshnessScore:
@@ -211,13 +213,13 @@ export function toMarketplaceListing(
       resource.includedItems?.length
         ? resource.includedItems
         : inferIncludedItems(resource.title, resource.format),
-    previewSlides,
+    previewSlides: resource.previewLabels?.length ? resource.previewLabels : previewSlides,
     previewAssets: buildManagedPreviewAssets({
       productId: resource.id,
       title: resource.title,
       subject: resource.subject,
       format: resource.format,
-      previewLabels: previewSlides,
+      previewLabels: resource.previewLabels?.length ? resource.previewLabels : previewSlides,
       previewUrls: resource.previewAssetUrls,
     }),
     thumbnailUrl:
@@ -238,7 +240,7 @@ export function toMarketplaceListing(
           ? "Thumbnail still being prepared"
           : `Protected preview ready · Version ${resource.assetVersionNumber ?? 1}`,
     reviewSummary: overrides?.reviewSummary ?? buildReviewSummary(index),
-    supportLabel: overrides?.supportLabel ?? `${split.sellerCents / 100} dollars to seller`,
+    supportLabel: overrides?.supportLabel ?? "Protected download after purchase",
     conversionLabel: overrides?.conversionLabel ?? `${(3.1 + index * 0.2).toFixed(1)}% conversion`,
     salesVelocityLabel: overrides?.salesVelocityLabel ?? `${12 + index * 2} sales this month`,
     issueCountLabel: overrides?.issueCountLabel ?? `${index % 2} active issues`,
@@ -285,7 +287,8 @@ export function filterMarketplaceListings(query: string, subject?: string) {
     const titleScore = listing.title.toLowerCase().includes(normalizedQuery) ? 3 : 0;
     const metadataScore =
       listing.subject.toLowerCase().includes(normalizedQuery) ||
-      listing.standardsTag.toLowerCase().includes(normalizedQuery)
+      listing.standardsTag.toLowerCase().includes(normalizedQuery) ||
+      listing.tags.some((tag) => tag.toLowerCase().includes(normalizedQuery))
         ? 2
         : 0;
     const descriptionScore = listing.summary.toLowerCase().includes(normalizedQuery)

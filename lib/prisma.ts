@@ -100,11 +100,13 @@ function createPrismaClient() {
     }
   })();
 
-  console.info("[lessonforge.db] Prisma runtime datasource selected", {
-    source,
-    host,
-    pooled: isSupabasePoolerUrl(databaseUrl),
-  });
+  if (process.env.NODE_ENV !== "production") {
+    console.info("[lessonforge.db] Prisma runtime datasource selected", {
+      source,
+      host,
+      pooled: isSupabasePoolerUrl(databaseUrl),
+    });
+  }
 
   return new PrismaClient({
     datasources: {
@@ -112,7 +114,7 @@ function createPrismaClient() {
         url: databaseUrl,
       },
     },
-    log: process.env.NODE_ENV === "development" ? ["error"] : ["error"],
+    log: process.env.NODE_ENV === "development" ? ["error"] : [],
   });
 }
 

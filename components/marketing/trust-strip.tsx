@@ -9,9 +9,9 @@ export function TrustStrip() {
     <section className="px-5 py-8 sm:px-6 lg:px-8 lg:py-10">
       <div className="mx-auto max-w-7xl rounded-[2.2rem] border border-ink/5 bg-white p-6 shadow-soft-xl sm:p-8 lg:p-10">
         <SectionIntro
-          body="Preview first, pay through Stripe, and find support links without hunting around."
+          body="Preview first, understand the rules, and know exactly how LessonForgeHub handles listing review, product reports, support, and digital downloads."
           eyebrow="Before you pay"
-          title="Know what happens next."
+          title="Know how the marketplace stays controlled."
           titleClassName="text-3xl sm:text-4xl"
           bodyClassName="text-base leading-7"
         />
@@ -23,7 +23,7 @@ export function TrustStrip() {
             </div>
             <h3 className="mt-4 text-xl font-semibold text-ink">Preview before buying</h3>
             <p className="mt-2 text-sm leading-6 text-ink-soft">
-              Open a listing, check the preview, and decide if it fits your class.
+              Open a listing, check the preview, and confirm the file type, grade level, and classroom fit before buying.
             </p>
             <Link
               className={`mt-4 ${secondaryActionLinkClassName("w-fit")}`}
@@ -38,9 +38,9 @@ export function TrustStrip() {
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-soft text-brand">
               <Store className="h-5 w-5" />
             </div>
-            <h3 className="mt-4 text-xl font-semibold text-ink">Clear seller earnings</h3>
+            <h3 className="mt-4 text-xl font-semibold text-ink">Clear seller payout rules</h3>
             <p className="mt-2 text-sm leading-6 text-ink-soft">
-              See your plan payout before you publish a resource for sale.
+              Sellers see their plan split, payout setup path, and platform rules before publishing.
             </p>
             <Link
               className={`mt-4 ${secondaryActionLinkClassName("w-fit")}`}
@@ -55,9 +55,9 @@ export function TrustStrip() {
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-soft text-brand">
               <LifeBuoy className="h-5 w-5" />
             </div>
-            <h3 className="mt-4 text-xl font-semibold text-ink">Help is easy to find</h3>
+            <h3 className="mt-4 text-xl font-semibold text-ink">Reports and policy help stay visible</h3>
             <p className="mt-2 text-sm leading-6 text-ink-soft">
-              Support, refund rules, privacy, and terms are linked in plain view.
+              Buyers can find support, refund rules, privacy, seller agreement, and reporting paths without hunting through hidden screens.
             </p>
             <Link
               className={`mt-4 ${secondaryActionLinkClassName("w-fit")}`}
@@ -72,7 +72,7 @@ export function TrustStrip() {
         <div className="mt-5 rounded-[1.5rem] border border-brand/10 bg-brand-soft/45 p-4 text-sm leading-6 text-ink-soft">
           <div className="flex items-start gap-3">
             <ShoppingBag className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-            <span>Know what you are buying, know when refunds are reviewed, and know where to get help.</span>
+            <span>Know what you are buying, know how a listing can be reported or removed, and know when digital refunds may still be reviewed.</span>
           </div>
         </div>
       </div>

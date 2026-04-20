@@ -713,14 +713,26 @@ export async function getAccountOverview() {
     };
   }
 
+  const isSellerViewer = viewer.role === "seller" || viewer.role === "admin" || viewer.role === "owner";
   const [orders, syncedBuyerOrders, favorites, products, syncedProducts, sellerProfiles, sellerSalesSummary, refundRequests, reports] = await Promise.all([
     listOrders(),
     listSupabaseOrderRecordsForBuyer(viewer.email).catch(() => []),
     listFavorites(),
     listPersistedProducts(),
     listSupabaseProductRecords().catch(() => []),
-    listSellerProfiles(),
-    getSellerSalesSummary(viewer.email, viewer.email),
+    isSellerViewer ? listSellerProfiles() : Promise.resolve([]),
+    isSellerViewer
+      ? getSellerSalesSummary(viewer.email, viewer.email)
+      : Promise.resolve({
+          completedSales: 0,
+          grossSalesCents: 0,
+          sellerEarningsCents: 0,
+          platformFeesCents: 0,
+          liveListings: 0,
+          buyerReadyListings: 0,
+          lastSaleAt: null,
+          recentSales: [],
+        }),
     listRefundRequests(),
     listReports(),
   ]);

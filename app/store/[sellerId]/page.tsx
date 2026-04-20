@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { BadgeCheck, Star } from "lucide-react";
+import { BadgeCheck, FileText } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -10,19 +10,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { getMarketplaceSellerWithPersistedListings } from "@/lib/lessonforge/server-catalog";
 import { buildNoIndexMetadata, buildPageMetadata } from "@/lib/seo/metadata";
 
-function getStoreTrustLabel(values: {
-  listingCount: number;
-  averageRating: number;
-  totalReviewCount: number;
-}) {
-  if (values.totalReviewCount >= 25 && values.averageRating >= 4.8) {
-    return "Trusted seller";
-  }
-
-  if (values.totalReviewCount >= 10 && values.averageRating >= 4.6) {
-    return "Review-backed store";
-  }
-
+function getStoreTrustLabel(values: { listingCount: number }) {
   if (values.listingCount >= 3) {
     return "Established storefront";
   }
@@ -91,18 +79,14 @@ export default async function SellerStorefrontPage({
 
   const storefrontTrustLabel = getStoreTrustLabel({
     listingCount: seller.listingCount,
-    averageRating: seller.averageRating,
-    totalReviewCount: seller.totalReviewCount,
   });
   const featuredListing =
     seller.listings.length > 0
       ? seller.listings.reduce((best, listing) => {
           const bestScore =
-            best.reviewSummary.reviewCount * Math.max(best.reviewSummary.averageRating, 1) +
-            best.assetVersionNumber;
+            best.previewAssets.length + best.assetVersionNumber + best.pageCount;
           const listingScore =
-            listing.reviewSummary.reviewCount * Math.max(listing.reviewSummary.averageRating, 1) +
-            listing.assetVersionNumber;
+            listing.previewAssets.length + listing.assetVersionNumber + listing.pageCount;
 
           return listingScore > bestScore ? listing : best;
         })
@@ -164,7 +148,7 @@ export default async function SellerStorefrontPage({
                   <div className="rounded-[1.5rem] bg-slate-50 p-5 text-sm leading-7 text-ink-soft">
                     <p className="font-semibold text-ink">Why buyers trust this store</p>
                     <p className="mt-1">
-                      Verified-purchase reviews, preview-ready listings, and one clear seller identity make this storefront easier to evaluate quickly.
+                      Real preview pages, clear file details, and one consistent seller identity make this storefront easier to evaluate quickly.
                     </p>
                   </div>
                 </div>
@@ -182,16 +166,15 @@ export default async function SellerStorefrontPage({
                 </div>
                 <div className="rounded-[28px] bg-slate-50 p-6">
                   <span className="inline-flex rounded-full bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-700">
-                    Buyer proof
+                    File quality
                   </span>
-                  <p className="text-sm text-ink-soft">Average rating</p>
+                  <p className="text-sm text-ink-soft">Preview-ready listings</p>
                   <p className="mt-2 flex items-center gap-2 text-3xl font-semibold text-ink">
-                    <Star className="h-5 w-5 fill-current text-amber-500" />
-                    {seller.averageRating}
+                    <FileText className="h-5 w-5 text-brand" />
+                    {seller.listings.length}
                   </p>
                   <p className="mt-2 text-sm text-ink-soft">
-                    From {seller.totalReviewCount} verified review
-                    {seller.totalReviewCount === 1 ? "" : "s"} across the store
+                    Each listing includes real preview pages pulled from the downloadable file
                   </p>
                 </div>
                 <div className="rounded-[28px] bg-slate-50 p-6">
@@ -204,7 +187,7 @@ export default async function SellerStorefrontPage({
                     {storefrontTrustLabel}
                   </p>
                   <p className="mt-2 text-sm text-ink-soft">
-                    Clear previews and verified-purchase proof stay visible across the store.
+                    Clear previews and practical classroom file details stay visible across the store.
                   </p>
                 </div>
               </div>
@@ -229,8 +212,7 @@ export default async function SellerStorefrontPage({
               </p>
               <p className="mt-2 text-sm leading-6 text-ink-soft">
                 {seller.name} currently has {seller.listingCount} published listing
-                {seller.listingCount === 1 ? "" : "s"}, an average rating of {seller.averageRating}, and {seller.totalReviewCount} verified review
-                {seller.totalReviewCount === 1 ? "" : "s"} across the storefront.
+                {seller.listingCount === 1 ? "" : "s"} with real preview pages, protected downloads, and clear classroom-facing file details across the storefront.
               </p>
             </div>
             <Link
@@ -259,7 +241,7 @@ export default async function SellerStorefrontPage({
                     Start with this seller’s strongest listing
                   </h2>
                   <p className="mt-3 max-w-3xl text-sm leading-7 text-ink-soft">
-                    This is the clearest first stop if you want the strongest mix of preview quality, buyer proof, and seller trust from this storefront.
+                    This is the clearest first stop if you want the strongest mix of preview quality, classroom usefulness, and file clarity from this storefront.
                   </p>
                 </div>
                 <div className="rounded-[24px] bg-slate-50 px-4 py-3 text-sm leading-6 text-ink-soft">

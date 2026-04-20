@@ -18,6 +18,7 @@ import {
   buildViewerCookieValue,
   getCurrentViewer,
 } from "@/lib/auth/viewer";
+import { getSupabaseServerAdminClient, hasSupabaseServerEnv } from "@/lib/supabase/server";
 import type { ViewerRole } from "@/types";
 
 const VIEWER_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
@@ -45,6 +46,7 @@ export async function POST(request: Request) {
     name?: string;
     email?: string;
     sellerDisplayName?: string;
+    accessToken?: string;
   };
   const accessRole = await getPrivateAccessRole();
 
@@ -58,6 +60,34 @@ export async function POST(request: Request) {
 
   if (body.role === "owner" && !canAccessOwner(accessRole)) {
     return NextResponse.json({ error: "Private owner access is required." }, { status: 403 });
+  }
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    (body.role === "buyer" || body.role === "seller")
+  ) {
+    const email = body.email?.trim().toLowerCase();
+    const accessToken = body.accessToken?.trim();
+
+    if (!email || !accessToken || !hasSupabaseServerEnv()) {
+      return NextResponse.json(
+        { error: "A verified signed-in session is required." },
+        { status: 403 },
+      );
+    }
+
+    const supabase = getSupabaseServerAdminClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(accessToken);
+
+    if (error || !user?.email || user.email.trim().toLowerCase() !== email) {
+      return NextResponse.json(
+        { error: "The signed-in session could not be verified." },
+        { status: 403 },
+      );
+    }
   }
 
   const fallbackViewer = VIEWERS[body.role];

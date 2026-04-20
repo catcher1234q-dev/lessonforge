@@ -203,10 +203,19 @@ function getProductFamily(input: { title?: string; format?: string; subject: str
   const source = `${input.title ?? ""} ${input.format ?? ""}`.toLowerCase();
 
   if (input.subject === "Math") {
-    if (source.includes("intervention")) {
+    if (
+      source.includes("intervention") ||
+      source.includes("fraction") ||
+      source.includes("decimal")
+    ) {
       return "intervention";
     }
-    if (source.includes("fluency")) {
+    if (
+      source.includes("fluency") ||
+      source.includes("warm up") ||
+      source.includes("daily review") ||
+      source.includes("division")
+    ) {
       return "fluency";
     }
     return "practice";

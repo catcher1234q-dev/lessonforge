@@ -4,8 +4,10 @@ import { FinalCTA } from "@/components/marketing/final-cta";
 import { FAQPreview } from "@/components/marketing/faq-preview";
 import { FirstTimeGuide } from "@/components/marketing/first-time-guide";
 import { LandingHero } from "@/components/marketing/landing-hero";
+import { MarketplaceReadiness } from "@/components/marketing/marketplace-readiness";
 import { PricingPreview } from "@/components/marketing/pricing-preview";
 import { SubjectShowcase } from "@/components/marketing/subject-showcase";
+import { Testimonials } from "@/components/marketing/testimonials";
 import { TrustStrip } from "@/components/marketing/trust-strip";
 import { WebsiteStatusBanner } from "@/components/marketing/website-status-banner";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -30,8 +32,10 @@ export default function HomePage() {
       <LandingHero />
       <div className="space-y-4 pb-4 sm:space-y-6 sm:pb-6">
         <FirstTimeGuide />
+        <MarketplaceReadiness />
         <TrustStrip />
       </div>
+      <Testimonials />
       <SubjectShowcase />
       <PricingPreview />
       <FAQPreview />

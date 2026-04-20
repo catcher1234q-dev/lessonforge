@@ -1,4 +1,4 @@
-import { ArrowUpRight, BadgeCheck, Star } from "lucide-react";
+import { ArrowUpRight, BadgeCheck } from "lucide-react";
 import Link from "next/link";
 
 import { HighlightChip } from "@/components/buyer/highlight-chip";
@@ -11,15 +11,11 @@ import type { MarketplaceListing } from "@/lib/demo/catalog";
 
 function getRankingReasons(listing: MarketplaceListing) {
   const reasons = [
-    listing.sellerTrustLabel === "Trusted seller" ||
-    listing.sellerTrustLabel === "Review-backed store"
-      ? "Trusted seller"
-      : null,
-    listing.reviewSummary.reviewCount > 0 ? "Review backed" : null,
-    listing.assetVersionNumber > 1 ? "Updated assets" : null,
+    listing.pageCount >= 8 ? "Expanded file" : null,
+    listing.assetVersionNumber > 1 ? "Updated file" : null,
     listing.freshnessScore >= 10 ? "Fresh listing" : null,
     listing.assetHealthStatus === "Preview and thumbnail ready"
-      ? "Asset ready"
+      ? "Real preview pages"
       : null,
   ].filter(Boolean) as string[];
 
@@ -27,23 +23,16 @@ function getRankingReasons(listing: MarketplaceListing) {
 }
 
 function getFeaturedLabel(listing: MarketplaceListing) {
-  if (
-    listing.sellerTrustLabel === "Trusted seller" ||
-    listing.sellerTrustLabel === "Review-backed store"
-  ) {
-    return "Trusted seller";
-  }
-
-  if (listing.reviewSummary.reviewCount >= 20) {
-    return "Buyer favorite";
+  if (listing.pageCount >= 8) {
+    return "Expanded resource";
   }
 
   if (listing.assetVersionNumber > 1) {
-    return "Fresh update";
+    return "Updated file";
   }
 
   if (listing.assetHealthStatus === "Preview and thumbnail ready") {
-    return "Strong preview";
+    return "Real preview pages";
   }
 
   return "Featured listing";
@@ -59,7 +48,8 @@ function getSubjectTheme(subject: string) {
         text: "text-sky-900",
         gradient: "from-sky-300 via-sky-100 to-white",
       };
-    case "ELA":
+    case "Reading":
+    case "Writing":
       return {
         frame: "border-rose-200 bg-rose-50",
         accent: "bg-rose-500",
@@ -74,6 +64,26 @@ function getSubjectTheme(subject: string) {
         accentSoft: "bg-emerald-100 text-emerald-800",
         text: "text-emerald-900",
         gradient: "from-emerald-300 via-emerald-100 to-white",
+      };
+    case "Social Studies":
+      return {
+        frame: "border-violet-200 bg-violet-50",
+        accent: "bg-violet-500",
+        accentSoft: "bg-violet-100 text-violet-800",
+        text: "text-violet-900",
+        gradient: "from-violet-300 via-violet-100 to-white",
+      };
+    case "Classroom Management":
+    case "Morning Work":
+    case "Intervention":
+    case "Seasonal":
+    case "Test Prep":
+      return {
+        frame: "border-teal-200 bg-teal-50",
+        accent: "bg-teal-500",
+        accentSoft: "bg-teal-100 text-teal-800",
+        text: "text-teal-900",
+        gradient: "from-teal-300 via-teal-100 to-white",
       };
     default:
       return {
@@ -180,13 +190,23 @@ export function ProductCard({
             <p className="mt-2 text-sm text-ink-soft">
               {listing.subject} · {listing.gradeBand}
             </p>
-            <p className="mt-3 line-clamp-2 text-sm leading-6 text-ink-soft">
-              {listing.shortDescription}
-            </p>
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
-                Not for sale
+          <p className="mt-3 line-clamp-2 text-sm leading-6 text-ink-soft">
+            {listing.shortDescription}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {listing.tags.slice(0, 2).map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-medium text-ink-soft"
+              >
+                {tag}
               </span>
+            ))}
+          </div>
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
+              Not for sale
+            </span>
               <span className="text-sm font-semibold text-brand transition group-hover:text-brand-700">
                 View demo
               </span>
@@ -321,6 +341,16 @@ export function ProductCard({
           <p className="mt-2 line-clamp-2 text-base leading-7 text-ink-soft">
             {listing.shortDescription}
           </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {listing.tags.slice(0, 3).map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-medium text-ink-soft"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
         </Link>
 
         <div className="mt-5 space-y-4">
@@ -334,8 +364,11 @@ export function ProductCard({
               <span>{listing.resourceType}</span>
             </div>
             <div>
-              <span className="block font-semibold text-ink">Subject</span>
-              <span>{listing.subject}</span>
+              <span className="block font-semibold text-ink">File</span>
+              <span>
+                {listing.fileTypes[0] ?? "PDF"}
+                {listing.pageCount ? ` · ${listing.pageCount} pages` : ""}
+              </span>
             </div>
             <div>
               <span className="block font-semibold text-ink">Preview</span>
@@ -391,19 +424,11 @@ export function ProductCard({
 
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-medium text-ink">
-                {featured ? listing.sellerName : listing.sellerTrustLabel}
-              </p>
-              <p className="text-sm text-ink-soft">
-                {featured ? listing.sellerTrustLabel : listing.sellerName}
-              </p>
+              <p className="text-sm font-medium text-ink">{listing.sellerName}</p>
+              <p className="text-sm text-ink-soft">{listing.sellerTrustLabel}</p>
             </div>
-            <div className="flex items-center gap-1 text-sm font-semibold text-ink">
-              <Star className="h-4 w-4 fill-current text-amber-500" />
-              {listing.reviewSummary.averageRating}
-              <span className="font-normal text-ink-soft">
-                ({listing.reviewSummary.reviewCount})
-              </span>
+            <div className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-medium text-ink-soft">
+              {listing.subject}
             </div>
           </div>
 

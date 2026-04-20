@@ -39,6 +39,106 @@ function mergeProductSources(
   return Array.from(merged.values());
 }
 
+function hasMeaningfulCopy(value?: string | null) {
+  if (!value) {
+    return false;
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  return ![
+    "",
+    "not set",
+    "general",
+    "digital resource",
+    "teacher seller",
+    "@lessonforge-seller",
+  ].includes(normalized);
+}
+
+function hasMeaningfulTags(tags: string[]) {
+  if (tags.length === 0) {
+    return false;
+  }
+
+  return tags.some((tag) => hasMeaningfulCopy(tag));
+}
+
+function isRealCatalogPreviewUrl(value?: string | null) {
+  return Boolean(value?.startsWith("/catalog-previews/"));
+}
+
+function hasRealCatalogPreviewAssets(listing: MarketplaceListing) {
+  return listing.previewAssets.some((asset) => isRealCatalogPreviewUrl(asset.previewUrl));
+}
+
+function mergeLaunchCatalogListing(
+  launchListing: MarketplaceListing,
+  persistedListing: MarketplaceListing,
+): MarketplaceListing {
+  return {
+    ...launchListing,
+    ...persistedListing,
+    subject: hasMeaningfulCopy(persistedListing.subject)
+      ? persistedListing.subject
+      : launchListing.subject,
+    gradeBand: hasMeaningfulCopy(persistedListing.gradeBand)
+      ? persistedListing.gradeBand
+      : launchListing.gradeBand,
+    standardsTag: hasMeaningfulCopy(persistedListing.standardsTag)
+      ? persistedListing.standardsTag
+      : launchListing.standardsTag,
+    tags: hasMeaningfulTags(persistedListing.tags) ? persistedListing.tags : launchListing.tags,
+    format: hasMeaningfulCopy(persistedListing.format)
+      ? persistedListing.format
+      : launchListing.format,
+    summary: hasMeaningfulCopy(persistedListing.summary)
+      ? persistedListing.summary
+      : launchListing.summary,
+    shortDescription: hasMeaningfulCopy(persistedListing.shortDescription)
+      ? persistedListing.shortDescription
+      : launchListing.shortDescription,
+    fullDescription: hasMeaningfulCopy(persistedListing.fullDescription)
+      ? persistedListing.fullDescription
+      : launchListing.fullDescription,
+    resourceType: hasMeaningfulCopy(persistedListing.resourceType)
+      ? persistedListing.resourceType
+      : launchListing.resourceType,
+    sellerName: hasMeaningfulCopy(persistedListing.sellerName)
+      ? persistedListing.sellerName
+      : launchListing.sellerName,
+    sellerHandle: hasMeaningfulCopy(persistedListing.sellerHandle)
+      ? persistedListing.sellerHandle
+      : launchListing.sellerHandle,
+    sellerId: hasMeaningfulCopy(persistedListing.sellerId)
+      ? persistedListing.sellerId
+      : launchListing.sellerId,
+    priceCents:
+      persistedListing.priceCents > 0 ? persistedListing.priceCents : launchListing.priceCents,
+    fileTypes:
+      persistedListing.fileTypes.length > 0 ? persistedListing.fileTypes : launchListing.fileTypes,
+    includedItems:
+      persistedListing.includedItems.length > 0
+        ? persistedListing.includedItems
+        : launchListing.includedItems,
+    previewSlides:
+      persistedListing.previewSlides.length > 0
+        ? persistedListing.previewSlides
+        : launchListing.previewSlides,
+    previewAssets:
+      hasRealCatalogPreviewAssets(persistedListing)
+        ? persistedListing.previewAssets
+        : launchListing.previewAssets,
+    thumbnailUrl: isRealCatalogPreviewUrl(persistedListing.thumbnailUrl)
+      ? persistedListing.thumbnailUrl
+      : launchListing.thumbnailUrl,
+    assetVersionNumber: Math.max(
+      launchListing.assetVersionNumber,
+      persistedListing.assetVersionNumber,
+    ),
+  };
+}
+
 function formatUpdatedAtLabel(value?: string) {
   if (!value) {
     return "Updated recently";
@@ -245,7 +345,8 @@ function computeMarketplaceScore(
     : 0;
   const metadataScore = normalizedQuery
     ? listing.subject.toLowerCase().includes(normalizedQuery) ||
-      listing.standardsTag.toLowerCase().includes(normalizedQuery)
+      listing.standardsTag.toLowerCase().includes(normalizedQuery) ||
+      listing.tags.some((tag) => tag.toLowerCase().includes(normalizedQuery))
       ? 1
       : 0
     : 0;
@@ -303,12 +404,31 @@ export async function listMarketplaceListings() {
         effectiveOrders,
       ),
     );
+  const launchReadyListings = attachSellerTrustSignals(
+    demoMarketplaceListings.filter((listing) => !listing.demoOnly),
+  );
 
   if (persistedListings.length === 0) {
-    return attachSellerTrustSignals(demoMarketplaceListings);
+    return attachSellerTrustSignals(
+      launchReadyListings.length > 0 ? launchReadyListings : demoMarketplaceListings,
+    );
   }
 
-  return attachSellerTrustSignals(persistedListings);
+  const mergedListings = new Map<string, MarketplaceListing>();
+
+  for (const listing of launchReadyListings) {
+    mergedListings.set(listing.id, listing);
+  }
+
+  for (const listing of persistedListings) {
+    const launchListing = mergedListings.get(listing.id);
+    mergedListings.set(
+      listing.id,
+      launchListing ? mergeLaunchCatalogListing(launchListing, listing) : listing,
+    );
+  }
+
+  return attachSellerTrustSignals(Array.from(mergedListings.values()));
 }
 
 export async function listPublicMarketplacePreviewListings() {
@@ -353,7 +473,8 @@ export async function filterPublicMarketplaceListings(
     const titleScore = listing.title.toLowerCase().includes(normalizedQuery) ? 3 : 0;
     const metadataScore =
       listing.subject.toLowerCase().includes(normalizedQuery) ||
-      listing.standardsTag.toLowerCase().includes(normalizedQuery)
+      listing.standardsTag.toLowerCase().includes(normalizedQuery) ||
+      listing.tags.some((tag) => tag.toLowerCase().includes(normalizedQuery))
         ? 2
         : 0;
     const descriptionScore = listing.summary.toLowerCase().includes(normalizedQuery)

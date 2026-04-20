@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { BadgeCheck, Eye, FileText } from "lucide-react";
+import { BadgeCheck, Eye, FileText, Flag, LifeBuoy } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { CheckoutButton } from "@/components/marketplace/checkout-button";
 import { ProductImageGallery } from "@/components/marketplace/product-image-gallery";
 import { ProductCard } from "@/components/marketplace/product-card";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -14,9 +15,10 @@ import {
   getStorefrontAction,
 } from "@/lib/lessonforge/marketplace-navigation";
 import {
-  getPublicMarketplaceListingBySlug,
-  getPublicRelatedListings,
+  getMarketplaceListingBySlug,
+  getRelatedListings,
 } from "@/lib/lessonforge/server-catalog";
+import { formatCurrency } from "@/lib/marketplace/config";
 import { buildNoIndexMetadata, buildPageMetadata } from "@/lib/seo/metadata";
 
 export async function generateMetadata({
@@ -25,18 +27,18 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const listing = await getPublicMarketplaceListingBySlug(slug);
+  const listing = await getMarketplaceListingBySlug(slug);
 
   if (!listing) {
     return buildNoIndexMetadata(
-      "Demo listing not found",
-      "This LessonForgeHub marketplace preview listing could not be found.",
+      "Marketplace listing not found",
+      "This LessonForgeHub marketplace listing could not be found.",
     );
   }
 
   return buildPageMetadata({
-    title: `${listing.title} Demo Listing`,
-    description: `${listing.title} is a preview-only ${listing.subject} demo listing on LessonForgeHub. Review the layout, preview images, and seller presentation before creating your own listing.`,
+    title: listing.title,
+    description: `${listing.title} is a ${listing.subject} marketplace listing on LessonForgeHub with preview images, seller details, and digital download purchase information.`,
     path: `/marketplace/${listing.slug}`,
     image: listing.thumbnailUrl ?? listing.previewAssets[0]?.previewUrl ?? undefined,
   });
@@ -51,7 +53,7 @@ export default async function ProductDetailPage({
 }) {
   const { slug } = await params;
   const resolvedSearchParams = (await searchParams) ?? {};
-  const listing = await getPublicMarketplaceListingBySlug(slug);
+  const listing = await getMarketplaceListingBySlug(slug);
 
   if (!listing) {
     notFound();
@@ -71,9 +73,14 @@ export default async function ProductDetailPage({
     returnTo,
     sellerId: listing.sellerId,
   });
-  const relatedListings = await getPublicRelatedListings(listing.subject, listing.id);
+  const relatedListings = await getRelatedListings(listing.subject, listing.id);
   const previewHeroImage = listing.thumbnailUrl ?? listing.previewAssets[0]?.previewUrl ?? null;
   const previewAssetCount = Math.max(listing.previewAssets.length, 1);
+  const pageCount = listing.pageCount || 0;
+  const answerKeyIncluded = listing.includedItems.some((item) =>
+    /answer/i.test(item),
+  );
+  const reportHref = `/report-product?productId=${encodeURIComponent(listing.id)}&title=${encodeURIComponent(listing.title)}&returnTo=${encodeURIComponent(currentListingHref)}`;
 
   return (
     <main className="page-shell min-h-screen">
@@ -85,13 +92,12 @@ export default async function ProductDetailPage({
             {returnLabel}
           </Link>
 
-          <section className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 shadow-[0_14px_40px_rgba(245,158,11,0.10)]">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-800">
-              Demo listing
+          <section className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 shadow-[0_14px_40px_rgba(16,185,129,0.10)]">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-800">
+              Digital marketplace listing
             </p>
-            <p className="mt-2 text-sm leading-6 text-amber-950">
-              Preview only, not for sale. This page shows how a polished LessonForge listing can
-              look when a seller uploads classroom materials.
+            <p className="mt-2 text-sm leading-6 text-emerald-950">
+              Buyers receive digital downloads through LessonForgeHub. Listings stay subject to review and may be removed if they violate marketplace policy.
             </p>
           </section>
 
@@ -104,7 +110,7 @@ export default async function ProductDetailPage({
                     {listing.gradeBand}
                   </span>
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-ink-soft">
-                    Demo preview
+                    Digital download
                   </span>
                 </div>
                 <h1 className="mt-4 font-[family-name:var(--font-display)] text-4xl leading-tight text-ink sm:text-5xl">
@@ -117,15 +123,27 @@ export default async function ProductDetailPage({
                 <div className="mt-6 rounded-[24px] border border-sky-100 bg-sky-50/70 px-5 py-4 text-sm leading-6 text-ink-soft">
                   <p className="font-semibold text-ink">What this preview shows</p>
                   <p className="mt-1">
-                    A strong cover image, clear product details, and visible preview pages so
-                    buyers can understand the resource quickly.
+                    Preview shows real pages from the full product so buyers can see the layout, directions, and level of rigor before checkout.
                   </p>
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-2 text-sm text-ink-soft">
                   <span className="rounded-full bg-slate-100 px-4 py-2">{listing.format}</span>
                   <span className="rounded-full bg-slate-100 px-4 py-2">{listing.resourceType}</span>
+                  {pageCount ? (
+                    <span className="rounded-full bg-slate-100 px-4 py-2">
+                      {pageCount} PDF page{pageCount === 1 ? "" : "s"}
+                    </span>
+                  ) : null}
                   <span className="rounded-full bg-slate-100 px-4 py-2">{listing.standardsTag}</span>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2 text-sm text-ink-soft">
+                  {listing.tags.map((tag) => (
+                    <span key={tag} className="rounded-full border border-slate-200 bg-white px-4 py-2">
+                      {tag}
+                    </span>
+                  ))}
                 </div>
               </section>
 
@@ -148,8 +166,22 @@ export default async function ProductDetailPage({
                     <p className="mt-2 text-lg font-semibold text-ink">{listing.gradeBand}</p>
                   </div>
                   <div className="rounded-3xl bg-slate-50 p-5">
+                    <p className="text-sm text-ink-soft">Subject</p>
+                    <p className="mt-2 text-lg font-semibold text-ink">{listing.subject}</p>
+                  </div>
+                  <div className="rounded-3xl bg-slate-50 p-5">
                     <p className="text-sm text-ink-soft">Resource type</p>
                     <p className="mt-2 text-lg font-semibold text-ink">{listing.format}</p>
+                  </div>
+                  <div className="rounded-3xl bg-slate-50 p-5">
+                    <p className="text-sm text-ink-soft">File type</p>
+                    <p className="mt-2 text-lg font-semibold text-ink">{listing.fileTypes.join(", ")}</p>
+                  </div>
+                  <div className="rounded-3xl bg-slate-50 p-5">
+                    <p className="text-sm text-ink-soft">Page count</p>
+                    <p className="mt-2 text-lg font-semibold text-ink">
+                      {pageCount ? `${pageCount} pages` : "Included in file"}
+                    </p>
                   </div>
                   <div className="rounded-3xl bg-slate-50 p-5">
                     <p className="text-sm text-ink-soft">Standards</p>
@@ -188,6 +220,16 @@ export default async function ProductDetailPage({
                         </span>
                       ))}
                     </div>
+                    <div className="mt-5 grid gap-3 text-sm leading-6 text-ink-soft">
+                      {answerKeyIncluded ? (
+                        <p className="rounded-2xl bg-slate-50 px-4 py-3">
+                          Answer key support is included in the file for teacher review and quick checking.
+                        </p>
+                      ) : null}
+                      <p className="rounded-2xl bg-slate-50 px-4 py-3">
+                        This is a digital download delivered through LessonForgeHub after purchase.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </section>
@@ -204,13 +246,15 @@ export default async function ProductDetailPage({
                     Preview pages stay visible near the top.
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-ink-soft">
-                    Buyers should be able to open the listing and understand the resource without digging through collapsed sections first.
+                    Buyers should be able to open the listing and see real inside pages from the exact file they will download, without guessing what the resource actually looks like.
                   </p>
                 </div>
 
                 <div className="mt-6">
                   <ProductImageGallery
                     coverImageUrl={listing.thumbnailUrl ?? null}
+                    pageCount={pageCount}
+                    previewLabels={listing.previewSlides}
                     previewImageUrls={listing.previewAssets.map((asset) => asset.previewUrl)}
                     title={listing.title}
                   />
@@ -224,7 +268,7 @@ export default async function ProductDetailPage({
                   {previewHeroImage ? (
                     <img
                       alt={`${listing.title} preview`}
-                      className="aspect-[3/4] w-full bg-slate-100 object-cover object-top"
+                      className="aspect-[3/4] w-full bg-slate-100 object-contain"
                       decoding="async"
                       loading="lazy"
                       sizes="(min-width: 1024px) 34vw, 100vw"
@@ -246,9 +290,9 @@ export default async function ProductDetailPage({
 
                 <div className="space-y-4 p-6">
                   <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.14em]">
-                    <span className="rounded-full bg-slate-950 px-3 py-1 text-white">Demo</span>
-                    <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-800">
-                      Not for sale
+                    <span className="rounded-full bg-slate-950 px-3 py-1 text-white">Live listing</span>
+                    <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-800">
+                      {formatCurrency(listing.priceCents)}
                     </span>
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-ink-soft">
                       {previewAssetCount} preview page{previewAssetCount === 1 ? "" : "s"}
@@ -256,8 +300,29 @@ export default async function ProductDetailPage({
                   </div>
 
                   <p className="text-sm leading-6 text-ink-soft">
-                    This example is here to show what a finished listing can look like. Checkout is
-                    disabled on demo listings, but the preview and page structure are real.
+                    Buy through LessonForgeHub, return to your library after purchase, and use the report path if a listing looks broken, misleading, or outside policy.
+                  </p>
+
+                  <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand">
+                      How delivery and refunds work
+                    </p>
+                    <div className="mt-3 grid gap-3 text-sm leading-6 text-ink-soft">
+                      {pageCount ? <p>{pageCount}-page PDF file included with this listing.</p> : null}
+                      <p>Digital products are delivered through the platform after checkout.</p>
+                      <p>Refunds are usually limited after access, except for broken files, unusable files, undelivered purchases, or clear listing problems.</p>
+                    </div>
+                  </div>
+
+                  <CheckoutButton
+                    className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+                    label="Buy now"
+                    productId={listing.id}
+                    returnTo={currentListingHref}
+                    testId="product-page-buy-now"
+                  />
+                  <p className="text-center text-xs leading-5 text-ink-soft">
+                    Instant download after purchase · Digital product, no shipping
                   </p>
 
                   <div className="flex flex-col gap-3">
@@ -270,16 +335,18 @@ export default async function ProductDetailPage({
                       Jump to preview
                     </a>
                     <Link
-                      className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
-                      href="/sell/products/new"
+                      className="inline-flex min-h-11 items-center justify-center rounded-full border border-slate-200 px-4 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
+                      href={reportHref}
                     >
-                      Create a listing like this
+                      <Flag className="mr-2 h-4 w-4" />
+                      Report product
                     </Link>
                     <Link
                       className="inline-flex min-h-11 items-center justify-center rounded-full border border-slate-200 px-4 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
-                      href="/sell/onboarding"
+                      href="/support"
                     >
-                      Start selling on LessonForge
+                      <LifeBuoy className="mr-2 h-4 w-4" />
+                      Support
                     </Link>
                   </div>
                 </div>
@@ -287,17 +354,17 @@ export default async function ProductDetailPage({
 
               <section className="rounded-[28px] border border-black/5 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand">
-                  Why this page exists
+                  Policy notes
                 </p>
                 <div className="mt-4 grid gap-3">
                   <div className="rounded-[20px] bg-slate-50 px-4 py-4 text-sm leading-6 text-ink-soft">
-                    Show teachers what a polished listing looks like before they upload their own work.
+                    Products are subject to review and may be removed if they violate marketplace policy.
                   </div>
                   <div className="rounded-[20px] bg-slate-50 px-4 py-4 text-sm leading-6 text-ink-soft">
-                    Keep previews visible so buyers can understand the format and layout quickly.
+                    Buyers can report products that look broken, misleading, copied, or otherwise unsafe.
                   </div>
                   <div className="rounded-[20px] bg-slate-50 px-4 py-4 text-sm leading-6 text-ink-soft">
-                    Make it obvious this is a demo example and not a live product for purchase.
+                    Digital refunds are limited after access except for broken files, unusable files, undelivered purchases, or verified listing problems.
                   </div>
                 </div>
               </section>
@@ -327,14 +394,13 @@ export default async function ProductDetailPage({
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand">
-                    More demo listings
+                    More listings
                   </p>
-                  <h2 className="mt-2 text-3xl font-semibold text-ink">
-                    More {listing.subject} examples
+                <h2 className="mt-2 text-3xl font-semibold text-ink">
+                    More {listing.subject} resources
                   </h2>
                   <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-soft">
-                    Open another example if you want to compare different cover styles, preview
-                    layouts, or listing structure.
+                    Compare a few more listings if you want to browse similar grade levels, preview styles, or resource formats.
                   </p>
                 </div>
                 <Link
@@ -349,7 +415,6 @@ export default async function ProductDetailPage({
                 {relatedListings.map((related) => (
                   <ProductCard
                     key={related.id}
-                    demoPreview
                     listing={related}
                     returnTo={currentListingHref}
                   />

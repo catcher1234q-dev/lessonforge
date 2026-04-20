@@ -32,11 +32,16 @@ import type {
   AdminAiSettings,
   AiActionCacheRecord,
   AIProviderResult,
+  FavoriteRecord,
   MonetizationEventRecord,
+  OrderRecord,
   PrivateFeedbackRecord,
   FeedbackRating,
+  RefundRequestRecord,
+  ReportRecord,
   SellerProfileDraft,
   SubscriptionRecord,
+  ReviewRecord,
   SystemSettings,
   UsageLedgerEntry,
   ViewerRole,
@@ -66,8 +71,18 @@ const defaultSystemSettings: SystemSettings = {
 
 let systemSettingsTableAvailable: boolean | null = null;
 let adminAuditLogsTableAvailable: boolean | null = null;
+const prismaTableAvailability = new Map<string, boolean>();
+const prismaColumnAvailability = new Map<string, boolean>();
+const schemaSkipNotices = new Set<string>();
 
 function logDatabaseFallback(scope: string, error: unknown) {
+  if (
+    process.env.NODE_ENV === "production" &&
+    (scope.startsWith("checkTableExists.") || scope.startsWith("checkColumnExists."))
+  ) {
+    return;
+  }
+
   console.error(
     `[lessonforge:data-access] ${scope} failed`,
     error instanceof Error ? error.message : error,
@@ -77,7 +92,7 @@ function logDatabaseFallback(scope: string, error: unknown) {
 function isMissingPrismaCoreTableError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
 
-  return /public\.Product|public\.UsageLedger|public\.User|table `public\.(Product|UsageLedger|User)`|relation "(Product|UsageLedger|User)"/i.test(
+  return /public\.(Product|UsageLedger|User|Order|OrderItem|Report|Review|Favorite|SellerProfile|RefundRequest|Subscription)|table `public\.(Product|UsageLedger|User|Order|OrderItem|Report|Review|Favorite|SellerProfile|RefundRequest|Subscription)`|relation "(Product|UsageLedger|User|Order|OrderItem|Report|Review|Favorite|SellerProfile|RefundRequest|Subscription)"|column `subject` does not exist|column Product\.subject does not exist/i.test(
     message,
   );
 }
@@ -135,6 +150,10 @@ async function checkTableExists(tableName: string) {
     return false;
   }
 
+  if (prismaTableAvailability.has(tableName)) {
+    return prismaTableAvailability.get(tableName) ?? false;
+  }
+
   try {
     const rows = await prisma.$queryRaw<Array<{ exists: boolean }>>`
       SELECT EXISTS (
@@ -145,11 +164,87 @@ async function checkTableExists(tableName: string) {
       ) AS "exists"
     `;
 
-    return Boolean(rows[0]?.exists);
+    const exists = Boolean(rows[0]?.exists);
+    prismaTableAvailability.set(tableName, exists);
+    return exists;
   } catch (error) {
     logDatabaseFallback(`checkTableExists.${tableName}`, error);
     return false;
   }
+}
+
+async function checkColumnExists(tableName: string, columnName: string) {
+  if (!hasRealDatabaseUrl()) {
+    return false;
+  }
+
+  const cacheKey = `${tableName}.${columnName}`;
+
+  if (prismaColumnAvailability.has(cacheKey)) {
+    return prismaColumnAvailability.get(cacheKey) ?? false;
+  }
+
+  try {
+    const rows = await prisma.$queryRaw<Array<{ exists: boolean }>>`
+      SELECT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = ${tableName}
+          AND column_name = ${columnName}
+      ) AS "exists"
+    `;
+
+    const exists = Boolean(rows[0]?.exists);
+    prismaColumnAvailability.set(cacheKey, exists);
+    return exists;
+  } catch (error) {
+    logDatabaseFallback(`checkColumnExists.${tableName}.${columnName}`, error);
+    return false;
+  }
+}
+
+function logSchemaSkip(scope: string, details: string) {
+  const key = `${scope}:${details}`;
+
+  if (schemaSkipNotices.has(key)) {
+    return;
+  }
+
+  schemaSkipNotices.add(key);
+  if (process.env.NODE_ENV !== "production") {
+    console.info("[lessonforge:data-access] skipped Prisma read because schema is still incomplete", {
+      scope,
+      details,
+    });
+  }
+}
+
+async function requirePrismaTable(scope: string, tableName: string) {
+  const exists = await checkTableExists(tableName);
+
+  if (!exists) {
+    logSchemaSkip(scope, `missing table public.${tableName}`);
+  }
+
+  return exists;
+}
+
+async function requirePrismaColumn(scope: string, tableName: string, columnName: string) {
+  const tableExists = await checkTableExists(tableName);
+
+  if (!tableExists) {
+    logSchemaSkip(scope, `missing table public.${tableName}`);
+    return false;
+  }
+
+  const exists = await checkColumnExists(tableName, columnName);
+
+  if (!exists) {
+    logSchemaSkip(scope, `missing column public.${tableName}.${columnName}`);
+  }
+
+  return exists;
 }
 
 async function hasSystemSettingsTable() {
@@ -600,6 +695,140 @@ function coerceSupabaseListingAssistCacheEntry(row: SupabaseListingAssistCacheRo
   };
 }
 
+function coerceSupabaseReportEntry(row: {
+  target_id: string | null;
+  metadata_json: unknown;
+  created_at: string | null;
+}): ReportRecord | null {
+  if (!isRecord(row.metadata_json)) {
+    return null;
+  }
+
+  const metadata = row.metadata_json;
+  const id = typeof metadata.id === "string" ? metadata.id : row.target_id;
+  const category = metadata.category;
+  const status = metadata.status;
+
+  if (
+    typeof id !== "string" ||
+    typeof metadata.productId !== "string" ||
+    typeof metadata.productTitle !== "string" ||
+    typeof metadata.details !== "string" ||
+    (category !== "Broken file" &&
+      category !== "Copyright" &&
+      category !== "Misleading listing" &&
+      category !== "Low quality" &&
+      category !== "Spam" &&
+      category !== "Access issue") ||
+    (status !== "Open" &&
+      status !== "Under review" &&
+      status !== "Resolved" &&
+      status !== "Dismissed")
+  ) {
+    return null;
+  }
+
+  return {
+    id,
+    productId: metadata.productId,
+    productTitle: metadata.productTitle,
+    reporterName:
+      typeof metadata.reporterName === "string" ? metadata.reporterName : undefined,
+    reporterEmail:
+      typeof metadata.reporterEmail === "string" ? metadata.reporterEmail : undefined,
+    category,
+    status,
+    details: metadata.details,
+    adminResolutionNote:
+      typeof metadata.adminResolutionNote === "string"
+        ? metadata.adminResolutionNote
+        : undefined,
+    createdAt:
+      typeof metadata.createdAt === "string"
+        ? metadata.createdAt
+        : row.created_at || new Date().toISOString(),
+  };
+}
+
+async function listSupabaseReportEntries(): Promise<ReportRecord[]> {
+  if (!(await hasAdminAuditLogsTable()) || !hasSupabaseServerEnv()) {
+    return [];
+  }
+
+  const { data, error } = await getSupabaseServerAdminClient()
+    .from("admin_audit_logs")
+    .select("target_id, metadata_json, created_at")
+    .eq("action", "marketplace.report")
+    .eq("target_type", "report")
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  if (error) {
+    throw new Error(`Unable to load fallback reports: ${error.message}`);
+  }
+
+  return (data ?? [])
+    .map((row) => coerceSupabaseReportEntry(row))
+    .filter((entry): entry is ReportRecord => Boolean(entry));
+}
+
+function mergeReportEntries(
+  prismaReports: ReportRecord[],
+  fallbackReports: ReportRecord[],
+) {
+  const merged = new Map<string, ReportRecord>();
+
+  for (const report of [...fallbackReports, ...prismaReports]) {
+    merged.set(report.id, report);
+  }
+
+  return Array.from(merged.values()).sort(
+    (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
+  );
+}
+
+async function saveSupabaseReportEntry(report: ReportRecord) {
+  if (!(await hasAdminAuditLogsTable()) || !hasSupabaseServerEnv()) {
+    return report;
+  }
+
+  const { error } = await getSupabaseServerAdminClient().from("admin_audit_logs").upsert(
+    {
+      id: `report-${report.id}`,
+      action: "marketplace.report",
+      target_type: "report",
+      target_id: report.id,
+      metadata_json: report,
+    },
+    { onConflict: "id" },
+  );
+
+  if (error) {
+    throw new Error(`Unable to store fallback report: ${error.message}`);
+  }
+
+  return report;
+}
+
+async function updateSupabaseReportEntry(
+  reportId: string,
+  nextStatus: NonNullable<ReportRecord["status"]>,
+  adminResolutionNote?: string,
+) {
+  const reports = await listSupabaseReportEntries();
+  const existing = reports.find((entry) => entry.id === reportId);
+
+  if (!existing) {
+    throw new Error("Report not found.");
+  }
+
+  return saveSupabaseReportEntry({
+    ...existing,
+    status: nextStatus,
+    adminResolutionNote: adminResolutionNote?.trim() || undefined,
+  });
+}
+
 async function listSupabaseAiUsageLedger(): Promise<UsageLedgerEntry[]> {
   if (!hasSupabaseServerEnv()) {
     return [];
@@ -975,6 +1204,10 @@ async function buildSupabaseSubscriptionRecord(input: {
 }
 
 export async function listPersistedProducts() {
+  if (!(await requirePrismaColumn("listPersistedProducts", "Product", "subject"))) {
+    return [];
+  }
+
   return safeDatabaseRead("listPersistedProducts", [], () => prismaListPersistedProducts());
 }
 export const saveProduct = prismaSaveProduct;
@@ -982,27 +1215,90 @@ export async function listAdminAuditLogs() {
   return safeDatabaseRead("listAdminAuditLogs", [], () => prismaListAdminAuditLogs());
 }
 export async function listOrders() {
+  if (!(await requirePrismaTable("listOrders", "Order"))) {
+    return [];
+  }
+
   return safeDatabaseRead("listOrders", [], () => prismaListOrders());
 }
-export const saveOrder = prismaSaveOrder;
+export async function saveOrder(order: OrderRecord) {
+  if (!(await requirePrismaTable("saveOrder", "Order"))) {
+    return order;
+  }
+
+  try {
+    return await prismaSaveOrder(order);
+  } catch (error) {
+    logCriticalPrismaSchemaMismatch("saveOrder", error);
+    throw error;
+  }
+}
 export async function listFavorites() {
+  if (!(await requirePrismaTable("listFavorites", "Favorite"))) {
+    return [];
+  }
+
   return safeDatabaseRead("listFavorites", [], () => prismaListFavorites());
 }
 export const toggleFavorite = prismaToggleFavorite;
 export async function listReviews() {
+  if (!(await requirePrismaTable("listReviews", "Review"))) {
+    return [];
+  }
+
   return safeDatabaseRead("listReviews", [], () => prismaListReviews());
 }
 export const saveReview = prismaSaveReview;
 export async function listRefundRequests() {
+  if (!(await requirePrismaTable("listRefundRequests", "RefundRequest"))) {
+    return [];
+  }
+
   return safeDatabaseRead("listRefundRequests", [], () => prismaListRefundRequests());
 }
 export const saveRefundRequest = prismaSaveRefundRequest;
 export const updateRefundRequestStatus = prismaUpdateRefundRequestStatus;
 export async function listReports() {
-  return safeDatabaseRead("listReports", [], () => prismaListReports());
+  if (!(await requirePrismaTable("listReports", "Report"))) {
+    return listSupabaseReportEntries();
+  }
+
+  const [prismaReports, fallbackReports] = await Promise.all([
+    safeDatabaseRead("listReports", [], () => prismaListReports()),
+    listSupabaseReportEntries().catch(() => [] as ReportRecord[]),
+  ]);
+
+  return mergeReportEntries(prismaReports, fallbackReports);
 }
-export const saveReport = prismaSaveReport;
-export const updateReportStatus = prismaUpdateReportStatus;
+export async function saveReport(report: ReportRecord) {
+  if (!(await requirePrismaTable("saveReport", "Report"))) {
+    return saveSupabaseReportEntry(report);
+  }
+
+  try {
+    return await prismaSaveReport(report);
+  } catch (error) {
+    logDatabaseFallback("saveReport", error);
+    return saveSupabaseReportEntry(report);
+  }
+}
+export async function updateReportStatus(
+  reportId: string,
+  status: NonNullable<ReportRecord["status"]>,
+  adminResolutionNote?: string,
+  actor?: { email?: string; role?: ViewerRole },
+) {
+  if (!(await requirePrismaTable("updateReportStatus", "Report"))) {
+    return updateSupabaseReportEntry(reportId, status, adminResolutionNote);
+  }
+
+  try {
+    return await prismaUpdateReportStatus(reportId, status, adminResolutionNote, actor);
+  } catch (error) {
+    logDatabaseFallback("updateReportStatus", error);
+    return updateSupabaseReportEntry(reportId, status, adminResolutionNote);
+  }
+}
 export const updateProductStatus = prismaUpdateProductStatus;
 export async function listSubscriptions() {
   try {
@@ -1223,6 +1519,10 @@ export async function listSellerProfiles() {
 }
 
 export async function saveSellerProfile(profile: SellerProfileDraft) {
+  if (!(await requirePrismaTable("saveSellerProfile", "SellerProfile"))) {
+    return profile;
+  }
+
   return prismaSaveSellerProfile(profile);
 }
 

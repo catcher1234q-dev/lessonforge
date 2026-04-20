@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getPublicMarketplaceListingBySlug } from "@/lib/lessonforge/server-catalog";
+import { getMarketplaceListingBySlug } from "@/lib/lessonforge/server-catalog";
 import {
   renderManagedPreviewSvg,
   renderMissingPreviewSvg,
@@ -11,7 +11,7 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
-  const listing = await getPublicMarketplaceListingBySlug(slug);
+  const listing = await getMarketplaceListingBySlug(slug);
 
   if (!listing) {
     const fallbackSvg = renderMissingPreviewSvg({

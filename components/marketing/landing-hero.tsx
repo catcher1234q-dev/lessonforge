@@ -8,7 +8,7 @@ export function LandingHero() {
         <div className="animate-fade-up">
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-brand/10 bg-brand-soft px-4 py-2 text-sm font-medium text-brand-700">
             <BookOpenCheck className="h-4 w-4" />
-            Teacher-made resources for busy school days
+            Digital marketplace for teacher-made resources
           </div>
 
           <h1 className="font-[family-name:var(--font-display)] text-4xl leading-tight tracking-tight text-ink sm:text-6xl lg:text-7xl">
@@ -16,7 +16,7 @@ export function LandingHero() {
           </h1>
 
           <p className="mt-5 max-w-xl text-lg leading-8 text-ink-soft sm:text-xl">
-            Browse ready-to-use classroom materials or list the lessons, worksheets, and activities you already trust.
+            Browse original classroom materials, purchase digital downloads, or upload the lessons, worksheets, and activities you already trust.
           </p>
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -43,13 +43,13 @@ export function LandingHero() {
             <div className="rounded-[1.15rem] border border-emerald-100 bg-emerald-50/70 px-4 py-3.5 text-sm leading-6 text-emerald-900">
               <p className="font-semibold">For sellers</p>
               <p className="mt-1">
-                Share the materials you already use and earn when another teacher buys them.
+                Upload original resources, show previews, and receive payouts through the platform after transactions clear.
               </p>
             </div>
             <div className="rounded-[1.15rem] border border-amber-100 bg-amber-50/80 px-4 py-3.5 text-sm leading-6 text-amber-900">
               <p className="font-semibold">For buyers</p>
               <p className="mt-1">
-                Preview first, buy securely, and return to your library when you need the file.
+                Preview first, buy securely, download instantly, and return to your library when you need the file again.
               </p>
             </div>
           </div>
@@ -64,15 +64,15 @@ export function LandingHero() {
             <div className="mt-4 space-y-2.5 text-sm text-white/80">
               <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-3.5">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
-                <span>Preview resources before buying.</span>
+                <span>Listings are reviewed and can be reported or removed for policy violations.</span>
               </div>
               <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-3.5">
                 <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-sky-300" />
-                <span>Sellers can keep up to 80% of each sale.</span>
+                <span>Payments are processed securely and seller payouts follow platform rules.</span>
               </div>
               <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-3.5">
                 <BookOpenCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
-                <span>Purchases stay available in your library.</span>
+                <span>Purchases stay in your library, with support and refund rules linked in plain view.</span>
               </div>
             </div>
           </div>

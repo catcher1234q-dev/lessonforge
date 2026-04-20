@@ -44,6 +44,7 @@ test("thumbnail svg render includes the core listing metadata", () => {
   });
 
   assert.match(svg, /Fraction Fluency Intervention Pack/);
-  assert.match(svg, /Math · 3-5/);
+  assert.match(svg, />Math</);
+  assert.match(svg, />3-5</);
   assert.match(svg, /Interactive slide deck/);
 });

@@ -1,6 +1,18 @@
 import Link from "next/link";
 
-const subjects = ["All", "Math", "ELA", "Science", "Social Studies"] as const;
+const subjects = [
+  "All",
+  "Math",
+  "Reading",
+  "Writing",
+  "Science",
+  "Social Studies",
+  "Classroom Management",
+  "Morning Work",
+  "Test Prep",
+  "Intervention",
+  "Seasonal",
+] as const;
 
 export function FilterBar({
   selectedSubject,
