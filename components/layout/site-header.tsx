@@ -1,6 +1,5 @@
 import { SiteHeaderShell } from "@/components/layout/site-header-shell";
 import { getOwnerAccessContext } from "@/lib/auth/owner-access";
-import { getPersistenceReadiness } from "@/lib/lessonforge/persistence-readiness";
 import { getViewerContext } from "@/lib/lessonforge/server-operations";
 
 export async function SiteHeader() {
@@ -8,19 +7,12 @@ export async function SiteHeader() {
     getViewerContext(),
     getOwnerAccessContext(),
   ]);
-  const canSeeAdmin = ownerAccess.isOwner;
-  const persistenceReadiness =
-    canSeeAdmin
-      ? await getPersistenceReadiness()
-      : null;
   const adminHref = "/founder";
 
   return (
     <SiteHeaderShell
       adminHref={adminHref}
       isOwner={ownerAccess.isOwner}
-      persistenceReport={persistenceReadiness?.cutoverReport ?? null}
-      persistenceSummary={persistenceReadiness?.cutoverReport.summary ?? null}
       primaryLinks={[
         {
           description: "browse lesson resources and open product pages",

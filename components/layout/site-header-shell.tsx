@@ -5,8 +5,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { AuthControls } from "@/components/layout/auth-controls";
-import { PersistenceHeaderBadge } from "@/components/layout/persistence-header-badge";
-import type { PrismaCutoverReport } from "@/lib/lessonforge/prisma-cutover";
 
 type HeaderLink = {
   description?: string;
@@ -20,8 +18,6 @@ type SiteHeaderShellProps = {
   productName: string;
   primaryLinks: HeaderLink[];
   secondaryLinks: HeaderLink[];
-  persistenceReport: PrismaCutoverReport | null;
-  persistenceSummary: string | null;
 };
 
 export function SiteHeaderShell({
@@ -30,8 +26,6 @@ export function SiteHeaderShell({
   productName,
   primaryLinks,
   secondaryLinks,
-  persistenceReport,
-  persistenceSummary,
 }: SiteHeaderShellProps) {
   const [isCondensed, setIsCondensed] = useState(false);
 
@@ -46,8 +40,6 @@ export function SiteHeaderShell({
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  const hasPersistenceBadge = persistenceReport && persistenceSummary;
 
   return (
     <header
@@ -101,25 +93,9 @@ export function SiteHeaderShell({
                   {link.label}
                 </Link>
               ))}
-              {hasPersistenceBadge ? (
-                <PersistenceHeaderBadge
-                  href={adminHref}
-                  initialReport={persistenceReport}
-                  initialSummary={persistenceSummary}
-                />
-              ) : null}
             </div>
 
             <div className="flex items-center gap-3">
-              {hasPersistenceBadge ? (
-                <div className="xl:hidden">
-                  <PersistenceHeaderBadge
-                    href={adminHref}
-                    initialReport={persistenceReport}
-                    initialSummary={persistenceSummary}
-                  />
-                </div>
-              ) : null}
               <AuthControls adminHref={adminHref} isOwner={isOwner} />
             </div>
           </div>
@@ -145,21 +121,6 @@ export function SiteHeaderShell({
           </nav>
         </div>
 
-        <div
-          className={`flex items-center gap-3 overflow-hidden transition-all duration-300 lg:hidden ${
-            isCondensed
-              ? "mt-0 max-h-0 -translate-y-2 opacity-0 pointer-events-none"
-              : "mt-3 max-h-24 translate-y-0 opacity-100"
-          }`}
-        >
-          {hasPersistenceBadge ? (
-            <PersistenceHeaderBadge
-              href={adminHref}
-              initialReport={persistenceReport}
-              initialSummary={persistenceSummary}
-            />
-          ) : null}
-        </div>
       </div>
     </header>
   );
