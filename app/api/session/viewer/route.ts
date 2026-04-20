@@ -12,6 +12,7 @@ import {
   getAllowedViewerRoles,
   getPrivateAccessRole,
 } from "@/lib/auth/private-access";
+import { hasOwnerPlatformAccess } from "@/lib/auth/owner-access";
 import {
   VIEWER_COOKIE,
   VIEWERS,
@@ -30,12 +31,14 @@ function isViewerRole(value: unknown): value is ViewerRole {
 export async function GET() {
   const viewer = await getCurrentViewer();
   const accessRole = await getPrivateAccessRole();
+  const hasOwnerAccess =
+    process.env.NODE_ENV === "production" ? await hasOwnerPlatformAccess() : true;
   const signedIn =
     (viewer.role === "buyer" || viewer.role === "seller") &&
     (await hasAppSessionForEmail(viewer.email));
   return NextResponse.json({
     viewer,
-    allowedRoles: getAllowedViewerRoles(accessRole),
+    allowedRoles: hasOwnerAccess ? getAllowedViewerRoles(accessRole) : ["buyer", "seller"],
     signedIn,
   });
 }
@@ -49,16 +52,18 @@ export async function POST(request: Request) {
     accessToken?: string;
   };
   const accessRole = await getPrivateAccessRole();
+  const hasOwnerAccess =
+    process.env.NODE_ENV === "production" ? await hasOwnerPlatformAccess() : true;
 
   if (!isViewerRole(body.role)) {
     return NextResponse.json({ error: "Invalid viewer role." }, { status: 400 });
   }
 
-  if (body.role === "admin" && !canAccessAdmin(accessRole)) {
+  if (body.role === "admin" && (!canAccessAdmin(accessRole) || !hasOwnerAccess)) {
     return NextResponse.json({ error: "Private admin access is required." }, { status: 403 });
   }
 
-  if (body.role === "owner" && !canAccessOwner(accessRole)) {
+  if (body.role === "owner" && (!canAccessOwner(accessRole) || !hasOwnerAccess)) {
     return NextResponse.json({ error: "Private owner access is required." }, { status: 403 });
   }
 

@@ -35,6 +35,7 @@ type ListingAssistDeps = {
     warningThresholds: { starter: number; basic: number; pro: number };
     updatedAt: string;
   }>;
+  ownerBypassCredits?: boolean;
   consumeCredits: (input: {
     sellerId: string;
     sellerEmail: string;
@@ -147,6 +148,7 @@ export async function handleListingAssistRequest(
 
   const plan = planConfig[body.sellerPlanKey];
   const costConfig = actionCostMap[body.action];
+  const ownerBypassCredits = deps.ownerBypassCredits === true;
   let reservationState: "reserved" | "reused" | null = null;
   const cached = await deps.findListingAssistCacheEntry({
     sellerId: body.sellerId,
@@ -156,16 +158,21 @@ export async function handleListingAssistRequest(
   });
 
   if (cached) {
-    const usage = await deps.consumeCredits({
-      sellerId: body.sellerId,
-      sellerEmail: body.sellerEmail,
-      planKey: body.sellerPlanKey,
-      monthlyCredits: plan.availableCredits,
-      action: costConfig.action,
-      creditsUsed: costConfig.cost,
-      provider: body.provider,
-      idempotencyKey: body.idempotencyKey,
-    });
+    const usage = ownerBypassCredits
+      ? {
+          subscription: { availableCredits: Number.MAX_SAFE_INTEGER },
+          reservationState: "reserved" as const,
+        }
+      : await deps.consumeCredits({
+          sellerId: body.sellerId,
+          sellerEmail: body.sellerEmail,
+          planKey: body.sellerPlanKey,
+          monthlyCredits: plan.availableCredits,
+          action: costConfig.action,
+          creditsUsed: costConfig.cost,
+          provider: body.provider,
+          idempotencyKey: body.idempotencyKey,
+        });
 
     return {
       status: 200,
@@ -187,17 +194,22 @@ export async function handleListingAssistRequest(
   }
 
   try {
-    const usage = await deps.consumeCredits({
-      sellerId: body.sellerId,
-      sellerEmail: body.sellerEmail,
-      planKey: body.sellerPlanKey,
-      monthlyCredits: plan.availableCredits,
-      action: costConfig.action,
-      creditsUsed: costConfig.cost,
-      provider: body.provider,
-      idempotencyKey: body.idempotencyKey,
-    });
-    reservationState = usage.reservationState;
+    const usage = ownerBypassCredits
+      ? {
+          subscription: { availableCredits: Number.MAX_SAFE_INTEGER },
+          reservationState: "reserved" as const,
+        }
+      : await deps.consumeCredits({
+          sellerId: body.sellerId,
+          sellerEmail: body.sellerEmail,
+          planKey: body.sellerPlanKey,
+          monthlyCredits: plan.availableCredits,
+          action: costConfig.action,
+          creditsUsed: costConfig.cost,
+          provider: body.provider,
+          idempotencyKey: body.idempotencyKey,
+        });
+    reservationState = ownerBypassCredits ? null : usage.reservationState;
 
     console.info("[lessonforge.ai] ai provider started", {
       provider: body.provider,

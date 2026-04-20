@@ -292,6 +292,45 @@ test("AI handler reuses a cached standards result without calling the provider a
   });
 });
 
+test("AI handler lets the owner bypass credit reservations", async () => {
+  let consumed = false;
+  let refunded = false;
+
+  const response = await handleStandardsScanRequest(
+    {
+      sellerId: "seller-1",
+      sellerEmail: "seller@example.com",
+      sellerPlanKey: "starter",
+      title: "Fraction number line warm-up",
+      excerpt: "Students model equivalent fractions on a number line.",
+      provider: "openai",
+      idempotencyKey: "scan-owner-bypass",
+    },
+    {
+      ownerBypassCredits: true,
+      getAdminAiSettings: async () => defaultAdminAiSettings,
+      consumeCredits: async () => {
+        consumed = true;
+        return { subscription: { availableCredits: 8 }, reservationState: "reserved" as const };
+      },
+      refundCredits: async () => {
+        refunded = true;
+      },
+      mapStandardsWithOpenAI: async () => sampleMapping,
+      mapStandardsWithGemini: async () => ({ ...sampleMapping, provider: "gemini" }),
+    },
+  );
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.body, {
+    mapping: sampleMapping,
+    availableCredits: Number.MAX_SAFE_INTEGER,
+    cost: 2,
+  });
+  assert.equal(consumed, false);
+  assert.equal(refunded, false);
+});
+
 test("AI handler refunds credits when the upstream mapping call fails", async () => {
   const refundCalls: string[] = [];
   let providerCalled = false;

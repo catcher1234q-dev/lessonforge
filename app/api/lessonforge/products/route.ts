@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { hasAppSessionForEmail } from "@/lib/auth/app-session";
+import { getOwnerAccessContext } from "@/lib/auth/owner-access";
 import { getCurrentViewer } from "@/lib/auth/viewer";
 import { normalizePlanKey } from "@/lib/config/plans";
 import { checkAdminMutationRateLimit } from "@/lib/lessonforge/admin-rate-limit";
@@ -161,15 +162,22 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const viewer = await getCurrentViewer();
+  const [viewer, ownerAccess] = await Promise.all([
+    getCurrentViewer(),
+    getOwnerAccessContext(),
+  ]);
 
-  if (viewer.role !== "admin" && viewer.role !== "owner") {
-    return NextResponse.json({ error: "Admin access required." }, { status: 403 });
+  if (!(await hasAppSessionForEmail(viewer.email))) {
+    return NextResponse.json({ error: "Signed-in owner access required." }, { status: 401 });
+  }
+
+  if (!ownerAccess.isOwner) {
+    return NextResponse.json({ error: "Owner access required." }, { status: 403 });
   }
 
   const rateLimit = checkAdminMutationRateLimit({
-    actorEmail: viewer.email,
-    actorRole: viewer.role,
+    actorEmail: ownerAccess.authenticatedEmail ?? viewer.email,
+    actorRole: "owner",
     actionKey: "product-moderation",
   });
 
@@ -191,8 +199,8 @@ export async function PATCH(request: Request) {
   const response = await handleProductModerationRequest(body, {
     updateProductStatus: (productId, productStatus, moderationFeedback) =>
       updateProductStatus(productId, productStatus, moderationFeedback, {
-        email: viewer.email,
-        role: viewer.role,
+        email: ownerAccess.authenticatedEmail ?? viewer.email,
+        role: "owner",
       }),
   });
 

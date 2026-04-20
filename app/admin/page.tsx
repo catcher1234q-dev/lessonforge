@@ -13,8 +13,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { DisclosureSummary } from "@/components/shared/disclosure-summary";
 import { SectionIntro } from "@/components/shared/section-intro";
 import { StartHerePanel } from "@/components/shared/start-here-panel";
-import { canAccessAdmin, getPrivateAccessRole } from "@/lib/auth/private-access";
-import { getCurrentViewer } from "@/lib/auth/viewer";
+import { getOwnerAccessContext } from "@/lib/auth/owner-access";
 import { normalizePlanKey, planConfig } from "@/lib/config/plans";
 import { getIntegrationReadiness } from "@/lib/lessonforge/integration-readiness";
 import { getSystemSettings } from "@/lib/lessonforge/data-access";
@@ -31,26 +30,22 @@ export const metadata: Metadata = buildNoIndexMetadata(
 );
 
 export default async function AdminPage() {
-  const [viewer, systemSettings, persistenceReadiness, privateAccessRole, integrationReadiness] = await Promise.all([
-    getCurrentViewer(),
+  const [ownerAccess, systemSettings, persistenceReadiness, integrationReadiness] = await Promise.all([
+    getOwnerAccessContext(),
     getSystemSettings(),
     getPersistenceReadiness(),
-    getPrivateAccessRole(),
     getIntegrationReadiness(),
   ]);
-  const isOwner = viewer.role === "owner";
+  const isOwner = ownerAccess.isOwner;
 
-  if (
-    (viewer.role !== "admin" && viewer.role !== "owner") ||
-    !canAccessAdmin(privateAccessRole)
-  ) {
+  if (!isOwner) {
     return (
       <main className="page-shell min-h-screen">
         <SiteHeader />
         <section className="px-5 pb-20 pt-10 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl rounded-[36px] border border-black/5 bg-white p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
             <SectionIntro
-              body="This area is private and only opens after a valid access code unlocks admin or owner tools on this device."
+              body="This area is private and only opens for the configured signed-in owner account."
               eyebrow="Restricted area"
               level="h1"
               title="Admin access is private."

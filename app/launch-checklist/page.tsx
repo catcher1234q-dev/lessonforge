@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { DisclosureSummary } from "@/components/shared/disclosure-summary";
 import { SectionIntro } from "@/components/shared/section-intro";
 import { secondaryActionLinkClassName } from "@/components/shared/secondary-action-link";
-import { canAccessAdmin, getPrivateAccessRole } from "@/lib/auth/private-access";
+import { getOwnerAccessContext } from "@/lib/auth/owner-access";
 import { getIntegrationReadiness } from "@/lib/lessonforge/integration-readiness";
 import { getPersistenceReadiness } from "@/lib/lessonforge/persistence-readiness";
 import { getAdminOverview } from "@/lib/lessonforge/server-operations";
@@ -56,16 +56,16 @@ const launchFlowSteps = [
 ] as const;
 
 export default async function LaunchChecklistPage() {
-  const privateAccessRole = await getPrivateAccessRole();
+  const ownerAccess = await getOwnerAccessContext();
 
-  if (!canAccessAdmin(privateAccessRole)) {
+  if (!ownerAccess.isOwner) {
     return (
       <main className="page-shell min-h-screen">
         <SiteHeader />
         <section className="px-5 pb-20 pt-10 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl rounded-[36px] border border-black/5 bg-white p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
             <SectionIntro
-              body="This launch checklist is private because it points directly at owner and admin review steps."
+              body="This launch checklist is private because it points directly at owner review steps and moderation controls."
               eyebrow="Private checklist"
               level="h1"
               title="Launch checklist access is private."

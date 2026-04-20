@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { mapStandardsWithGemini, mapStandardsWithOpenAI } from "@/lib/ai/providers";
 import type { UploadedAiSource } from "@/lib/ai/providers";
 import { hasAppSessionForEmail } from "@/lib/auth/app-session";
+import { getOwnerAccessContext } from "@/lib/auth/owner-access";
 import { getCurrentViewer } from "@/lib/auth/viewer";
 import type { PlanKey } from "@/lib/config/plans";
 import { handleStandardsScanRequest } from "@/lib/lessonforge/api-handlers";
@@ -17,7 +18,10 @@ import {
 
 export async function POST(request: Request) {
   try {
-    const viewer = await getCurrentViewer();
+    const [viewer, ownerAccess] = await Promise.all([
+      getCurrentViewer(),
+      getOwnerAccessContext(),
+    ]);
     const body = (await request.json()) as {
       sellerId?: string;
       sellerEmail?: string;
@@ -37,7 +41,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Signed-in seller access required." }, { status: 401 });
     }
 
-    if (viewer.role !== "seller" && viewer.role !== "admin" && viewer.role !== "owner") {
+    if (viewer.role !== "seller" && !ownerAccess.isOwner) {
       console.info("[lessonforge.ai] seller access rejected", {
         reason: "viewer_role_forbidden",
         viewerRole: viewer.role,
@@ -46,7 +50,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Seller access required." }, { status: 403 });
     }
 
-    if (viewer.role === "seller" && body.sellerId && body.sellerId !== viewer.email && body.sellerEmail !== viewer.email) {
+    if (
+      !ownerAccess.isOwner &&
+      viewer.role === "seller" &&
+      body.sellerId &&
+      body.sellerId !== viewer.email &&
+      body.sellerEmail !== viewer.email
+    ) {
       console.info("[lessonforge.ai] seller access rejected", {
         reason: "seller_ownership_mismatch",
         viewerEmail: viewer.email,
@@ -61,6 +71,7 @@ export async function POST(request: Request) {
 
     const response = await handleStandardsScanRequest(body, {
       getAdminAiSettings,
+      ownerBypassCredits: ownerAccess.isOwner,
       findAiActionCacheEntry,
       saveAiActionCacheEntry,
       consumeCredits,

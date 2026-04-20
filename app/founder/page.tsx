@@ -9,7 +9,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { DisclosureSummary } from "@/components/shared/disclosure-summary";
 import { SectionIntro } from "@/components/shared/section-intro";
 import { secondaryActionLinkClassName } from "@/components/shared/secondary-action-link";
-import { canAccessOwner, getPrivateAccessRole } from "@/lib/auth/private-access";
+import { getOwnerAccessContext } from "@/lib/auth/owner-access";
 import { featureFlags } from "@/lib/config/feature-flags";
 import { normalizePlanKey, planConfig } from "@/lib/config/plans";
 import { siteConfig } from "@/lib/config/site";
@@ -44,16 +44,16 @@ function formatFeedbackDate(value: string) {
 }
 
 export default async function FounderPage() {
-  const privateAccessRole = await getPrivateAccessRole();
+  const ownerAccess = await getOwnerAccessContext();
 
-  if (!canAccessOwner(privateAccessRole)) {
+  if (!ownerAccess.isOwner) {
     return (
       <main className="page-shell min-h-screen">
         <SiteHeader />
         <section className="px-5 pb-20 pt-10 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl rounded-[36px] border border-black/5 bg-white p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
             <SectionIntro
-              body="Owner tools are hidden until this device is unlocked with the private owner access code."
+              body="Owner tools are only available to the signed-in owner account configured for this site."
               eyebrow="Private owner area"
               level="h1"
               title="Owner access is private."
@@ -247,6 +247,36 @@ export default async function FounderPage() {
                   No private feedback has been submitted yet. When users send feedback, newest notes will appear here first.
                 </div>
               )}
+            </div>
+          </section>
+
+          <section className="rounded-[32px] border border-black/5 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:p-8">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand">
+                  Owner controls
+                </p>
+                <h2 className="mt-3 text-3xl font-semibold text-ink">
+                  Open moderation and platform controls
+                </h2>
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-ink-soft">
+                  Use the admin workspace to review reports, hide or remove listings, resolve refund issues, and adjust AI or maintenance controls.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  className="inline-flex items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+                  href="/admin"
+                >
+                  Open moderation dashboard
+                </Link>
+                <Link
+                  className={secondaryActionLinkClassName()}
+                  href="/launch-checklist"
+                >
+                  Open launch checklist
+                </Link>
+              </div>
             </div>
           </section>
 

@@ -109,6 +109,55 @@ test("listing assist returns the cached result for a reused idempotency key", as
   assert.equal(saveCalled, false);
 });
 
+test("listing assist lets the owner bypass credit reservations", async () => {
+  let consumed = false;
+  let refunded = false;
+
+  const response = await handleListingAssistRequest(
+    {
+      sellerId: "seller-1",
+      sellerEmail: "seller@example.com",
+      sellerPlanKey: "basic",
+      provider: "openai",
+      action: "autofill",
+      title: "Fractions Exit Ticket Pack",
+      fileNames: ["fractions.pdf"],
+      idempotencyKey: "listing-owner-bypass",
+    },
+    {
+      ownerBypassCredits: true,
+      getAdminAiSettings: async () => ({
+        aiKillSwitchEnabled: false,
+        warningThresholds: { starter: 70, basic: 80, pro: 85 },
+        updatedAt: "2026-04-18T00:00:00.000Z",
+      }),
+      consumeCredits: async () => {
+        consumed = true;
+        return {
+          subscription: { availableCredits: 96 },
+          reservationState: "reserved" as const,
+        };
+      },
+      refundCredits: async () => {
+        refunded = true;
+      },
+      findListingAssistCacheEntry: async () => null,
+      saveListingAssistCacheEntry: async () => null,
+      suggestListingWithOpenAI: async () => sampleSuggestion,
+      suggestListingWithGemini: async () => ({ ...sampleSuggestion, provider: "gemini" }),
+    },
+  );
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.body, {
+    suggestion: sampleSuggestion,
+    availableCredits: Number.MAX_SAFE_INTEGER,
+    cost: 2,
+  });
+  assert.equal(consumed, false);
+  assert.equal(refunded, false);
+});
+
 test("listing assist blocks a reused in-flight request before running the provider again", async () => {
   let providerCalled = false;
   let refundCalled = false;

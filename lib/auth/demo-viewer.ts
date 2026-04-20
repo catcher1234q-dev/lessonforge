@@ -9,6 +9,7 @@ import {
   canAccessOwner,
   getPrivateAccessRole,
 } from "@/lib/auth/private-access";
+import { hasOwnerPlatformAccess } from "@/lib/auth/owner-access";
 import { env } from "@/lib/config/env";
 import type { Viewer, ViewerRole } from "@/types";
 
@@ -125,6 +126,14 @@ export async function getCurrentViewer(): Promise<Viewer> {
   }
 
   if (resolvedViewer.role === "admin" && !canAccessAdmin(privateAccessRole)) {
+    return getDefaultViewer();
+  }
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    (resolvedViewer.role === "admin" || resolvedViewer.role === "owner") &&
+    !(await hasOwnerPlatformAccess())
+  ) {
     return getDefaultViewer();
   }
 

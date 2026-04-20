@@ -98,6 +98,7 @@ type HandlerResponse<T> = {
 
 type StandardsScanDeps = {
   getAdminAiSettings: () => Promise<AdminAiSettings>;
+  ownerBypassCredits?: boolean;
   findAiActionCacheEntry?: (input: {
     sellerId: string;
     action: "standardsScan";
@@ -231,6 +232,7 @@ export async function handleStandardsScanRequest(
   const plan = planConfig[body.sellerPlanKey];
   const cost = getAiCreditCost("standardsScan");
   const aiSettings = await deps.getAdminAiSettings();
+  const ownerBypassCredits = deps.ownerBypassCredits === true;
   let reservationState: AiCreditReservationState | null = null;
   const cached = deps.findAiActionCacheEntry
     ? await deps.findAiActionCacheEntry({
@@ -242,11 +244,9 @@ export async function handleStandardsScanRequest(
     : null;
 
   if (cached) {
-    return {
-      status: 200,
-      body: {
-        mapping: cached.result,
-        availableCredits: (
+    const availableCredits = ownerBypassCredits
+      ? Number.MAX_SAFE_INTEGER
+      : (
           await deps.consumeCredits({
             sellerId: body.sellerId,
             sellerEmail: body.sellerEmail,
@@ -257,7 +257,13 @@ export async function handleStandardsScanRequest(
             provider: body.provider,
             idempotencyKey: body.idempotencyKey,
           })
-        ).subscription.availableCredits,
+        ).subscription.availableCredits;
+
+    return {
+      status: 200,
+      body: {
+        mapping: cached.result,
+        availableCredits,
         cost,
       },
     };
@@ -273,17 +279,22 @@ export async function handleStandardsScanRequest(
   }
 
   try {
-    const usage = await deps.consumeCredits({
-      sellerId: body.sellerId,
-      sellerEmail: body.sellerEmail,
-      planKey: body.sellerPlanKey,
-      monthlyCredits: plan.availableCredits,
-      action: "standardsScan",
-      creditsUsed: cost,
-      provider: body.provider,
-      idempotencyKey: body.idempotencyKey,
-    });
-    reservationState = usage.reservationState;
+    const usage = ownerBypassCredits
+      ? {
+          subscription: { availableCredits: Number.MAX_SAFE_INTEGER },
+          reservationState: "reserved" as const,
+        }
+      : await deps.consumeCredits({
+          sellerId: body.sellerId,
+          sellerEmail: body.sellerEmail,
+          planKey: body.sellerPlanKey,
+          monthlyCredits: plan.availableCredits,
+          action: "standardsScan",
+          creditsUsed: cost,
+          provider: body.provider,
+          idempotencyKey: body.idempotencyKey,
+        });
+    reservationState = ownerBypassCredits ? null : usage.reservationState;
 
     console.info("[lessonforge.ai] ai provider started", {
       provider: body.provider,

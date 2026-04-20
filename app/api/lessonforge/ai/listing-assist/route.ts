@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { hasAppSessionForEmail } from "@/lib/auth/app-session";
+import { getOwnerAccessContext } from "@/lib/auth/owner-access";
 import { getCurrentViewer } from "@/lib/auth/viewer";
 import { classifyAiRouteError } from "@/lib/lessonforge/ai-route-errors";
 import {
@@ -21,7 +22,10 @@ import {
 
 export async function POST(request: Request) {
   try {
-    const viewer = await getCurrentViewer();
+    const [viewer, ownerAccess] = await Promise.all([
+      getCurrentViewer(),
+      getOwnerAccessContext(),
+    ]);
     const body = (await request.json()) as ListingAssistRequestBody;
 
     if (!(await hasAppSessionForEmail(viewer.email))) {
@@ -32,7 +36,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Signed-in seller access required." }, { status: 401 });
     }
 
-    if (viewer.role !== "seller" && viewer.role !== "admin" && viewer.role !== "owner") {
+    if (viewer.role !== "seller" && !ownerAccess.isOwner) {
       console.info("[lessonforge.ai] seller access rejected", {
         reason: "viewer_role_forbidden",
         viewerRole: viewer.role,
@@ -52,7 +56,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing AI assist details." }, { status: 400 });
     }
 
-    if (viewer.role === "seller" && body.sellerId !== viewer.email && body.sellerEmail !== viewer.email) {
+    if (
+      !ownerAccess.isOwner &&
+      viewer.role === "seller" &&
+      body.sellerId !== viewer.email &&
+      body.sellerEmail !== viewer.email
+    ) {
       console.info("[lessonforge.ai] seller access rejected", {
         reason: "seller_ownership_mismatch",
         viewerEmail: viewer.email,
@@ -67,6 +76,7 @@ export async function POST(request: Request) {
 
     const response = await handleListingAssistRequest(body, {
       getAdminAiSettings,
+      ownerBypassCredits: ownerAccess.isOwner,
       consumeCredits,
       refundCredits,
       findListingAssistCacheEntry,

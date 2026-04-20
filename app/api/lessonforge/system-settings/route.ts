@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getCurrentViewer } from "@/lib/auth/viewer";
+import { getOwnerAccessContext } from "@/lib/auth/owner-access";
 import { checkAdminMutationRateLimit } from "@/lib/lessonforge/admin-rate-limit";
 import {
   getSystemSettings,
@@ -8,10 +8,10 @@ import {
 } from "@/lib/lessonforge/data-access";
 
 export async function GET() {
-  const viewer = await getCurrentViewer();
+  const ownerAccess = await getOwnerAccessContext();
 
-  if (viewer.role !== "admin" && viewer.role !== "owner") {
-    return NextResponse.json({ error: "Admin access required." }, { status: 403 });
+  if (!ownerAccess.isOwner) {
+    return NextResponse.json({ error: "Owner access required." }, { status: 403 });
   }
 
   const settings = await getSystemSettings();
@@ -20,9 +20,9 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
-    const viewer = await getCurrentViewer();
+    const ownerAccess = await getOwnerAccessContext();
 
-    if (viewer.role !== "owner") {
+    if (!ownerAccess.isOwner) {
       return NextResponse.json(
         { error: "Only the owner can update system settings." },
         { status: 403 },
@@ -30,8 +30,8 @@ export async function PATCH(request: Request) {
     }
 
     const rateLimit = checkAdminMutationRateLimit({
-      actorEmail: viewer.email,
-      actorRole: viewer.role,
+      actorEmail: ownerAccess.authenticatedEmail ?? "owner@lessonforge.local",
+      actorRole: "owner",
       actionKey: "system-settings",
     });
 
@@ -53,8 +53,8 @@ export async function PATCH(request: Request) {
       maintenanceModeEnabled: body.maintenanceModeEnabled,
       maintenanceMessage: body.maintenanceMessage,
     }, {
-      email: viewer.email,
-      role: viewer.role,
+      email: ownerAccess.authenticatedEmail ?? "owner@lessonforge.local",
+      role: "owner",
     });
 
     return NextResponse.json({ settings });

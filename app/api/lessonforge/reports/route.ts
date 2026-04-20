@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { hasAppSessionForEmail } from "@/lib/auth/app-session";
+import { getOwnerAccessContext } from "@/lib/auth/owner-access";
 import { getCurrentViewer } from "@/lib/auth/viewer";
 import { checkAdminMutationRateLimit } from "@/lib/lessonforge/admin-rate-limit";
 import {
@@ -15,14 +16,17 @@ import {
 import type { ReportRecord } from "@/types";
 
 export async function GET() {
-  const viewer = await getCurrentViewer();
+  const [viewer, ownerAccess] = await Promise.all([
+    getCurrentViewer(),
+    getOwnerAccessContext(),
+  ]);
 
   if (!(await hasAppSessionForEmail(viewer.email))) {
     return NextResponse.json({ error: "Signed-in access required." }, { status: 401 });
   }
 
-  if (viewer.role !== "admin" && viewer.role !== "owner") {
-    return NextResponse.json({ error: "Admin access required." }, { status: 403 });
+  if (!ownerAccess.isOwner) {
+    return NextResponse.json({ error: "Owner access required." }, { status: 403 });
   }
 
   const reports = await listReports();
@@ -68,19 +72,22 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const viewer = await getCurrentViewer();
+  const [viewer, ownerAccess] = await Promise.all([
+    getCurrentViewer(),
+    getOwnerAccessContext(),
+  ]);
 
   if (!(await hasAppSessionForEmail(viewer.email))) {
     return NextResponse.json({ error: "Signed-in admin access required." }, { status: 401 });
   }
 
-  if (viewer.role !== "admin" && viewer.role !== "owner") {
-    return NextResponse.json({ error: "Admin access required." }, { status: 403 });
+  if (!ownerAccess.isOwner) {
+    return NextResponse.json({ error: "Owner access required." }, { status: 403 });
   }
 
   const rateLimit = checkAdminMutationRateLimit({
-    actorEmail: viewer.email,
-    actorRole: viewer.role,
+    actorEmail: ownerAccess.authenticatedEmail ?? viewer.email,
+    actorRole: "owner",
     actionKey: "report-triage",
   });
 
@@ -103,8 +110,8 @@ export async function PATCH(request: Request) {
     saveReport,
     updateReportStatus: (reportId, status, adminResolutionNote) =>
       updateReportStatus(reportId, status, adminResolutionNote, {
-        email: viewer.email,
-        role: viewer.role,
+        email: ownerAccess.authenticatedEmail ?? viewer.email,
+        role: "owner",
       }),
   });
   return NextResponse.json(response.body, { status: response.status });
