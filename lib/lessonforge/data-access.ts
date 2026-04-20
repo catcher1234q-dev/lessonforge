@@ -1301,6 +1301,10 @@ export async function updateReportStatus(
 }
 export const updateProductStatus = prismaUpdateProductStatus;
 export async function listSubscriptions() {
+  if (!(await requirePrismaTable("listSubscriptions", "Subscription"))) {
+    return [];
+  }
+
   try {
     return await prismaListSubscriptions();
   } catch (error) {

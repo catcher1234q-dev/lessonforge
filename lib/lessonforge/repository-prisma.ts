@@ -1381,7 +1381,15 @@ export async function prismaListSubscriptions() {
     },
   });
 
-  const creditBalances = await prisma.creditBalance.findMany();
+  let creditBalances: CreditBalance[] = [];
+
+  try {
+    creditBalances = await prisma.creditBalance.findMany();
+  } catch (error) {
+    if (!isMissingTableError(error, ["credit_balance", "creditbalance"])) {
+      throw error;
+    }
+  }
 
   return subscriptions.map((subscription) =>
     toSubscriptionRecord(

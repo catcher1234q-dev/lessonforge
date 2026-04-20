@@ -4,6 +4,25 @@ BEGIN
     CREATE TYPE "UserRole" AS ENUM ('OWNER', 'ADMIN', 'USER');
   END IF;
 
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'PlanKey') THEN
+    CREATE TYPE "PlanKey" AS ENUM ('STARTER', 'BASIC', 'PRO');
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'SubscriptionStatus') THEN
+    CREATE TYPE "SubscriptionStatus" AS ENUM (
+      'TRIALING',
+      'ACTIVE',
+      'PAST_DUE',
+      'CANCELED',
+      'PAUSED',
+      'INCOMPLETE'
+    );
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'RolloverPolicy') THEN
+    CREATE TYPE "RolloverPolicy" AS ENUM ('NONE');
+  END IF;
+
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ReviewStatus') THEN
     CREATE TYPE "ReviewStatus" AS ENUM ('VISIBLE', 'HIDDEN', 'FLAGGED');
   END IF;
@@ -114,6 +133,63 @@ ALTER TABLE public."SellerProfile"
 CREATE UNIQUE INDEX IF NOT EXISTS "SellerProfile_userId_key" ON public."SellerProfile" ("userId");
 CREATE UNIQUE INDEX IF NOT EXISTS "SellerProfile_storeHandle_key" ON public."SellerProfile" ("storeHandle");
 CREATE UNIQUE INDEX IF NOT EXISTS "SellerProfile_stripeAccountId_key" ON public."SellerProfile" ("stripeAccountId");
+
+CREATE TABLE IF NOT EXISTS public."Subscription" (
+  "id" TEXT NOT NULL,
+  "userId" TEXT NOT NULL,
+  "planKey" "PlanKey" NOT NULL,
+  "status" "SubscriptionStatus" NOT NULL DEFAULT 'ACTIVE',
+  "stripeSubscriptionId" TEXT,
+  "currentPeriodStart" TIMESTAMP(3),
+  "currentPeriodEnd" TIMESTAMP(3),
+  "canceledAt" TIMESTAMP(3),
+  "rolloverPolicy" "RolloverPolicy" NOT NULL DEFAULT 'NONE',
+  "monthlyCreditAllowance" INTEGER NOT NULL DEFAULT 0,
+  "hardMonthlyCreditCap" INTEGER NOT NULL DEFAULT 0,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "Subscription_pkey" PRIMARY KEY ("id")
+);
+
+ALTER TABLE public."Subscription"
+  ADD COLUMN IF NOT EXISTS "userId" TEXT,
+  ADD COLUMN IF NOT EXISTS "planKey" "PlanKey" DEFAULT 'STARTER',
+  ADD COLUMN IF NOT EXISTS "status" "SubscriptionStatus" DEFAULT 'ACTIVE',
+  ADD COLUMN IF NOT EXISTS "stripeSubscriptionId" TEXT,
+  ADD COLUMN IF NOT EXISTS "currentPeriodStart" TIMESTAMP(3),
+  ADD COLUMN IF NOT EXISTS "currentPeriodEnd" TIMESTAMP(3),
+  ADD COLUMN IF NOT EXISTS "canceledAt" TIMESTAMP(3),
+  ADD COLUMN IF NOT EXISTS "rolloverPolicy" "RolloverPolicy" DEFAULT 'NONE',
+  ADD COLUMN IF NOT EXISTS "monthlyCreditAllowance" INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "hardMonthlyCreditCap" INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
+  ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "Subscription_userId_key" ON public."Subscription" ("userId");
+CREATE UNIQUE INDEX IF NOT EXISTS "Subscription_stripeSubscriptionId_key" ON public."Subscription" ("stripeSubscriptionId");
+
+CREATE TABLE IF NOT EXISTS public."CreditBalance" (
+  "id" TEXT NOT NULL,
+  "userId" TEXT NOT NULL,
+  "availableCredits" INTEGER NOT NULL DEFAULT 0,
+  "reservedCredits" INTEGER NOT NULL DEFAULT 0,
+  "cycleStartedAt" TIMESTAMP(3),
+  "cycleEndsAt" TIMESTAMP(3),
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "CreditBalance_pkey" PRIMARY KEY ("id")
+);
+
+ALTER TABLE public."CreditBalance"
+  ADD COLUMN IF NOT EXISTS "userId" TEXT,
+  ADD COLUMN IF NOT EXISTS "availableCredits" INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "reservedCredits" INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS "cycleStartedAt" TIMESTAMP(3),
+  ADD COLUMN IF NOT EXISTS "cycleEndsAt" TIMESTAMP(3),
+  ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
+  ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "CreditBalance_userId_key" ON public."CreditBalance" ("userId");
 
 CREATE TABLE IF NOT EXISTS public."Order" (
   "id" TEXT NOT NULL,
@@ -293,6 +369,36 @@ CREATE INDEX IF NOT EXISTS "ProductAsset_productId_versionNumber_idx" ON public.
 
 DO $$
 BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'Subscription' AND column_name = 'userId'
+  ) AND EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'User' AND column_name = 'id'
+  ) THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'Subscription_userId_fkey') THEN
+      ALTER TABLE public."Subscription"
+        ADD CONSTRAINT "Subscription_userId_fkey"
+        FOREIGN KEY ("userId") REFERENCES public."User"("id")
+        ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'CreditBalance' AND column_name = 'userId'
+  ) AND EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'User' AND column_name = 'id'
+  ) THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'CreditBalance_userId_fkey') THEN
+      ALTER TABLE public."CreditBalance"
+        ADD CONSTRAINT "CreditBalance_userId_fkey"
+        FOREIGN KEY ("userId") REFERENCES public."User"("id")
+        ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+  END IF;
+
   IF EXISTS (
     SELECT 1 FROM information_schema.columns
     WHERE table_schema = 'public' AND table_name = 'SellerProfile' AND column_name = 'userId'
