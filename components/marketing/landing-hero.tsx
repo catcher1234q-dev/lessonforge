@@ -16,7 +16,11 @@ export function LandingHero() {
           </h1>
 
           <p className="mt-5 max-w-xl text-lg leading-8 text-ink-soft sm:text-xl">
-            Browse original classroom materials, purchase digital downloads, or upload the lessons, worksheets, and activities you already trust.
+            LessonForge is a marketplace for teacher-created digital classroom resources. Sellers upload original materials they create, and buyers purchase downloadable resources for classroom use.
+          </p>
+
+          <p className="mt-3 max-w-xl text-base leading-7 text-ink-soft">
+            Browse worksheets, lesson plans, activities, assessments, and printable resources. Sellers are expected to upload only materials they created or have the right to sell.
           </p>
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -43,13 +47,13 @@ export function LandingHero() {
             <div className="rounded-[1.15rem] border border-emerald-100 bg-emerald-50/70 px-4 py-3.5 text-sm leading-6 text-emerald-900">
               <p className="font-semibold">For sellers</p>
               <p className="mt-1">
-                Upload original resources, show previews, and receive payouts through the platform after transactions clear.
+                Upload original classroom resources, show real previews, and offer digital downloads through the platform.
               </p>
             </div>
             <div className="rounded-[1.15rem] border border-amber-100 bg-amber-50/80 px-4 py-3.5 text-sm leading-6 text-amber-900">
               <p className="font-semibold">For buyers</p>
               <p className="mt-1">
-                Preview first, buy securely, download instantly, and return to your library when you need the file again.
+                Preview first, buy digital resources for classroom use, download them after purchase, and return to your library when you need the file again.
               </p>
             </div>
           </div>
@@ -64,11 +68,11 @@ export function LandingHero() {
             <div className="mt-4 space-y-2.5 text-sm text-white/80">
               <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-3.5">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
-                <span>Listings are reviewed and can be reported or removed for policy violations.</span>
+                <span>Listings must be original or properly licensed and can be reported or removed for policy violations.</span>
               </div>
               <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-3.5">
                 <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-sky-300" />
-                <span>Payments are processed securely and seller payouts follow platform rules.</span>
+                <span>Payments are processed securely and seller payouts follow the platform's marketplace rules.</span>
               </div>
               <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-3.5">
                 <BookOpenCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />

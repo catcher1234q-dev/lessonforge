@@ -28,8 +28,8 @@ const sections = [
   {
     title: "How the marketplace works",
     body: [
-      "Sellers upload original teaching resources, add previews and listing details, and publish them through the marketplace.",
-      "Buyers browse listings, review previews, purchase digital products through the platform, and return to their library to access purchased files.",
+      "Sellers upload original teaching resources they created or have the right to distribute, add previews and listing details, and publish them through the marketplace.",
+      "Buyers browse listings, review previews, purchase digital downloads through the platform, and return to their library to access purchased files.",
     ],
   },
   {

@@ -7,17 +7,22 @@ const questions = [
   {
     question: "Are payments secure?",
     answer:
-      "Yes. Payments are processed through a payment provider and, after a purchase is confirmed, the resource appears in the buyer library.",
+      "Yes. Payments are processed through a payment provider and, after a purchase is confirmed, the digital resource appears in the buyer library.",
   },
   {
     question: "What happens after I buy a resource?",
     answer:
-      "You can return to your library to reopen purchased resources and find support if something needs attention.",
+      "You can return to your library to reopen purchased classroom resources, download the file again, and find support if something needs attention.",
+  },
+  {
+    question: "What kind of products are sold here?",
+    answer:
+      "LessonForgeHub is a marketplace for teacher-created digital classroom resources such as worksheets, lesson plans, activities, task cards, and assessments.",
   },
   {
     question: "Can I get a refund after downloading?",
     answer:
-      "Digital purchases are usually final after access is delivered. Refunds are reviewed for broken files, missing access, misleading listings, duplicate charges, or rights issues.",
+      "Digital purchases are usually final after access is delivered. Refunds are reviewed for broken files, missing access, misleading listings, duplicate charges, or rights issues. Support can help review a legitimate delivery problem.",
   },
   {
     question: "How do sellers get paid?",
@@ -27,7 +32,7 @@ const questions = [
   {
     question: "Where do I go if something looks wrong?",
     answer:
-      "Start with the Support page or use the report path on a product or purchase. Refund, privacy, seller agreement, and terms pages are linked in the footer.",
+      "Start with the Support page or use the report path on a product or purchase. Refund, privacy, seller policy, and terms pages are linked in the footer.",
   },
 ];
 
@@ -47,7 +52,7 @@ export function FAQPreview() {
         </div>
 
         <div className="mt-6 grid gap-3">
-          {questions.slice(0, 4).map((item) => {
+          {questions.slice(0, 5).map((item) => {
             const isOpen = item.question === openQuestion;
 
             return (

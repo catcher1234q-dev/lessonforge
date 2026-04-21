@@ -10,7 +10,7 @@ import { buildPageMetadata } from "@/lib/seo/metadata";
 export const metadata: Metadata = buildPageMetadata({
   title: "Sell Teaching Resources",
   description:
-    "Start selling classroom resources on LessonForgeHub with Stripe payouts, simple listing tools, and seller plans up to 80 percent payout.",
+    "Start selling classroom resources on LessonForgeHub with simple listing tools, payout setup, and seller plans up to 80 percent payout.",
   path: "/sell",
 });
 
@@ -21,11 +21,11 @@ const steps = [
   },
   {
     title: "Upload",
-    description: "Add your resources and prep them for buyers.",
+    description: "Add original resources you created or have rights to distribute, then prep them for buyers.",
   },
   {
     title: "Earn",
-    description: "Sell through Stripe and keep more of every sale.",
+    description: "Sell through the platform and keep more of every sale.",
   },
 ];
 
@@ -45,7 +45,10 @@ export default function SellPage() {
                 Sell your lessons. Keep more of what you earn.
               </h1>
               <p className="mx-auto mt-4 max-w-2xl text-lg leading-8 text-ink-soft">
-                Up to 80 percent payout. Built for teachers.
+                Sell teacher-created digital classroom resources with clear rules, visible support, and up to 80 percent payout.
+              </p>
+              <p className="mx-auto mt-3 max-w-3xl text-base leading-7 text-ink-soft">
+                You should only upload materials you created yourself or have clear rights to distribute. Buyers purchase downloadable resources for classroom use.
               </p>
 
               <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row sm:items-center">
@@ -100,7 +103,7 @@ export default function SellPage() {
                 Start simple, then grow into Pro when you want the strongest payout.
               </h2>
               <p className="mt-4 text-base leading-7 text-ink-soft">
-                Manual uploads stay available, AI stays optional, and Stripe handles secure seller payouts in the background.
+                Manual uploads stay available, AI stays optional, and seller payouts follow the platform's payment and support rules in the background.
               </p>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row sm:items-center">
                   <Link
@@ -130,7 +133,7 @@ export default function SellPage() {
                   Payout setup and policy expectations stay visible.
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-white/72">
-                  Sellers can review payout setup, plan splits, publishing requirements, refund expectations, and dispute rules before relying on live buyer checkout.
+                  Sellers can review payout setup, plan splits, publishing requirements, refund expectations, and the rule that they must upload original or properly licensed materials before selling through the marketplace.
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
@@ -142,9 +145,9 @@ export default function SellPage() {
                 </Link>
                 <Link
                   className="rounded-[1rem] bg-white/8 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/12"
-                  href="/terms"
+                  href="/seller-agreement"
                 >
-                  Seller terms
+                  Seller policy
                 </Link>
                 <Link
                   className="rounded-[1rem] bg-white/8 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/12"

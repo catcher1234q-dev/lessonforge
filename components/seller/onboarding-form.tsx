@@ -94,7 +94,7 @@ export function SellerOnboardingForm() {
       ready: profileBasicsComplete,
     },
     {
-      label: "Stripe payouts",
+      label: "Payout setup",
       status: payoutsConnected ? "Connected" : payoutsStarted ? "In progress" : "Next",
       detail: "Payments are connected",
       icon: ShieldCheck,
@@ -201,17 +201,17 @@ export function SellerOnboardingForm() {
           if (nextProfile.stripeChargesEnabled && nextProfile.stripePayoutsEnabled) {
             setReturnState("connected");
             setMessage(
-              `${nextProfile.displayName || "Seller"} connected Stripe payouts. Your seller account is ready for the dashboard and product flow.`,
+              `${nextProfile.displayName || "Seller"} finished payout setup. Your seller account is ready for the dashboard and product flow.`,
             );
           } else {
             setReturnState("refresh");
             setMessage(
-              `${nextProfile.displayName || "Seller"} still needs to finish Stripe onboarding before payouts can go live.`,
+              `${nextProfile.displayName || "Seller"} still needs to finish payout onboarding before payouts can go live.`,
             );
           }
         } else if (planBilling === "success") {
           setMessage(
-            `${planConfig[targetPlan].label} checkout finished in Stripe. Your paid seller plan should appear after the billing sync completes.`,
+            `${planConfig[targetPlan].label} checkout finished. Your paid seller plan should appear after the billing sync completes.`,
           );
         } else if (planBilling === "cancelled") {
           setMessage(
@@ -282,7 +282,7 @@ export function SellerOnboardingForm() {
       setMessage(
         selectedPlanKey === "starter"
           ? "Seller profile saved. You can keep refining it before launch."
-          : "Seller profile saved. Paid plans only become active after Stripe checkout, so your account stays on Starter until billing is completed.",
+          : "Seller profile saved. Paid plans only become active after checkout is completed, so your account stays on Starter until billing is completed.",
       );
       return savedProfile;
     } catch (error) {
@@ -303,7 +303,7 @@ export function SellerOnboardingForm() {
       !profile.storeHandle.trim()
     ) {
       setMessage(
-        "Add your display name, email, store name, and store handle before starting Stripe onboarding.",
+        "Add your display name, email, store name, and store handle before starting payout onboarding.",
       );
       return;
     }
@@ -311,7 +311,7 @@ export function SellerOnboardingForm() {
     try {
       setIsConnecting(true);
       setMessage(null);
-      console.log("Connecting to Stripe");
+      console.log("Connecting payout onboarding");
       trackFunnelEvent("seller_stripe_connect_clicked", {
         selectedPlan: selectedPlanKey,
       });
@@ -342,8 +342,12 @@ export function SellerOnboardingForm() {
           Finish setup and create your first listing.
         </h1>
         <p className="mt-4 max-w-2xl text-base leading-7 text-ink-soft sm:text-lg">
-          Keep this simple: finish setup, then create one product.
+          Keep this simple: finish setup, then create one product. Only upload classroom resources you created yourself or have clear rights to sell.
         </p>
+
+        <div className="mt-6 rounded-[1.25rem] border border-amber-100 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-950">
+          Sellers must upload original work or content they have rights to distribute. Copyrighted, stolen, misleading, or unauthorized resale content is not allowed.
+        </div>
 
         <div className="mt-6 grid gap-3 lg:grid-cols-3">
           {setupSteps.map((step) => {
@@ -552,7 +556,7 @@ export function SellerOnboardingForm() {
               <p className="mt-2 text-ink-soft">
                 {selectedPlan.key === "starter"
                   ? "Starter is active right away after you save."
-                  : `${selectedPlan.label} is a paid plan. Save your seller profile first, then use Stripe checkout to activate it for real.`}
+                  : `${selectedPlan.label} is a paid plan. Save your seller profile first, then use checkout to activate it for real.`}
               </p>
               {selectedPlan.key !== "starter" ? (
                 <Link
@@ -590,7 +594,7 @@ export function SellerOnboardingForm() {
             }}
             type="button"
           >
-            {isConnecting || isSaving ? "Opening Stripe" : "Connect Stripe payouts"}
+            {isConnecting || isSaving ? "Opening payout setup" : "Connect payouts"}
             <ArrowRight className="h-4 w-4" />
           </button>
         </div>
@@ -618,7 +622,7 @@ export function SellerOnboardingForm() {
             ) : (
               <>
                 <p>A recognizable store identity on listings and storefront pages.</p>
-                <p>Stripe payout setup is required before products can sell through live buyer checkout.</p>
+                <p>Payout setup is required before products can sell through the marketplace.</p>
                 <p>Refunds, disputes, chargebacks, or rights issues can delay, adjust, or reverse seller earnings while they are reviewed.</p>
                 <p>A clearer next step into your first listing when setup is complete.</p>
               </>
@@ -635,8 +639,8 @@ export function SellerOnboardingForm() {
             {connectedSeller?.status === "connected"
               ? `Connected seller account: ${connectedSeller.displayName} (${connectedSeller.email})`
               : connectedSeller?.status === "setup_incomplete"
-                ? `Stripe account found for ${connectedSeller.displayName} (${connectedSeller.email}), but onboarding is still incomplete.`
-                : "No connected Stripe seller account detected yet."}
+                ? `A payout account was found for ${connectedSeller.displayName} (${connectedSeller.email}), but onboarding is still incomplete.`
+                : "No connected payout account was detected yet."}
           </p>
           <div className="mt-4 rounded-[1rem] bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft">
             <p className="font-semibold text-ink">Current plan value</p>
@@ -648,7 +652,7 @@ export function SellerOnboardingForm() {
             <div className="flex items-start gap-3">
               <CheckCircle2 className="mt-0.5 h-4 w-4 text-brand" />
               <p>
-                Stripe may ask for identity and bank details. That is normal for payout setup and helps keep money movement secure.
+                The payment provider may ask for identity and bank details. That is normal for payout setup and helps keep money movement secure.
               </p>
             </div>
           </div>

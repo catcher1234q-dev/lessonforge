@@ -35,7 +35,7 @@ const sections = [
   {
     title: "Third-party services",
     body: [
-      "LessonForgeHub may rely on services like Supabase for sign-in, Stripe or another payment provider for payments and payouts, and cloud hosting providers for website delivery.",
+      "LessonForgeHub may rely on services like Supabase for sign-in, a payment provider for payments and payouts, and cloud hosting providers for website delivery.",
       "Those providers have their own policies, and using LessonForge may require sharing only the information needed for those services to perform their part of the product.",
     ],
   },
@@ -52,7 +52,7 @@ export default function PrivacyPage() {
   return (
     <LegalPageShell
       eyebrow="Privacy"
-      intro="This page explains the plain-language privacy expectations for LessonForge while the product moves toward full launch readiness."
+      intro="This page explains the plain-language privacy expectations for LessonForgeHub as a marketplace for teacher-created digital resources."
       sections={[...sections]}
       title="Privacy Policy"
       updatedLabel="Last updated: April 8, 2026"

@@ -8,7 +8,7 @@ const steps = [
     icon: Store,
     title: "Teachers upload original resources",
     body:
-      "Sellers add previews, grade levels, standards, and listing details before a resource stays live in the marketplace.",
+      "Sellers upload original educational materials they created or have the right to sell, then add previews, grade levels, and listing details before a resource stays live.",
   },
   {
     icon: Download,
@@ -35,7 +35,7 @@ export function MarketplaceReadiness() {
     <section className="px-5 py-10 sm:px-6 lg:px-8 lg:py-14">
       <div className="mx-auto max-w-7xl rounded-[2.25rem] border border-ink/5 bg-white p-6 shadow-soft-xl sm:p-8 lg:p-10">
         <SectionIntro
-          body="LessonForgeHub is a digital marketplace for teacher resources. The goal is to make it obvious how sellers upload original materials, how buyers get digital downloads, and how the platform controls risk."
+          body="LessonForgeHub is a marketplace for teacher-created digital classroom resources. The goal is to make it obvious how sellers upload original materials, how buyers get digital downloads, and how the platform controls risk."
           eyebrow="How LessonForgeHub works"
           title="A real teacher marketplace, explained in plain language."
           titleClassName="text-3xl sm:text-4xl"
@@ -71,7 +71,7 @@ export function MarketplaceReadiness() {
             </h3>
             <div className="mt-4 grid gap-3 text-sm leading-7 text-ink-soft">
               <p>
-                Customers purchase digital products through LessonForgeHub and payments are processed securely through a payment provider.
+                Customers purchase digital products through LessonForgeHub, and payments are processed securely through a payment provider.
               </p>
               <p>
                 Sellers receive payouts after eligible transactions clear and according to platform rules, support review, and dispute handling.

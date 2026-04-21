@@ -13,7 +13,7 @@ export function SiteFooter() {
               {siteConfig.productName}
             </p>
             <p className="mt-3 max-w-sm text-sm leading-6 text-ink-soft">
-              A teacher-focused digital marketplace for original classroom resources, secure digital downloads, and seller payouts managed through the platform.
+              A teacher-focused marketplace for original digital classroom resources, secure digital downloads, and seller payouts managed through the platform.
             </p>
             <div className="mt-4 grid gap-2 text-sm leading-6 text-ink-soft">
               <a className="inline-flex items-center gap-2 transition hover:text-ink" href={`mailto:${siteConfig.supportEmail}`}>
@@ -28,7 +28,7 @@ export function SiteFooter() {
             <div className="mt-4 rounded-[1.25rem] border border-brand/10 bg-brand-soft/50 px-4 py-3 text-sm leading-6 text-ink-soft">
               <div className="flex items-start gap-2">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-                <span>Listings are reviewed, buyers can report products, and digital refund rules stay visible so buyers and sellers understand the marketplace rules.</span>
+                <span>Listings are reviewed, buyers can report products, and sellers are expected to upload only original or properly licensed educational materials.</span>
               </div>
             </div>
           </div>
@@ -103,7 +103,7 @@ export function SiteFooter() {
                   Refund policy
                 </Link>
                 <Link className="py-1 transition hover:text-ink" href="/seller-agreement">
-                  Seller agreement
+                  Seller policy
                 </Link>
                 <Link className="py-1 transition hover:text-ink" href="/payout-policy">
                   Payout policy
@@ -153,7 +153,7 @@ export function SiteFooter() {
                 Refunds
               </Link>
               <Link className="transition hover:text-ink" href="/seller-agreement">
-                Seller agreement
+                Seller policy
               </Link>
               <Link className="transition hover:text-ink" href="/payout-policy">
                 Payout policy

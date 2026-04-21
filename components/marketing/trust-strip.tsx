@@ -9,7 +9,7 @@ export function TrustStrip() {
     <section className="px-5 py-8 sm:px-6 lg:px-8 lg:py-10">
       <div className="mx-auto max-w-7xl rounded-[2.2rem] border border-ink/5 bg-white p-6 shadow-soft-xl sm:p-8 lg:p-10">
         <SectionIntro
-          body="Preview first, understand the rules, and know exactly how LessonForgeHub handles listing review, product reports, support, and digital downloads."
+          body="Preview first, understand the rules, and know exactly how LessonForgeHub handles teacher-created digital resources, product reports, support, and digital downloads."
           eyebrow="Before you pay"
           title="Know how the marketplace stays controlled."
           titleClassName="text-3xl sm:text-4xl"
@@ -40,7 +40,7 @@ export function TrustStrip() {
             </div>
             <h3 className="mt-4 text-xl font-semibold text-ink">Clear seller payout rules</h3>
             <p className="mt-2 text-sm leading-6 text-ink-soft">
-              Sellers see their plan split, payout setup path, and platform rules before publishing.
+              Sellers see platform rules, payout setup steps, and the requirement to upload only work they created or have rights to distribute.
             </p>
             <Link
               className={`mt-4 ${secondaryActionLinkClassName("w-fit")}`}
@@ -57,7 +57,7 @@ export function TrustStrip() {
             </div>
             <h3 className="mt-4 text-xl font-semibold text-ink">Reports and policy help stay visible</h3>
             <p className="mt-2 text-sm leading-6 text-ink-soft">
-              Buyers can find support, refund rules, privacy, seller agreement, and reporting paths without hunting through hidden screens.
+              Buyers can find support, refund rules, privacy, seller policy, and reporting paths without hunting through hidden screens.
             </p>
             <Link
               className={`mt-4 ${secondaryActionLinkClassName("w-fit")}`}

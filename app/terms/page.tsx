@@ -46,6 +46,7 @@ const sections = [
     title: "Payments, payouts, and disputes",
     body: [
       "Payments are processed through a third-party payment provider. LessonForgeHub records the order, access, fee, plan, and seller payout information needed to support each sale.",
+      "Customers should be able to find the refund policy, support contact, and seller content rules before or after a purchase.",
       "Seller payouts may be delayed, adjusted, held, reversed, or reduced when a sale is refunded, disputed, charged back, suspected of fraud, or tied to a rights or file-access problem.",
       "LessonForgeHub may use order records, access records, listing details, support messages, and refund history to review payment disputes and protect the marketplace.",
     ],

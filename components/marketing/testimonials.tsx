@@ -13,9 +13,9 @@ const credibilityPoints = [
   {
     icon: CreditCard,
     eyebrow: "Seller payouts",
-    title: "Stripe handles checkout and payout onboarding",
+    title: "Checkout and payout setup run through the platform",
     body:
-      "LessonForge is being built so buyer payments and seller payout setup run through Stripe instead of improvised manual payment steps.",
+      "LessonForge uses a structured marketplace flow so buyer payments and seller payout setup do not rely on improvised manual steps.",
   },
   {
     icon: BadgeCheck,

@@ -4,9 +4,9 @@ import { LegalPageShell } from "@/components/legal/legal-page-shell";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "Seller Agreement",
+  title: "Seller Policy",
   description:
-    "Plain-language seller agreement for LessonForgeHub covering ownership, prohibited content, payouts, and policy enforcement.",
+    "Plain-language seller policy for LessonForgeHub covering ownership, prohibited content, misleading listings, payouts, and policy enforcement.",
   path: "/seller-agreement",
 });
 
@@ -22,7 +22,7 @@ const sections = [
     title: "Prohibited content",
     body: [
       "Sellers may not publish content that is infringing, deceptive, broken, unsafe, hateful, sexually explicit, or otherwise unfit for a K-12 teacher marketplace.",
-      "Listings may also be removed when they are clearly misleading, unusable after download, spammy, or repeatedly reported for legitimate policy issues.",
+      "Copyrighted, stolen, unlicensed, or unauthorized resale content is prohibited. Listings may also be removed when they are clearly misleading, unusable after download, spammy, or repeatedly reported for legitimate policy issues.",
     ],
   },
   {
@@ -52,9 +52,9 @@ export default function SellerAgreementPage() {
   return (
     <LegalPageShell
       eyebrow="Seller rules"
-      intro="This agreement explains the basic expectations for teacher sellers who upload and sell classroom resources through LessonForgeHub."
+      intro="This policy explains the basic expectations for teacher sellers who upload and sell classroom resources through LessonForgeHub."
       sections={[...sections]}
-      title="Seller Agreement"
+      title="Seller Policy"
       updatedLabel="Last updated: April 19, 2026"
     />
   );

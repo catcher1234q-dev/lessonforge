@@ -24,7 +24,7 @@ const supportPaths = [
   },
   {
     title: "Seller setup help",
-    body: "Use seller onboarding to save your store profile, connect payout setup, and understand the first listing steps before publishing.",
+    body: "Use seller onboarding to save your store profile, connect payout setup, and review the rule that you should only upload original content you created or have rights to sell.",
     href: "/sell/onboarding",
     action: "Open seller setup",
   },
@@ -47,7 +47,7 @@ const policyLinks = [
   { label: "Terms of Service", href: "/terms" },
   { label: "Privacy Policy", href: "/privacy" },
   { label: "Refund Policy", href: "/refund-policy" },
-  { label: "Seller Agreement", href: "/seller-agreement" },
+  { label: "Seller Policy", href: "/seller-agreement" },
   { label: "Payout Policy", href: "/payout-policy" },
   { label: "About LessonForgeHub", href: "/about" },
 ] as const;
@@ -80,6 +80,9 @@ export default function SupportPage() {
                   </a>
                   <p className="mt-2">
                     We aim to respond within 24 to 48 business hours.
+                  </p>
+                  <p className="mt-2">
+                    If you need help with a digital download, include the product title, order details, and what went wrong so support can review it faster.
                   </p>
                 </div>
               </div>
@@ -150,7 +153,7 @@ export default function SupportPage() {
                   Review the plain-language marketplace rules.
                 </h2>
                 <p className="mt-2 max-w-3xl text-sm leading-7 text-ink-soft">
-                  These pages explain the current expectations for buying, selling, handling personal information, and reviewing refund requests.
+                  These pages explain the current expectations for buying digital resources, selling original educational materials, handling personal information, and reviewing refund requests.
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap lg:justify-end">

@@ -233,18 +233,18 @@ export function PricingPreview({
           <div className="rounded-[1rem] bg-white px-4 py-3">
             <p className="font-semibold text-ink">Good to know</p>
             <p className="mt-1">
-              Plans and payments run through Stripe. Support and policy pages stay easy to find.
+              Plans and payments run through the platform's payment flow. Support and policy pages stay easy to find.
             </p>
           </div>
         </div>
         {variant === "default" ? (
           <p className="mt-4 text-center text-sm text-ink-muted">
-            Secure payments powered by Stripe. Seller earnings and buyer access stay clear.
+            Secure payments, clear seller earnings, and visible buyer access rules.
           </p>
         ) : null}
         {variant === "sell" ? (
           <p className="mt-4 text-center text-sm text-ink-muted">
-            Secure payments powered by Stripe
+            Secure payments and clear payout rules
           </p>
         ) : null}
       </div>

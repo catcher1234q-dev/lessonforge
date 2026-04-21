@@ -37,6 +37,7 @@ const sections = [
     body: [
       "The fastest first step is to open the buyer library, redownload the file, revisit the listing, and use the support or refund tools attached to the purchase.",
       "A strong request should include the order, product title, what went wrong, and any screenshots or details that help LessonForgeHub review the issue fairly.",
+      "If you need help before filing a refund request, contact support@lessonforgehub.com and expect a response within 24 to 48 business hours.",
     ],
   },
   {
@@ -50,7 +51,7 @@ const sections = [
     title: "What happens after a request",
     body: [
       "Buyers should be able to see when a refund request has been submitted, approved, or denied. Open requests may stay visible in the buyer account area until a final decision is made.",
-      "If a refund is approved, payment reversal timing may depend on Stripe, the card network, and the original payment method. Refunded purchases may lose access to protected downloads.",
+      "If a refund is approved, payment reversal timing may depend on the payment provider, the card network, and the original payment method. Refunded purchases may lose access to protected downloads.",
     ],
   },
   {
