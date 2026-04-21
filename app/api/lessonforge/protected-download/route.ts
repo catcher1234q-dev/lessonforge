@@ -4,11 +4,12 @@ import { NextResponse } from "next/server";
 
 import { getCurrentViewer } from "@/lib/auth/viewer";
 import { getLaunchProductFile } from "@/lib/lessonforge/launch-product-files";
+import { downloadProductOriginalFile, isProductFileStoragePointer } from "@/lib/lessonforge/product-file-storage";
 import {
   findOrderById,
   orderBelongsToBuyer,
 } from "@/lib/lessonforge/marketplace-rules";
-import { listOrders } from "@/lib/lessonforge/data-access";
+import { listOrders, listPersistedProducts } from "@/lib/lessonforge/data-access";
 import { findSupabaseOrderRecordById } from "@/lib/supabase/admin-sync";
 import { verifyProtectedDeliveryToken } from "@/lib/lessonforge/secure-delivery";
 
@@ -78,6 +79,38 @@ export async function GET(request: Request) {
             error instanceof Error
               ? `Launch asset is not available yet: ${error.message}`
               : "Launch asset is not available yet.",
+        },
+        { status: 500 },
+      );
+    }
+  }
+
+  const products = await listPersistedProducts();
+  const product = products.find((entry) => entry.id === order.productId) ?? null;
+
+  if (product?.originalAssetUrl && isProductFileStoragePointer(product.originalAssetUrl)) {
+    try {
+      const downloaded = await downloadProductOriginalFile(product.originalAssetUrl);
+      const bytes = Buffer.from(await downloaded.data.arrayBuffer());
+      const fallbackExtension = downloaded.fileName.split(".").pop()?.toLowerCase() || "pdf";
+      const fallbackName = `${slugify(order.productTitle)}.${fallbackExtension}`;
+
+      return new NextResponse(bytes, {
+        status: 200,
+        headers: {
+          "Content-Type":
+            fallbackExtension === "pdf" ? "application/pdf" : "application/octet-stream",
+          "Content-Disposition": `attachment; filename="${downloaded.fileName || fallbackName}"`,
+          "Cache-Control": "private, no-store",
+        },
+      });
+    } catch (error) {
+      return NextResponse.json(
+        {
+          error:
+            error instanceof Error
+              ? `Stored product file is not available yet: ${error.message}`
+              : "Stored product file is not available yet.",
         },
         { status: 500 },
       );

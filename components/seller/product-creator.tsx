@@ -5,6 +5,7 @@ import { AlertCircle, ArrowRight, CheckCircle2, FileUp, Lock } from "lucide-reac
 import Link from "next/link";
 
 import { trackFunnelEvent } from "@/lib/analytics/events";
+import { GenerateListingFromFile } from "@/components/seller/generate-listing-from-file";
 import { ProductImageGalleryManager } from "@/components/seller/product-image-gallery-manager";
 import { normalizePlanKey, planConfig } from "@/lib/config/plans";
 import { ProductAssetPanel } from "@/components/seller/product-asset-panel";
@@ -472,6 +473,10 @@ export function ProductCreator() {
   const [rightsConfirmed, setRightsConfirmed] = useState(false);
   const [imageGallery, setImageGallery] = useState<ProductGalleryImage[]>([]);
   const [files, setFiles] = useState<File[]>([]);
+  const [originalAssetUrl, setOriginalAssetUrl] = useState<string | undefined>(undefined);
+  const [generatedPageCount, setGeneratedPageCount] = useState<number | undefined>(undefined);
+  const [generatedPreviewLabels, setGeneratedPreviewLabels] = useState<string[]>([]);
+  const [generatedPreviewPages, setGeneratedPreviewPages] = useState<number[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [savedProduct, setSavedProduct] = useState<{
     id: string;
@@ -1287,6 +1292,10 @@ export function ProductCreator() {
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const nextFiles = Array.from(event.target.files ?? []);
     setFiles(nextFiles);
+    setOriginalAssetUrl(undefined);
+    setGeneratedPageCount(undefined);
+    setGeneratedPreviewLabels([]);
+    setGeneratedPreviewPages([]);
     setStandardsResult(null);
     setSuggestedTags([]);
     setAiUpdatedFields({});
@@ -1445,7 +1454,19 @@ export function ProductCreator() {
       rightsConfirmed,
       imageGallery: normalizedGallery,
       fileTypes: files.length ? files.map((file) => file.name.split(".").pop()?.toUpperCase() || "FILE") : ["PDF"],
-      includedItems: ["Teacher-facing guide", "Student resource pages"],
+      includedItems:
+        generatedPageCount && generatedPageCount > 0
+          ? [
+              `Original PDF resource (${generatedPageCount} page${generatedPageCount === 1 ? "" : "s"})`,
+              "Teacher-facing listing summary",
+              "Real preview pages pulled from the uploaded file",
+            ]
+          : ["Teacher-facing guide", "Student resource pages"],
+      pageCount: generatedPageCount,
+      tags: suggestedTags,
+      previewLabels: generatedPreviewLabels,
+      previewPages: generatedPreviewPages,
+      originalAssetUrl,
     };
 
     const response = await fetch("/api/lessonforge/products", {
@@ -1489,6 +1510,10 @@ export function ProductCreator() {
     setNotes("");
     setPrice("12");
     setFiles([]);
+    setOriginalAssetUrl(undefined);
+    setGeneratedPageCount(undefined);
+    setGeneratedPreviewLabels([]);
+    setGeneratedPreviewPages([]);
     setStatus("Draft");
     setCreatedPath("Manual upload");
     setDraftProductId(createDraftProductId());
@@ -1717,6 +1742,41 @@ export function ProductCreator() {
                 </div>
               ) : null}
 
+              <GenerateListingFromFile
+                currentDescription={`${shortDescription} ${fullDescription}`.trim()}
+                currentTitle={title}
+                file={files[0] ?? null}
+                onApplySelection={(generated) => {
+                  setTitle(generated.title);
+                  setShortDescription(generated.shortDescription);
+                  setFullDescription(generated.fullDescription);
+                  setSubject(generated.subject);
+                  setGradeBand(generated.gradeBand);
+                  setSuggestedTags(generated.tags);
+                  setStandardsResult(generated.standardsResult);
+                  setGeneratedPageCount(generated.pageCount);
+                  setGeneratedPreviewLabels(generated.previewLabels);
+                  setGeneratedPreviewPages(generated.previewPages);
+                  setOriginalAssetUrl(generated.originalAssetUrl);
+                  setImageGallery(generated.imageGallery);
+                  setCreatedPath("AI assisted");
+                  markAiUpdated({
+                    title: "filled",
+                    shortDescription: "filled",
+                    fullDescription: "filled",
+                    subject: "filled",
+                    gradeBand: "filled",
+                    tags: generated.tags.length > 0 ? "suggested" : undefined,
+                    standards: generated.standardsResult ? "suggested" : undefined,
+                  });
+                  setShowAiReviewNotice(true);
+                }}
+                productId={draftProductId}
+                sellerEmail={profile?.email || seller?.email}
+                sellerId={profile?.email || seller?.email}
+                sellerPlanKey={profile?.sellerPlanKey || "starter"}
+              />
+
               <label className="block">
                 <span className="text-sm font-semibold text-ink">Title</span>
                 <input
@@ -1785,6 +1845,8 @@ export function ProductCreator() {
                     }}
                     value={gradeBand}
                   >
+                    <option>K-2</option>
+                    <option>3-5</option>
                     <option>K-12</option>
                     <option>K-5</option>
                     <option>6-8</option>
@@ -1968,6 +2030,32 @@ export function ProductCreator() {
                   {renderAiFieldNote("standards")}
                 </section>
               </div>
+
+              <label className="block">
+                <span className="text-sm font-semibold text-ink">Tags</span>
+                <input
+                  className={`mt-2 w-full rounded-[1rem] border px-4 py-3 text-sm text-ink outline-none transition ${getFieldClassName({
+                    isMissing: false,
+                    isAiUpdated: Boolean(aiUpdatedFields.tags),
+                  })}`}
+                  onChange={(event) => {
+                    setSuggestedTags(
+                      event.target.value
+                        .split(",")
+                        .map((tag) => tag.trim())
+                        .filter(Boolean)
+                        .slice(0, 8),
+                    );
+                    clearAiField("tags");
+                  }}
+                  placeholder="fractions practice, printable, small group"
+                  value={suggestedTags.join(", ")}
+                />
+                <span className="mt-2 block text-xs leading-5 text-ink-soft">
+                  Separate tags with commas. These help you review the listing copy before you publish.
+                </span>
+                {renderAiFieldNote("tags")}
+              </label>
             </div>
           </section>
 

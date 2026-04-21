@@ -314,6 +314,15 @@ function toProductRecord(
   );
   const coverImage = imageGallery[0] ?? null;
   const previewGalleryImages = imageGallery.slice(1);
+  const includedItems = product.whatIsIncluded
+    ? product.whatIsIncluded.split("\n").filter(Boolean)
+    : [];
+  const pageCountMatch = includedItems
+    .map((item) => item.match(/\((\d+)\s+page/i))
+    .find(Boolean);
+  const inferredPageCount =
+    Number(pageCountMatch?.[1] ?? 0) ||
+    Math.max(previewGalleryImages.length + 1, previewAssets.length + 1, 0);
 
   return {
     id: product.id,
@@ -344,9 +353,20 @@ function toProductRecord(
             .filter((value): value is string => Boolean(value)),
     originalAssetUrl: originalAsset?.originalUrl ?? undefined,
     assetVersionNumber: originalAsset?.versionNumber ?? previewAssets[0]?.versionNumber ?? 1,
-    includedItems: product.whatIsIncluded
-      ? product.whatIsIncluded.split("\n").filter(Boolean)
-      : [],
+    includedItems,
+    pageCount: inferredPageCount || undefined,
+    previewLabels:
+      previewGalleryImages.length > 0
+        ? previewGalleryImages.map((_, index) => `Preview page ${index + 1}`)
+        : previewAssets.length > 0
+          ? previewAssets.map((_, index) => `Preview page ${index + 1}`)
+          : undefined,
+    previewPages:
+      previewGalleryImages.length > 0
+        ? previewGalleryImages.map((_, index) => index + 1)
+        : previewAssets.length > 0
+          ? previewAssets.map((_, index) => index + 1)
+          : undefined,
     freshnessScore: product.freshnessScore,
     sellerName: product.seller.name ?? product.sellerProfile?.storeName ?? "Seller",
     sellerHandle: product.sellerProfile?.storeHandle

@@ -65,7 +65,12 @@ export async function uploadProductGalleryImage(input: {
 
   const extension = getFileExtension(input.file.name, input.file.type);
   const safeName = sanitizeFileSegment(input.file.name.replace(/\.[^.]+$/, ""));
-  const storagePath = `products/${sanitizeFileSegment(input.productId)}/gallery/${sanitizeFileSegment(input.imageId)}-${safeName}.${extension}`;
+  const storagePath = buildProductGalleryStoragePath({
+    productId: input.productId,
+    imageId: input.imageId,
+    fileName: input.file.name,
+    mimeType: input.file.type,
+  });
 
   const supabase = getSupabaseServerAdminClient();
   const { error } = await supabase.storage
@@ -82,6 +87,52 @@ export async function uploadProductGalleryImage(input: {
 
   return {
     storagePath,
+    fileName: input.file.name,
+    mimeType: input.file.type,
+    fileSizeBytes: input.file.size,
+  };
+}
+
+export function buildProductGalleryStoragePath(input: {
+  productId: string;
+  imageId: string;
+  fileName: string;
+  mimeType: string;
+}) {
+  const extension = getFileExtension(input.fileName, input.mimeType);
+  const safeName = sanitizeFileSegment(input.fileName.replace(/\.[^.]+$/, ""));
+  return `products/${sanitizeFileSegment(input.productId)}/gallery/${sanitizeFileSegment(input.imageId)}-${safeName}.${extension}`;
+}
+
+export async function uploadProductGalleryImageAtStoragePath(input: {
+  storagePath: string;
+  file: File;
+}) {
+  if (!isAllowedProductGalleryImageType(input.file.type)) {
+    throw new Error("Upload JPG, PNG, or WebP images only.");
+  }
+
+  if (input.file.size > PRODUCT_GALLERY_MAX_FILE_BYTES) {
+    throw new Error("Each gallery image must be under 8 MB.");
+  }
+
+  await ensureProductGalleryBucket();
+
+  const supabase = getSupabaseServerAdminClient();
+  const { error } = await supabase.storage
+    .from(PRODUCT_GALLERY_BUCKET)
+    .upload(input.storagePath, input.file, {
+      contentType: input.file.type,
+      cacheControl: "3600",
+      upsert: true,
+    });
+
+  if (error) {
+    throw new Error(`Unable to upload product gallery image: ${error.message}`);
+  }
+
+  return {
+    storagePath: input.storagePath,
     fileName: input.file.name,
     mimeType: input.file.type,
     fileSizeBytes: input.file.size,
