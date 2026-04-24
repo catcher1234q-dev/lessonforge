@@ -53,7 +53,7 @@ export default async function CheckoutSuccessPage({
           <AppAccessGate area="buyer">
             <div className="rounded-[36px] border border-emerald-100 bg-white p-6 shadow-[0_24px_80px_rgba(16,185,129,0.10)] sm:p-8">
               <SectionIntro
-                body="Stripe confirmed the checkout. Your next step is opening the library, where protected delivery, listing follow-up, and support actions stay together."
+                body="Your payment was confirmed. Your next step is opening the library, where protected delivery, listing follow-up, and support actions stay together."
                 eyebrow="Checkout success"
                 level="h1"
                 title={`${productTitle} is ready in your library.`}
@@ -64,12 +64,15 @@ export default async function CheckoutSuccessPage({
                 <p className="mt-1">
                   Open your library to download files, revisit the listing, request help if needed, or keep browsing for more classroom resources.
                 </p>
+                <p className="mt-2">
+                  LessonForgeHub sells digital educational downloads only. No physical products are sold or shipped.
+                </p>
               </div>
               <div className="mt-5 grid gap-3 md:grid-cols-3">
                 {[
                   {
                     title: "Payment confirmed",
-                    body: "Stripe completed the checkout, so the purchase can now be matched to your account.",
+                    body: "The checkout completed successfully, so the purchase can now be matched to your account.",
                   },
                   {
                     title: "Files live in library",

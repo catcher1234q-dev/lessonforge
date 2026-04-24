@@ -15,6 +15,9 @@ export function SiteFooter() {
             <p className="mt-3 max-w-sm text-sm leading-6 text-ink-soft">
               A teacher-focused marketplace for original digital classroom resources, secure digital downloads, and seller payouts managed through the platform.
             </p>
+            <p className="mt-3 max-w-sm text-sm leading-6 text-ink-soft">
+              LessonForgeHub is operated by LessonForge LLC, a registered U.S. business.
+            </p>
             <div className="mt-4 grid gap-2 text-sm leading-6 text-ink-soft">
               <a className="inline-flex items-center gap-2 transition hover:text-ink" href={`mailto:${siteConfig.supportEmail}`}>
                 <Mail className="h-4 w-4 text-brand" />
@@ -108,6 +111,9 @@ export function SiteFooter() {
                 <Link className="py-1 transition hover:text-ink" href="/payout-policy">
                   Payout policy
                 </Link>
+                <Link className="py-1 transition hover:text-ink" href="/copyright-policy">
+                  Copyright policy
+                </Link>
                 <Link className="py-1 transition hover:text-ink" href="/about">
                   About
                 </Link>
@@ -157,6 +163,9 @@ export function SiteFooter() {
               </Link>
               <Link className="transition hover:text-ink" href="/payout-policy">
                 Payout policy
+              </Link>
+              <Link className="transition hover:text-ink" href="/copyright-policy">
+                Copyright policy
               </Link>
               <Link className="transition hover:text-ink" href="/about">
                 About

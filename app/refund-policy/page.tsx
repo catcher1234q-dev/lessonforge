@@ -14,6 +14,8 @@ const sections = [
   {
     title: "Digital purchases are usually final",
     body: [
+      "LessonForgeHub is operated by LessonForge LLC, a registered U.S. business.",
+      "LessonForgeHub sells digital educational downloads only. No physical products are sold or shipped.",
       "LessonForgeHub sells downloadable classroom resources. Once a buyer receives access to a digital resource, the sale is generally final unless there is a real delivery, access, listing, or rights problem.",
       "This protects buyers from broken or misleading purchases while also protecting sellers from refund requests after a usable file has already been delivered.",
     ],

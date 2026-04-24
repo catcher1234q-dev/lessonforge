@@ -14,7 +14,9 @@ const sections = [
   {
     title: "What LessonForgeHub is",
     body: [
+      "LessonForgeHub is operated by LessonForge LLC, a registered U.S. business.",
       "LessonForgeHub is a digital marketplace for teacher-created classroom resources. Educators can upload original materials, and buyers can purchase digital downloads they can use in class right away.",
+      "LessonForgeHub sells digital educational downloads only. No physical products are sold or shipped.",
       "The goal is to give teacher creators a clearer place to sell their work and give buyers a faster way to find polished printable resources, warm-ups, units, task cards, and practice packs.",
     ],
   },
@@ -28,6 +30,7 @@ const sections = [
   {
     title: "How the marketplace works",
     body: [
+      "LessonForgeHub is a digital marketplace where independent educators upload and sell original or properly licensed classroom resources. LessonForgeHub facilitates marketplace access, digital delivery, seller policy enforcement, refund review, and platform commission collection.",
       "Sellers upload original teaching resources they created or have the right to distribute, add previews and listing details, and publish them through the marketplace.",
       "Buyers browse listings, review previews, purchase digital downloads through the platform, and return to their library to access purchased files.",
     ],

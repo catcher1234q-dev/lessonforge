@@ -14,6 +14,7 @@ const sections = [
   {
     title: "Marketplace relationship",
     body: [
+      "LessonForgeHub is operated by LessonForge LLC, a registered U.S. business.",
       "LessonForgeHub is a marketplace platform for teacher-created digital classroom resources. Sellers are independent and are responsible for the materials, descriptions, and rights tied to their own listings.",
       "LessonForgeHub is not the author of seller content. The platform processes marketplace transactions, keeps a commission on each completed sale, and uses third-party payment providers to route buyer payments and seller payouts.",
     ],

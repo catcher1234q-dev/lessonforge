@@ -23,6 +23,10 @@ export function LandingHero() {
             Browse worksheets, lesson plans, activities, assessments, and printable resources. Sellers are expected to upload only materials they created or have the right to sell.
           </p>
 
+          <p className="mt-3 max-w-xl text-base leading-7 text-ink-soft">
+            LessonForgeHub sells digital educational downloads only. No physical products are sold or shipped.
+          </p>
+
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Link
               className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-brand px-6 py-3.5 text-base font-semibold text-white transition hover:bg-brand-700 sm:w-auto"

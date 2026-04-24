@@ -309,7 +309,7 @@ export default async function ProductDetailPage({
                     </p>
                     <div className="mt-3 grid gap-3 text-sm leading-6 text-ink-soft">
                       {pageCount ? <p>{pageCount}-page PDF file included with this listing.</p> : null}
-                      <p>This is a digital download.</p>
+                      <p>LessonForgeHub sells digital educational downloads only. No physical products are sold or shipped.</p>
                       <p>Access is delivered after purchase.</p>
                       <p>
                         Refunds are reviewed under the{" "}

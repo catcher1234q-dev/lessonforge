@@ -14,6 +14,7 @@ const sections = [
   {
     title: "Using LessonForge",
     body: [
+      "LessonForgeHub is operated by LessonForge LLC, a registered U.S. business.",
       "LessonForgeHub is a digital marketplace for teacher-created classroom resources. Buyers use the platform to purchase digital downloads, and sellers use the platform to upload and sell original teaching materials.",
       "By using the site, you agree to use it for lawful classroom, publishing, and purchasing activity. You should not upload content you do not own, attempt to bypass access controls, misuse private admin or owner areas, or interfere with the website.",
     ],

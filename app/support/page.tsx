@@ -49,6 +49,7 @@ const policyLinks = [
   { label: "Refund Policy", href: "/refund-policy" },
   { label: "Seller Policy", href: "/seller-agreement" },
   { label: "Payout Policy", href: "/payout-policy" },
+  { label: "Copyright Policy", href: "/copyright-policy" },
   { label: "About LessonForgeHub", href: "/about" },
 ] as const;
 
@@ -63,7 +64,7 @@ export default function SupportPage() {
             <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
               <div>
                 <SectionIntro
-                  body="Use this page when you need help with a purchase, seller setup, payout onboarding, or marketplace policy question."
+                  body="Use this page when you need help with a purchase, seller setup, payout onboarding, or marketplace policy question. LessonForgeHub is operated by LessonForge LLC, a registered U.S. business."
                   eyebrow="Support"
                   level="h1"
                   title="Help for purchases, sellers, and policy questions."
