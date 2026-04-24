@@ -24,9 +24,11 @@ const sections = [
   {
     title: "Seller responsibilities",
     body: [
+      "Users must be at least 18 years old to open a seller account and sell on LessonForgeHub.",
       "Sellers are responsible for making sure they own or have rights to sell what they publish. Listings should be accurate, classroom-appropriate, and include the preview and thumbnail requirements needed for publication.",
       "LessonForgeHub may review, flag, remove, or hold listings that appear misleading, broken, unsafe, copied without rights, or otherwise unfit for the marketplace.",
       "Sellers are responsible for the quality, accuracy, file access, license terms, copyright compliance, and rights-to-sell confirmation for their resources.",
+      "Sellers are also responsible for taxes, reporting, and other legal obligations tied to their marketplace earnings.",
     ],
   },
   {

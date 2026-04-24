@@ -30,7 +30,7 @@ const sections = [
   {
     title: "Prohibited content",
     body: [
-      "Sellers may not publish content that is infringing, deceptive, broken, unsafe, hateful, sexually explicit, or otherwise unfit for a K-12 teacher marketplace.",
+      "Sellers may not publish content that is infringing, illegal, harmful, deceptive, misleading, broken, unsafe, hateful, adult, sexually explicit, or otherwise unfit for a K-12 teacher marketplace.",
       "Copyrighted, stolen, unlicensed, or unauthorized resale content is prohibited. Listings may also be removed when they are clearly misleading, unusable after download, spammy, or repeatedly reported for legitimate policy issues.",
     ],
   },

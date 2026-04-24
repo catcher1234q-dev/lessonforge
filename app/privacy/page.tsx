@@ -16,6 +16,7 @@ const sections = [
     body: [
       "LessonForgeHub collects the information needed to run a teacher marketplace, including account details, seller profile information, listing content, order history, support requests, and moderation records connected to listings and purchases.",
       "When payments are active, the payment provider handles sensitive payment details. LessonForgeHub stores the order, seller, payout, and access records needed to support the sale.",
+      "LessonForgeHub does not store full payment card numbers, card security codes, or other full card details on its own servers.",
     ],
   },
   {

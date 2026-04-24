@@ -23,7 +23,7 @@ const sections = [
   {
     title: "When a refund may be approved",
     body: [
-      "A refund may be approved when the purchased file is broken, corrupted, or cannot be opened; the buyer cannot access the product after purchase; the listing is materially misleading; the delivered resource is materially different from what was described; there is a duplicate charge; or a copyright, ownership, or rights concern requires review.",
+      "A refund may be approved when the purchased file is missing, broken, corrupted, or cannot be opened; the buyer cannot access the product after purchase; the listing is materially misleading; the delivered resource is materially different from what was described; there is a duplicate charge; or a copyright, ownership, or rights concern requires review.",
       "LessonForgeHub may also review other clear delivery failures caused by the site, payment record, or listing.",
     ],
   },
