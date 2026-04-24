@@ -23,6 +23,7 @@ const sections = [
     title: "Ownership and originality",
     body: [
       "Sellers must only upload resources they created themselves or have clear rights to sell. Uploading copied, unlicensed, or infringing material is not allowed.",
+      "Sellers may not upload content copied from other marketplaces, including Teachers Pay Teachers or similar platforms.",
       "By listing a product, the seller confirms that the material is original or properly licensed and that LessonForgeHub may review the listing for rights, quality, and policy compliance.",
     ],
   },

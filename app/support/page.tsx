@@ -80,7 +80,14 @@ export default function SupportPage() {
                     {siteConfig.supportEmail}
                   </a>
                   <p className="mt-2">
-                    We aim to respond within 24 to 48 business hours.
+                    Support inquiries are typically answered within 24 to 48 hours.
+                  </p>
+                  <p className="mt-2">
+                    LessonForge LLC
+                    <br />
+                    2730 Dale St. North
+                    <br />
+                    Roseville, MN 55113
                   </p>
                   <p className="mt-2">
                     If you need help with a digital download, include the product title, order details, and what went wrong so support can review it faster.

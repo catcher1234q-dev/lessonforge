@@ -45,6 +45,7 @@ const sections = [
   {
     title: "How requests are reviewed",
     body: [
+      "Refund requests are reviewed by LessonForgeHub and may require seller input before a decision is made.",
       "Refund requests may be reviewed by LessonForge admins and, when needed, escalated to the owner side for final marketplace decisions.",
       "LessonForgeHub has final review authority on refund decisions made inside the marketplace.",
       "Review may consider the listing details, the buyer report, seller response, file-access history, and whether the issue appears to be a broken file, access issue, copyright problem, or a misleading listing.",

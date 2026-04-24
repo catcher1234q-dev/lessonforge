@@ -28,6 +28,13 @@ export function SiteFooter() {
                 Support and policy help
               </Link>
             </div>
+            <p className="mt-4 text-sm leading-6 text-ink-soft">
+              LessonForge LLC
+              <br />
+              2730 Dale St. North
+              <br />
+              Roseville, MN 55113
+            </p>
             <div className="mt-4 rounded-[1.25rem] border border-brand/10 bg-brand-soft/50 px-4 py-3 text-sm leading-6 text-ink-soft">
               <div className="flex items-start gap-2">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-brand" />

@@ -15,7 +15,9 @@ const sections = [
     title: "Using LessonForge",
     body: [
       "LessonForgeHub is operated by LessonForge LLC, a registered U.S. business.",
+      "LessonForge LLC is located at 2730 Dale St. North, Roseville, MN 55113.",
       "LessonForgeHub is a digital marketplace for teacher-created classroom resources. Buyers use the platform to purchase digital downloads, and sellers use the platform to upload and sell original teaching materials.",
+      "LessonForgeHub is not the seller of record for individual products. Products are sold by independent sellers on the marketplace.",
       "By using the site, you agree to use it for lawful classroom, publishing, and purchasing activity. You should not upload content you do not own, attempt to bypass access controls, misuse private admin or owner areas, or interfere with the website.",
     ],
   },
@@ -47,6 +49,7 @@ const sections = [
     title: "Payments, payouts, and disputes",
     body: [
       "Payments are processed through a third-party payment provider. LessonForgeHub records the order, access, fee, plan, and seller payout information needed to support each sale.",
+      "LessonForgeHub facilitates payment processing between buyers and sellers. Funds are collected and distributed through third-party payment providers in accordance with platform policies.",
       "Customers should be able to find the refund policy, support contact, and seller content rules before or after a purchase.",
       "Seller payouts may be delayed, adjusted, held, reversed, or reduced when a sale is refunded, disputed, charged back, suspected of fraud, or tied to a rights or file-access problem.",
       "LessonForgeHub may use order records, access records, listing details, support messages, and refund history to review payment disputes and protect the marketplace.",

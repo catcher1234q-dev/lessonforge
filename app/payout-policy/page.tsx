@@ -16,6 +16,7 @@ const sections = [
     body: [
       "LessonForgeHub is operated by LessonForge LLC, a registered U.S. business.",
       "Transactions are processed by third-party payment providers. Sellers must complete the required connected payout account onboarding before payouts can be sent.",
+      "LessonForgeHub facilitates payment processing between buyers and sellers. Funds are collected and distributed through third-party payment providers in accordance with platform policies.",
       "Seller earnings are based on the sale price minus the LessonForgeHub commission and any provider fees or payment adjustments that apply to that transaction.",
       "Standard seller payouts are released after the payment provider confirms the transaction and any required marketplace review is complete. Payouts may be delayed for refunds, disputes, fraud review, rights concerns, incomplete seller onboarding, payment provider review, or policy violations.",
     ],
