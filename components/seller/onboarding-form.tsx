@@ -349,6 +349,25 @@ export function SellerOnboardingForm() {
           Sellers must upload original work or content they have rights to distribute. Copyrighted, stolen, misleading, or unauthorized resale content is not allowed.
         </div>
 
+        <div className="mt-4 rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-ink-soft">
+          <p className="font-semibold text-ink">Seller policy acknowledgment</p>
+          <p className="mt-2">
+            By selling on LessonForgeHub, you agree to the{" "}
+            <Link className="font-semibold text-brand transition hover:text-brand-700" href="/seller-agreement">
+              Seller Agreement
+            </Link>
+            ,{" "}
+            <Link className="font-semibold text-brand transition hover:text-brand-700" href="/payout-policy">
+              Payout Policy
+            </Link>
+            , and{" "}
+            <Link className="font-semibold text-brand transition hover:text-brand-700" href="/refund-policy">
+              Refund Policy
+            </Link>
+            .
+          </p>
+        </div>
+
         <div className="mt-6 grid gap-3 lg:grid-cols-3">
           {setupSteps.map((step) => {
             const Icon = step.icon;
@@ -655,6 +674,24 @@ export function SellerOnboardingForm() {
                 The payment provider may ask for identity and bank details. That is normal for payout setup and helps keep money movement secure.
               </p>
             </div>
+          </div>
+          <div className="mt-4 rounded-[1rem] bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft">
+            <p className="font-semibold text-ink">Policy links</p>
+            <p className="mt-1">
+              Review the{" "}
+              <Link className="font-semibold text-brand transition hover:text-brand-700" href="/seller-agreement">
+                Seller Agreement
+              </Link>
+              ,{" "}
+              <Link className="font-semibold text-brand transition hover:text-brand-700" href="/payout-policy">
+                Payout Policy
+              </Link>
+              , and{" "}
+              <Link className="font-semibold text-brand transition hover:text-brand-700" href="/refund-policy">
+                Refund Policy
+              </Link>
+              {" "}before publishing your first listing.
+            </p>
           </div>
         </section>
       </aside>

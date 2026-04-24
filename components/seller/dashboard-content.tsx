@@ -1148,6 +1148,24 @@ export function SellerDashboardContent() {
             </p>
           </div>
         </div>
+        <div className="mt-5 rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-4 text-sm leading-6 text-ink-soft">
+          <p className="font-semibold text-ink">Seller policy acknowledgment</p>
+          <p className="mt-2">
+            By selling on LessonForgeHub, you agree to the{" "}
+            <Link className="font-semibold text-brand transition hover:text-brand-700" href="/seller-agreement">
+              Seller Agreement
+            </Link>
+            ,{" "}
+            <Link className="font-semibold text-brand transition hover:text-brand-700" href="/payout-policy">
+              Payout Policy
+            </Link>
+            , and{" "}
+            <Link className="font-semibold text-brand transition hover:text-brand-700" href="/refund-policy">
+              Refund Policy
+            </Link>
+            . Review them anytime before publishing or updating listings.
+          </p>
+        </div>
         {(lowAiCredits || !premiumAccess?.revenueInsights.unlocked) ? (
           <div className="mt-5 rounded-[1.5rem] border border-brand/10 bg-brand-soft/35 px-5 py-4 text-sm leading-6 text-ink">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">

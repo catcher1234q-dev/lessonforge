@@ -309,8 +309,16 @@ export default async function ProductDetailPage({
                     </p>
                     <div className="mt-3 grid gap-3 text-sm leading-6 text-ink-soft">
                       {pageCount ? <p>{pageCount}-page PDF file included with this listing.</p> : null}
-                      <p>Digital products are delivered through the platform after checkout.</p>
-                      <p>Refunds are usually limited after access, except for broken files, unusable files, undelivered purchases, or clear listing problems.</p>
+                      <p>This is a digital download.</p>
+                      <p>Access is delivered after purchase.</p>
+                      <p>
+                        Refunds are reviewed under the{" "}
+                        <Link className="font-semibold text-brand transition hover:text-brand-700" href="/refund-policy">
+                          Refund Policy
+                        </Link>
+                        .
+                      </p>
+                      <p>Products are sold by independent sellers on LessonForgeHub.</p>
                     </div>
                   </div>
 
@@ -349,6 +357,14 @@ export default async function ProductDetailPage({
                       Support
                     </Link>
                   </div>
+
+                  <p className="text-center text-xs leading-5 text-ink-soft">
+                    Questions before buying? Contact{" "}
+                    <a className="font-semibold text-brand transition hover:text-brand-700" href="mailto:support@lessonforgehub.com">
+                      support@lessonforgehub.com
+                    </a>
+                    .
+                  </p>
                 </div>
               </section>
 

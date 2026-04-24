@@ -12,6 +12,13 @@ export const metadata: Metadata = buildPageMetadata({
 
 const sections = [
   {
+    title: "Marketplace relationship",
+    body: [
+      "LessonForgeHub is a marketplace platform for teacher-created digital classroom resources. Sellers are independent and are responsible for the materials, descriptions, and rights tied to their own listings.",
+      "LessonForgeHub is not the author of seller content. The platform processes marketplace transactions, keeps a commission on each completed sale, and uses third-party payment providers to route buyer payments and seller payouts.",
+    ],
+  },
+  {
     title: "Ownership and originality",
     body: [
       "Sellers must only upload resources they created themselves or have clear rights to sell. Uploading copied, unlicensed, or infringing material is not allowed.",
@@ -29,14 +36,14 @@ const sections = [
     title: "Listing and compliance rules",
     body: [
       "Sellers are responsible for accurate titles, descriptions, grade levels, standards tags, preview quality, and rights-to-sell confirmation.",
-      "LessonForgeHub may hold, unpublish, flag, or remove listings when policy enforcement, moderation review, refund protection, or payment integrity requires it.",
+      "Misleading listings, copied marketplace content, inaccurate previews, and file-delivery problems are not allowed. LessonForgeHub may hold, unpublish, flag, remove listings, suspend sellers, or hold payouts when policy enforcement, moderation review, refund protection, or payment integrity requires it.",
     ],
   },
   {
     title: "Payout terms",
     body: [
-      "Seller earnings depend on the seller plan and the marketplace split in effect at the time of sale. Payout timing may also depend on payment processing, refund windows, disputes, fraud review, and compliance review.",
-      "Refunds, chargebacks, or policy violations may reduce or reverse seller earnings tied to a transaction.",
+      "Seller earnings depend on the seller plan and the marketplace commission in effect at the time of sale. Depending on the payout provider setup, provider fees or payout processing adjustments may also affect what is available for payout.",
+      "Transactions and payouts are processed through third-party providers. Refunds, chargebacks, or policy violations may reduce, delay, hold, or reverse seller earnings tied to a transaction.",
     ],
   },
   {

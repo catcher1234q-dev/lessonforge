@@ -28,7 +28,7 @@ const sections = [
   {
     title: "When a refund may be denied",
     body: [
-      "A refund may be denied when the buyer changed their mind, bought the wrong item, did not read the listing, preview, or description, the product matches the listing, access works, or the issue falls outside what the listing promised.",
+      "A refund may be denied when the buyer changed their mind, made a purchase by mistake, bought the wrong item, did not read the listing, preview, or description, the product matches the listing, access works, or the issue is mainly a preference issue.",
       "Refunds may also be denied when a buyer has used, copied, shared, redistributed, or attempted to keep paid content outside the license terms.",
     ],
   },
@@ -44,6 +44,7 @@ const sections = [
     title: "How requests are reviewed",
     body: [
       "Refund requests may be reviewed by LessonForge admins and, when needed, escalated to the owner side for final marketplace decisions.",
+      "LessonForgeHub has final review authority on refund decisions made inside the marketplace.",
       "Review may consider the listing details, the buyer report, seller response, file-access history, and whether the issue appears to be a broken file, access issue, copyright problem, or a misleading listing.",
     ],
   },
@@ -57,6 +58,7 @@ const sections = [
   {
     title: "Chargebacks and payment disputes",
     body: [
+      "Buyers should contact support@lessonforgehub.com before filing a chargeback whenever a purchase issue can be reviewed inside LessonForgeHub.",
       "If a buyer opens a payment dispute or chargeback with their card provider, LessonForgeHub may use order records, download records, listing details, support messages, and refund history to respond.",
       "Repeated chargebacks or disputes without contacting support first may lead to account review or restrictions.",
       "Threatening reviews, pressure, or other abuse to force a refund is not allowed. Accounts may be limited when disputes, fraud signals, or repeated refund abuse put buyers, sellers, or the marketplace at risk.",
