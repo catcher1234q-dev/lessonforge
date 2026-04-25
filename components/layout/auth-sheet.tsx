@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import type { Provider } from "@supabase/supabase-js";
-import { Apple, Chrome, LoaderCircle, LogOut, Mail, X } from "lucide-react";
+import type { Provider, Session } from "@supabase/supabase-js";
+import { Apple, Chrome, KeyRound, LoaderCircle, LogOut, Mail, X } from "lucide-react";
 
 import {
   getSupabaseBrowserClient,
@@ -20,6 +20,8 @@ type AuthSheetProps = {
   triggerVariant?: "ghost" | "primary";
 };
 
+type EmailMode = "password" | "magic-link";
+
 export function AuthSheet({
   triggerLabel = "Log in",
   triggerVariant = "ghost",
@@ -29,18 +31,32 @@ export function AuthSheet({
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isCreateAccountEntry = triggerLabel.toLowerCase().includes("create");
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [emailMode, setEmailMode] = useState<EmailMode>("password");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  function getAuthCallbackUrl() {
+  function getNextPath() {
     const queryString = searchParams.toString();
-    const nextPath = pathname
-      ? `${pathname}${queryString ? `?${queryString}` : ""}`
-      : "/";
-    return buildAuthCallbackUrl(nextPath);
+    return pathname ? `${pathname}${queryString ? `?${queryString}` : ""}` : "/";
+  }
+
+  function getAuthCallbackUrl() {
+    return buildAuthCallbackUrl(getNextPath());
+  }
+
+  async function completeSignedInSession(session: Session | null) {
+    await syncViewerCookie({ session, preserveCurrentRole: true });
+    await fetch("/api/auth/profile-sync", {
+      method: "POST",
+    }).catch(() => null);
+    setIsOpen(false);
+    router.replace(getNextPath());
+    router.refresh();
   }
 
   const triggerClassName =
@@ -65,7 +81,7 @@ export function AuthSheet({
       setMessage(null);
 
       const supabase = getSupabaseBrowserClient();
-      rememberAuthNextPath(pathname ? `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}` : "/");
+      rememberAuthNextPath(getNextPath());
       const redirectTo = getAuthCallbackUrl();
       const { error: signInError } = await supabase.auth.signInWithOAuth({
         provider,
@@ -108,7 +124,7 @@ export function AuthSheet({
       setMessage(null);
 
       const supabase = getSupabaseBrowserClient();
-      rememberAuthNextPath(pathname ? `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}` : "/");
+      rememberAuthNextPath(getNextPath());
       const { error: signInError } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: {
@@ -130,6 +146,87 @@ export function AuthSheet({
         caughtError instanceof Error
           ? caughtError.message
           : "Unable to send the sign-in email.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handlePasswordAuth() {
+    trackFunnelEvent(
+      isCreateAccountEntry ? "signup_password_started" : "login_password_started",
+      {
+        surface: triggerLabel,
+      },
+    );
+
+    if (!hasSupabaseEnv()) {
+      setError(authSetupMessage);
+      return;
+    }
+
+    if (!email.trim()) {
+      setError("Enter an email address to sign in.");
+      return;
+    }
+
+    if (password.trim().length < 8) {
+      setError("Enter a password with at least 8 characters.");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      setMessage(null);
+
+      const supabase = getSupabaseBrowserClient();
+      rememberAuthNextPath(getNextPath());
+
+      if (isCreateAccountEntry) {
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            emailRedirectTo: getAuthCallbackUrl(),
+          },
+        });
+
+        if (signUpError) {
+          throw signUpError;
+        }
+
+        if (data.session) {
+          await completeSignedInSession(data.session);
+          setMessage("Account created. You are signed in and ready to continue.");
+          setPassword("");
+          return;
+        }
+
+        setMessage(
+          "Account created. If your workspace requires email confirmation, check your inbox before signing in.",
+        );
+        setPassword("");
+        return;
+      }
+
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (signInError) {
+        throw signInError;
+      }
+
+      await completeSignedInSession(data.session);
+      setMessage("You are signed in and ready to continue.");
+      setPassword("");
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to sign in with email and password.",
       );
     } finally {
       setIsLoading(false);
@@ -201,7 +298,7 @@ export function AuthSheet({
                   Sign in to LessonForge
                 </h2>
                 <p className="mt-3 text-sm leading-6 text-ink-soft">
-                  Use Google, Apple, or a passwordless email link to open your buyer and seller account spaces.
+                  Use Google, Apple, email and password, or a magic link to open your buyer and seller account spaces.
                 </p>
               </div>
 
@@ -256,8 +353,32 @@ export function AuthSheet({
                   Continue with Email
                 </label>
                 <p className="mt-1 text-xs text-ink-muted">
-                  Use a passwordless magic link.
+                  Use email and password for the most reliable sign-in, or request a magic link.
                 </p>
+                <div className="mt-3 inline-flex rounded-full border border-ink/10 bg-surface-subtle p-1">
+                  <button
+                    className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
+                      emailMode === "password"
+                        ? "bg-white text-ink shadow-sm"
+                        : "text-ink-soft hover:text-ink"
+                    }`}
+                    onClick={() => setEmailMode("password")}
+                    type="button"
+                  >
+                    Email + Password
+                  </button>
+                  <button
+                    className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
+                      emailMode === "magic-link"
+                        ? "bg-white text-ink shadow-sm"
+                        : "text-ink-soft hover:text-ink"
+                    }`}
+                    onClick={() => setEmailMode("magic-link")}
+                    type="button"
+                  >
+                    Magic Link
+                  </button>
+                </div>
                 <div className="mt-3 flex flex-col gap-3 sm:flex-row">
                   <div className="relative flex-1">
                     <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
@@ -269,14 +390,43 @@ export function AuthSheet({
                       value={email}
                     />
                   </div>
+                </div>
+                {emailMode === "password" ? (
+                  <>
+                    <div className="relative mt-3">
+                      <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
+                      <input
+                        className="w-full rounded-full border border-ink/10 bg-surface-subtle py-3 pl-10 pr-4 text-sm text-ink outline-none transition focus:border-brand"
+                        onChange={(event) => setPassword(event.target.value)}
+                        placeholder={isCreateAccountEntry ? "Create a password" : "Enter your password"}
+                        type="password"
+                        value={password}
+                      />
+                    </div>
+                    <button
+                      className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
+                      disabled={isLoading}
+                      onClick={() => void handlePasswordAuth()}
+                      type="button"
+                    >
+                      {isCreateAccountEntry ? "Create Account" : "Sign In"}
+                    </button>
+                    <p className="mt-2 text-xs leading-5 text-ink-muted">
+                      {isCreateAccountEntry
+                        ? "Create a buyer account with an email and password so you can sign in again before checkout."
+                        : "Sign in directly with your email and password before starting checkout."}
+                    </p>
+                  </>
+                ) : (
                   <button
-                    className="inline-flex items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
+                    className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
                     disabled={isLoading}
                     onClick={() => void handleMagicLink()}
+                    type="button"
                   >
-                    Send Link
+                    Send Magic Link
                   </button>
-                </div>
+                )}
               </div>
             </div>
 
