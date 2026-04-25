@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useId, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { AlertCircle, ArrowRight, CheckCircle2, FileUp, Lock } from "lucide-react";
 import Link from "next/link";
 
@@ -453,6 +453,8 @@ function createDraftProductId() {
 }
 
 export function ProductCreator() {
+  const fileInputId = useId();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [seller, setSeller] = useState<ConnectedSeller | null>(null);
   const [profile, setProfile] = useState<SellerProfileDraft | null>(null);
   const [draftProductId, setDraftProductId] = useState(() => createDraftProductId());
@@ -1284,8 +1286,7 @@ export function ProductCreator() {
     };
   }, [files]);
 
-  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const nextFiles = Array.from(event.target.files ?? []);
+  function applySelectedFiles(nextFiles: File[]) {
     setFiles(nextFiles);
     setStandardsResult(null);
     setSuggestedTags([]);
@@ -1303,6 +1304,15 @@ export function ProductCreator() {
     if (nextFiles.length > 0) {
       setAiFeedback(null);
     }
+  }
+
+  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    applySelectedFiles(Array.from(event.target.files ?? []));
+  }
+
+  function handleFileDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    applySelectedFiles(Array.from(event.dataTransfer.files ?? []));
   }
 
   async function handleSave(nextStatusOverride?: NonNullable<ProductRecord["productStatus"]>) {
@@ -1595,23 +1605,58 @@ export function ProductCreator() {
             </div>
 
             <div className="mt-4 grid gap-4">
-              <label className="block">
+              <div className="block">
                 <span className="text-sm font-semibold text-ink">Resource files</span>
                 <div
-                  className={`mt-2 rounded-[1rem] border px-4 py-3 ${
+                  className={`mt-2 rounded-[1rem] border px-4 py-4 ${
                     missingPublishKeys.has("file")
                       ? "border-red-300 bg-red-50/40"
                       : "border-ink/10 bg-white"
                   }`}
                   id="publish-target-file"
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={handleFileDrop}
                 >
                   <input
-                    className="block w-full text-sm text-ink-soft"
+                    ref={fileInputRef}
+                    accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip"
+                    className="sr-only"
                     data-testid="seller-creator-files"
+                    id={fileInputId}
                     multiple
                     onChange={handleFileChange}
                     type="file"
                   />
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-ink">
+                        Drag files here or choose them from your device
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-ink-soft">
+                        PDFs, images, slide decks, documents, spreadsheets, and zipped resource packs are supported.
+                      </p>
+                    </div>
+                    <button
+                      className="inline-flex items-center justify-center rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
+                      onClick={() => fileInputRef.current?.click()}
+                      type="button"
+                    >
+                      Choose file
+                    </button>
+                  </div>
+
+                  {files.length > 0 ? (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {files.map((file) => (
+                        <span
+                          key={`${file.name}-${file.size}`}
+                          className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-ink-soft"
+                        >
+                          {file.name}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
                 {missingPublishKeys.has("file") ? (
                   <span className="mt-2 block text-xs font-semibold text-red-600">
@@ -1621,7 +1666,7 @@ export function ProductCreator() {
                 <span className="mt-2 block text-xs leading-5 text-ink-soft">
                   Upload a worksheet, slide deck, assessment, lesson page, or pack that already works in class.
                 </span>
-              </label>
+              </div>
 
               {files.length > 0 || aiFeedback ? (
                 <div className="rounded-[1rem] border border-brand/10 bg-brand-soft/30 p-4">
