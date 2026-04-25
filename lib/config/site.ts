@@ -34,3 +34,7 @@ export function buildAuthCallbackUrl(nextPath: string) {
   void nextPath;
   return `${getSiteOrigin()}/auth/callback`;
 }
+
+export function buildAuthResetPasswordUrl() {
+  return `${getSiteOrigin()}/auth/reset-password`;
+}

@@ -13,7 +13,10 @@ import {
 import { trackFunnelEvent } from "@/lib/analytics/events";
 import { rememberAuthNextPath } from "@/lib/auth/auth-redirect";
 import { syncViewerCookie } from "@/lib/auth/viewer-sync";
-import { buildAuthCallbackUrl } from "@/lib/config/site";
+import {
+  buildAuthCallbackUrl,
+  buildAuthResetPasswordUrl,
+} from "@/lib/config/site";
 
 type AuthSheetProps = {
   triggerLabel?: string;
@@ -233,6 +236,50 @@ export function AuthSheet({
     }
   }
 
+  async function handlePasswordReset() {
+    trackFunnelEvent("password_reset_requested", {
+      surface: triggerLabel,
+    });
+
+    if (!hasSupabaseEnv()) {
+      setError(authSetupMessage);
+      return;
+    }
+
+    if (!email.trim()) {
+      setError("Enter your email address first so we know where to send the reset link.");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      setMessage(null);
+
+      const supabase = getSupabaseBrowserClient();
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        email.trim(),
+        {
+          redirectTo: buildAuthResetPasswordUrl(),
+        },
+      );
+
+      if (resetError) {
+        throw resetError;
+      }
+
+      setMessage("Check your email for a password reset link from LessonForge.");
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to send the password reset email.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   async function handleSignOut() {
     if (!hasSupabaseEnv()) {
       return;
@@ -403,6 +450,21 @@ export function AuthSheet({
                         value={password}
                       />
                     </div>
+                    {!isCreateAccountEntry ? (
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <p className="text-xs leading-5 text-ink-muted">
+                          Use your account password for the quickest way back into checkout.
+                        </p>
+                        <button
+                          className="text-xs font-semibold text-brand transition hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
+                          disabled={isLoading}
+                          onClick={() => void handlePasswordReset()}
+                          type="button"
+                        >
+                          Forgot password?
+                        </button>
+                      </div>
+                    ) : null}
                     <button
                       className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
                       disabled={isLoading}
