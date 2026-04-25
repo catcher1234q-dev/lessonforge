@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 
 import { FunnelAnalytics } from "@/components/analytics/funnel-analytics";
+import { AuthCodeBridge } from "@/components/layout/auth-code-bridge";
 import { MaintenanceGate } from "@/components/layout/maintenance-gate";
 import { siteConfig } from "@/lib/config/site";
 
@@ -76,6 +78,9 @@ export default function RootLayout({
       <body className="bg-surface-subtle font-[family-name:var(--font-sans)] text-ink antialiased">
         <Analytics />
         <FunnelAnalytics />
+        <Suspense fallback={null}>
+          <AuthCodeBridge />
+        </Suspense>
         <MaintenanceGate>{children}</MaintenanceGate>
       </body>
     </html>

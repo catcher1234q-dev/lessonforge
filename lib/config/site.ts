@@ -31,6 +31,6 @@ export function getSiteOrigin() {
 }
 
 export function buildAuthCallbackUrl(nextPath: string) {
-  const safeNextPath = nextPath.startsWith("/") ? nextPath : "/";
-  return `${getSiteOrigin()}/auth/callback?next=${encodeURIComponent(safeNextPath)}`;
+  void nextPath;
+  return `${getSiteOrigin()}/auth/callback`;
 }

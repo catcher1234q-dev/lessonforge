@@ -11,6 +11,7 @@ import {
   hasSupabaseEnv,
 } from "@/lib/supabase/client";
 import { trackFunnelEvent } from "@/lib/analytics/events";
+import { rememberAuthNextPath } from "@/lib/auth/auth-redirect";
 import { syncViewerCookie } from "@/lib/auth/viewer-sync";
 import { buildAuthCallbackUrl } from "@/lib/config/site";
 
@@ -64,6 +65,7 @@ export function AuthSheet({
       setMessage(null);
 
       const supabase = getSupabaseBrowserClient();
+      rememberAuthNextPath(pathname ? `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}` : "/");
       const redirectTo = getAuthCallbackUrl();
       const { error: signInError } = await supabase.auth.signInWithOAuth({
         provider,
@@ -106,6 +108,7 @@ export function AuthSheet({
       setMessage(null);
 
       const supabase = getSupabaseBrowserClient();
+      rememberAuthNextPath(pathname ? `${pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ""}` : "/");
       const { error: signInError } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: {

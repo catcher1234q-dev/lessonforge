@@ -8,24 +8,17 @@ import { SectionIntro } from "@/components/shared/section-intro";
 import { secondaryActionLinkClassName } from "@/components/shared/secondary-action-link";
 import { StartHerePanel } from "@/components/shared/start-here-panel";
 import {
+  clearRememberedAuthNextPath,
+  readRememberedAuthNextPath,
+  sanitizeAuthNextPath,
+} from "@/lib/auth/auth-redirect";
+import {
   getSupabaseBrowserClient,
   hasSupabaseEnv,
 } from "@/lib/supabase/client";
 import { syncViewerCookie } from "@/lib/auth/viewer-sync";
 
 type CallbackState = "working" | "success" | "error";
-
-function sanitizeNextPath(nextPath: string | null) {
-  if (!nextPath || !nextPath.startsWith("/")) {
-    return "/";
-  }
-
-  if (nextPath.startsWith("//")) {
-    return "/";
-  }
-
-  return nextPath;
-}
 
 export function CallbackContent() {
   const router = useRouter();
@@ -34,7 +27,10 @@ export function CallbackContent() {
   const [message, setMessage] = useState("Signing you in to LessonForge...");
 
   const nextPath = useMemo(
-    () => sanitizeNextPath(searchParams.get("next")),
+    () =>
+      searchParams.get("next")
+        ? sanitizeAuthNextPath(searchParams.get("next"))
+        : readRememberedAuthNextPath(),
     [searchParams],
   );
 
@@ -78,6 +74,7 @@ export function CallbackContent() {
       await fetch("/api/auth/profile-sync", {
         method: "POST",
       }).catch(() => null);
+      clearRememberedAuthNextPath();
 
       setState("success");
       setMessage("Sign-in successful. Redirecting back to the website...");
