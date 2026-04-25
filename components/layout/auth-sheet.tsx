@@ -12,8 +12,6 @@ import {
 } from "@/lib/supabase/client";
 import { trackFunnelEvent } from "@/lib/analytics/events";
 import {
-  buildClientAuthCallbackUrl,
-  buildClientAuthResetPasswordUrl,
   rememberAuthNextPath,
 } from "@/lib/auth/auth-redirect";
 import { syncViewerCookie } from "@/lib/auth/viewer-sync";
@@ -48,12 +46,32 @@ export function AuthSheet({
     return pathname ? `${pathname}${queryString ? `?${queryString}` : ""}` : "/";
   }
 
+  function getBrowserAuthOrigin() {
+    if (typeof window !== "undefined") {
+      const browserOrigin = window.location.origin;
+      const fallbackOrigin = "https://lessonforgehub.com";
+
+      if (
+        process.env.NODE_ENV === "production" &&
+        browserOrigin.includes("localhost") &&
+        window.location.hostname !== "localhost" &&
+        window.location.hostname !== "127.0.0.1"
+      ) {
+        return fallbackOrigin;
+      }
+
+      return browserOrigin;
+    }
+
+    return process.env.NEXT_PUBLIC_SITE_URL || "https://lessonforgehub.com";
+  }
+
   function getAuthCallbackUrl() {
-    return buildClientAuthCallbackUrl();
+    return `${getBrowserAuthOrigin()}/auth/callback`;
   }
 
   function getResetPasswordUrl() {
-    return buildClientAuthResetPasswordUrl();
+    return `${getBrowserAuthOrigin()}/auth/reset-password`;
   }
 
   async function completeSignedInSession(session: Session | null) {
