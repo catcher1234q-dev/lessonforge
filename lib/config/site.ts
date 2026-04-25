@@ -25,9 +25,12 @@ function normalizeOrigin(candidate: string) {
 }
 
 export function getSiteOrigin() {
-  return normalizeOrigin(
-    env.NEXT_PUBLIC_SITE_URL || env.NEXT_PUBLIC_APP_URL || siteConfig.productionUrl,
-  );
+  const isProduction = process.env.NODE_ENV === "production";
+  const baseUrl = isProduction
+    ? env.NEXT_PUBLIC_SITE_URL || siteConfig.productionUrl
+    : env.NEXT_PUBLIC_SITE_URL || env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+  return normalizeOrigin(baseUrl);
 }
 
 export function buildAuthCallbackUrl(nextPath: string) {
