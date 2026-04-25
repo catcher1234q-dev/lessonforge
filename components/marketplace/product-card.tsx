@@ -219,14 +219,14 @@ export function ProductCard({
 
   return (
     <article
-      className={`group flex h-full flex-col rounded-[30px] bg-white p-5 transition duration-300 [contain-intrinsic-size:540px] [content-visibility:auto] hover:-translate-y-1 ${
+      className={`group flex h-full flex-col rounded-[28px] bg-white p-4 transition duration-300 [contain-intrinsic-size:540px] [content-visibility:auto] hover:-translate-y-1 ${
         featured
           ? "shadow-[0_24px_70px_rgba(37,99,235,0.14)] hover:shadow-[0_30px_90px_rgba(37,99,235,0.18)]"
           : "shadow-[0_18px_50px_rgba(15,23,42,0.08)] hover:shadow-[0_28px_70px_rgba(15,23,42,0.12)]"
       }`}
       data-testid={testId}
     >
-      <div className="flex items-start justify-end">
+      <div className="mb-3 flex items-start justify-end">
         <FavoriteFormButton
           compact
           initialFavorited={initiallyFavorited}
@@ -251,7 +251,7 @@ export function ProductCard({
           {coverImage ? (
             <img
               alt={`${listing.title} cover preview`}
-              className="relative z-10 aspect-[4/3] w-full bg-slate-100 object-contain"
+              className="relative z-10 aspect-[4/5] w-full bg-slate-100 object-cover object-top"
               decoding="async"
               loading={featured ? "eager" : "lazy"}
               sizes="(min-width: 1536px) 33vw, (min-width: 768px) 50vw, 100vw"
@@ -289,7 +289,7 @@ export function ProductCard({
             </div>
           )}
 
-          <div className="absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-3 p-4">
+          <div className="absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-3 p-3">
             <span className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${theme.accentSoft}`}>
               {listing.subject}
             </span>
@@ -298,12 +298,12 @@ export function ProductCard({
             </span>
           </div>
 
-          <div className="absolute inset-x-0 bottom-0 z-20 p-4">
-            <div className="overflow-hidden rounded-[22px] border border-white/30 bg-gradient-to-t from-slate-950/90 via-slate-900/68 to-slate-900/8 p-4 shadow-[0_18px_44px_rgba(15,23,42,0.22)] backdrop-blur-sm">
+          <div className="absolute inset-x-0 bottom-0 z-20 p-3">
+            <div className="overflow-hidden rounded-[20px] border border-white/30 bg-gradient-to-t from-slate-950/90 via-slate-900/68 to-slate-900/8 p-3.5 shadow-[0_18px_44px_rgba(15,23,42,0.22)] backdrop-blur-sm">
               <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/72">
                 {listing.format}
               </p>
-              <h3 className="mt-2 line-clamp-2 text-[1.32rem] font-semibold leading-tight text-white">
+              <h3 className="mt-2 line-clamp-2 text-[1.18rem] font-semibold leading-tight text-white">
                 {listing.title}
               </h3>
               <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-medium">
@@ -328,117 +328,40 @@ export function ProductCard({
         </div>
       </Link>
 
-      <div className="flex flex-1 flex-col justify-between px-2 pb-2 pt-5">
+      <div className="flex flex-1 flex-col justify-between px-1 pb-1 pt-4">
         <Link
           className="block"
           data-analytics-event="product_card_clicked"
           data-analytics-props={JSON.stringify({ productId: listing.id, surface: "copy" })}
           href={listingHref}
         >
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-ink-soft">
-            {featured ? `Sold by ${listing.sellerName}` : listing.sellerName}
+          <p className="text-sm font-semibold text-ink">
+            {listing.sellerName}
           </p>
-          <p className="mt-2 line-clamp-2 text-base leading-7 text-ink-soft">
-            {listing.shortDescription}
+          <p className="mt-1 text-sm leading-6 text-ink-soft">
+            {listing.resourceType}
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {listing.tags.slice(0, 3).map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-medium text-ink-soft"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
         </Link>
 
-        <div className="mt-5 space-y-4">
-          <div className="grid gap-2 rounded-[20px] bg-slate-50 px-3 py-3 text-xs leading-5 text-ink-soft sm:grid-cols-2">
-            <div>
-              <span className="block font-semibold text-ink">Grade</span>
-              <span>{listing.gradeBand}</span>
-            </div>
-            <div>
-              <span className="block font-semibold text-ink">Format</span>
-              <span>{listing.resourceType}</span>
-            </div>
-            <div>
-              <span className="block font-semibold text-ink">File</span>
-              <span>
-                {listing.fileTypes[0] ?? "PDF"}
-                {listing.pageCount ? ` · ${listing.pageCount} pages` : ""}
-              </span>
-            </div>
-            <div>
-              <span className="block font-semibold text-ink">Preview</span>
-              <span>
-                {listing.assetHealthStatus === "Preview and thumbnail ready"
-                  ? "Ready to review"
-                  : "Check details"}
-              </span>
-            </div>
-          </div>
-
-          {featured ? (
-            <div className="rounded-[22px] border border-brand/15 bg-brand-soft/70 px-4 py-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-brand">
-                Why this stands out
-              </p>
-              <p className="mt-2 text-sm leading-6 text-ink">
-                {featuredLabel}
-              </p>
-            </div>
-          ) : null}
-
+        <div className="mt-4 space-y-4">
           <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-ink-soft">
-            <HighlightChip
-              label={listing.licenseType}
-              toneClassName="bg-brand-soft text-brand"
-            />
-            <HighlightChip
-              label={
-                listing.assetHealthStatus === "Preview and thumbnail ready"
-                  ? "Preview available"
-                  : "Preview details"
-              }
-              toneClassName="bg-emerald-50 text-emerald-800"
-            />
-            <HighlightChip
-              label="Library access after purchase"
-              toneClassName="bg-slate-100 text-ink-soft"
-            />
+            <span className="rounded-full bg-slate-100 px-3 py-1">{listing.subject}</span>
+            <span className="rounded-full bg-slate-100 px-3 py-1">{listing.gradeBand}</span>
             {featured ? (
-              <HighlightChip
-                label={listing.supportLabel}
-                toneClassName="bg-slate-100 text-ink-soft"
-              />
+              <span className="rounded-full bg-brand-soft px-3 py-1 text-brand">
+                {featuredLabel}
+              </span>
+            ) : rankingReasons[0] ? (
+              <span className="rounded-full bg-amber-50 px-3 py-1 text-amber-800">
+                {rankingReasons[0]}
+              </span>
             ) : null}
-            {!featured && rankingReasons[0] ? (
-              <HighlightChip
-                label={rankingReasons[0]}
-                toneClassName="bg-amber-50 text-amber-800"
-              />
-            ) : null}
-          </div>
-
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-ink">{listing.sellerName}</p>
-              <p className="text-sm text-ink-soft">{listing.sellerTrustLabel}</p>
-            </div>
-            <div className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-medium text-ink-soft">
-              {listing.subject}
-            </div>
           </div>
 
           <div className="flex flex-col gap-4 border-t border-slate-100 pt-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="min-w-0">
               <p className={`${featured ? "text-[2.2rem]" : "text-2xl"} font-semibold text-ink`}>
                 {formatCurrency(listing.priceCents)}
-              </p>
-              <p className="mt-1 text-xs text-ink-soft">
-                Secure checkout and library delivery after purchase
               </p>
             </div>
             <div className="flex w-full flex-col gap-2 sm:min-w-[140px] sm:w-auto sm:items-end">
@@ -459,14 +382,6 @@ export function ProductCard({
                 View details
                 <ArrowUpRight className="h-4 w-4" />
               </Link>
-              {returnTo !== "/favorites" ? (
-                <Link
-                  className="text-xs font-semibold text-ink-soft transition hover:text-ink"
-                  href="/favorites"
-                >
-                  Compare in saved items
-                </Link>
-              ) : null}
             </div>
           </div>
         </div>

@@ -81,39 +81,28 @@ export default async function MarketplacePage({
       <section className="px-4 pb-16 pt-6 sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-7xl flex-col gap-6">
           <section className="rounded-[28px] border border-black/5 bg-white px-5 py-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:px-7 sm:py-6">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-3xl">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="max-w-2xl">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand">
                   Marketplace
                 </p>
                 <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl leading-tight text-ink sm:text-5xl">
-                  Browse real teacher-created classroom resources.
+                  Browse teacher-created classroom resources.
                 </h1>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-ink-soft sm:text-base">
-                  LessonForgeHub is a digital marketplace for teacher resources. Buyers can review previews before buying, and sellers upload original materials through the platform.
+                  Review previews, compare resources quickly, and open the product page for details before you buy.
                 </p>
-                <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.14em]">
-                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-800">
-                    Digital downloads
-                  </span>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-ink-soft">
-                    Reviewed listings with preview access
-                  </span>
-                </div>
               </div>
 
-              <div className="rounded-[24px] border border-brand/10 bg-brand-soft/40 p-4 sm:min-w-[280px]">
+              <div className="rounded-[24px] border border-brand/10 bg-brand-soft/40 p-4 sm:min-w-[260px]">
                 <Link
                   className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
                   href="/sell/products/new"
                 >
                   Start Selling
                 </Link>
-                <p className="mt-3 text-center text-xs font-medium text-ink-soft">
-                  AI-powered setup in under 60 seconds
-                </p>
-                <p className="mt-2 text-center text-sm leading-6 text-ink-soft">
-                  Upload original teaching resources and start building your seller storefront.
+                <p className="mt-3 text-center text-sm leading-6 text-ink-soft">
+                  Upload original teaching resources and create a clean listing.
                 </p>
               </div>
             </div>
@@ -164,11 +153,11 @@ export default async function MarketplacePage({
             <p>
               <span className="font-semibold text-ink">{getResultLabel(listings.length, subject, query)}</span>
             </p>
-            <p>Buyers can review previews, report products, and check out securely from eligible listings.</p>
+            <p>Open any listing to preview pages, check details, and buy.</p>
           </section>
 
           {listings.length ? (
-            <section className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {listings.map((listing) => (
                 <ProductCard
                   key={listing.id}
@@ -188,7 +177,7 @@ export default async function MarketplacePage({
                   Ready to upload your own?
                 </p>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-soft">
-                  Every seller listing is expected to show real classroom value, clear previews, and policy-safe details before it stays live.
+                  Show clear previews, simple details, and the classroom value of your resource.
                 </p>
               </div>
               <Link

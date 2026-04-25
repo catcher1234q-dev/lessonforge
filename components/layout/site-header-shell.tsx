@@ -48,13 +48,13 @@ export function SiteHeaderShell({
       }`}
     >
       <div
-          className={`mx-auto w-full max-w-7xl px-4 transition-all duration-300 sm:px-6 lg:px-8 ${
-            isCondensed ? "py-3" : "py-4"
-          }`}
+        className={`mx-auto w-full max-w-7xl px-4 transition-all duration-300 sm:px-6 lg:px-8 ${
+          isCondensed ? "py-3" : "py-4"
+        }`}
       >
         <div
-          className={`flex items-start justify-between gap-3 transition-all duration-300 sm:gap-6 ${
-            isCondensed ? "items-center" : ""
+          className={`flex flex-wrap items-center justify-between gap-3 transition-all duration-300 sm:gap-4 lg:flex-nowrap lg:gap-6 ${
+            isCondensed ? "" : ""
           }`}
         >
           <Link className="flex min-w-0 items-center gap-3" href="/">
@@ -76,36 +76,37 @@ export function SiteHeaderShell({
             </div>
           </Link>
 
-          <div className="flex min-w-0 flex-1 flex-col items-end gap-3">
-            <div
-              className={`hidden flex-wrap items-center justify-end gap-x-5 gap-y-2 text-sm text-ink-soft transition-all duration-300 xl:flex ${
-                isCondensed
-                  ? "max-h-0 -translate-y-2 overflow-hidden opacity-0 pointer-events-none"
-                  : "max-h-24 translate-y-0 opacity-100"
-              }`}
-            >
-              {secondaryLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  className="whitespace-nowrap transition hover:text-ink"
-                  href={link.href}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
+          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-2 lg:flex">
+            {primaryLinks.map((link) => (
+              <Link
+                key={link.href}
+                className="inline-flex min-h-10 shrink-0 items-center whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium text-ink transition hover:bg-brand-soft hover:text-brand"
+                href={link.href}
+              >
+                {link.label}
+              </Link>
+            ))}
+            {secondaryLinks.map((link) => (
+              <Link
+                key={link.href}
+                className="inline-flex min-h-10 shrink-0 items-center whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium text-ink-soft transition hover:bg-surface-muted hover:text-ink"
+                href={link.href}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
 
-            <div className="flex items-center gap-3">
-              <AuthControls adminHref={adminHref} isOwner={isOwner} />
-            </div>
+          <div className="flex min-w-0 items-center gap-3">
+            <AuthControls adminHref={adminHref} isOwner={isOwner} />
           </div>
         </div>
 
         <div
-          className={`overflow-hidden transition-all duration-300 ${
+          className={`overflow-hidden transition-all duration-300 lg:hidden ${
             isCondensed
               ? "mt-0 max-h-0 -translate-y-2 opacity-0 pointer-events-none"
-              : "mt-4 max-h-28 translate-y-0 opacity-100"
+              : "mt-3 max-h-28 translate-y-0 opacity-100"
           }`}
         >
           <nav className="-mx-1 flex min-w-0 items-center gap-2 overflow-x-auto px-1 pb-1 text-sm text-ink [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -118,9 +119,17 @@ export function SiteHeaderShell({
                 {link.label}
               </Link>
             ))}
+            {secondaryLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  className="inline-flex min-h-10 shrink-0 items-center whitespace-nowrap rounded-full bg-white px-4 py-2 font-medium text-ink-soft transition hover:bg-surface-muted hover:text-ink"
+                  href={link.href}
+                >
+                  {link.label}
+                </Link>
+              ))}
           </nav>
         </div>
-
       </div>
     </header>
   );
