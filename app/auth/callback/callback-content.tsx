@@ -101,7 +101,9 @@ export function CallbackContent() {
         } else if (code) {
           if (!hasSupabasePkceCodeVerifier()) {
             setState("error");
-            setMessage("Your magic link expired or could not be verified. Please request a new link.");
+            setMessage(
+              "This sign-in link could not be verified in this browser session. Request a new link and open it on the same device and browser.",
+            );
             return;
           }
 
@@ -124,7 +126,9 @@ export function CallbackContent() {
 
         if (!session) {
           setState("error");
-          setMessage("Your magic link expired or could not be verified. Please request a new link.");
+          setMessage(
+            "LessonForge could not confirm a signed-in session from this link. Request a new link and try again.",
+          );
           return;
         }
 

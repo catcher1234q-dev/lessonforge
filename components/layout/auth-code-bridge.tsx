@@ -55,7 +55,10 @@ export function AuthCodeBridge() {
     }
 
     if (code && !hasSupabasePkceCodeVerifier() && !tokenHash && !accessToken) {
-      params.set("auth_message", "Your magic link expired or could not be verified. Please request a new link.");
+      params.set(
+        "auth_message",
+        "This sign-in link could not be verified in this browser session. Request a new link and open it on the same device and browser.",
+      );
     }
 
     const queryString = params.toString();

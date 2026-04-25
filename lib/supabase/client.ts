@@ -47,6 +47,10 @@ export function hasSupabaseEnv() {
   return Boolean(getSupabaseConfig());
 }
 
+export function getSupabasePublicConfig() {
+  return getSupabaseConfig();
+}
+
 export function getSupabaseBrowserClient() {
   if (browserClient) {
     return browserClient;

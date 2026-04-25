@@ -8,7 +8,7 @@ import { Apple, Chrome, KeyRound, LoaderCircle, LogOut, Mail, X } from "lucide-r
 
 import {
   getSupabaseBrowserClient,
-  getSupabasePasswordlessBrowserClient,
+  getSupabasePublicConfig,
   hasSupabaseEnv,
 } from "@/lib/supabase/client";
 import { trackFunnelEvent } from "@/lib/analytics/events";
@@ -149,17 +149,39 @@ export function AuthSheet({
       setError(null);
       setMessage(null);
 
-      const supabase = getSupabasePasswordlessBrowserClient();
+      const supabaseConfig = getSupabasePublicConfig();
+      if (!supabaseConfig) {
+        throw new Error(
+          "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+        );
+      }
+
       rememberAuthNextPath(getNextPath());
-      const { error: signInError } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: {
-          emailRedirectTo: getAuthCallbackUrl(),
+      const otpUrl = new URL(`${supabaseConfig.url}/auth/v1/otp`);
+      otpUrl.searchParams.set("redirect_to", getAuthCallbackUrl());
+
+      const response = await fetch(otpUrl.toString(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: supabaseConfig.anonKey,
+          Authorization: `Bearer ${supabaseConfig.anonKey}`,
         },
+        body: JSON.stringify({
+          email: email.trim(),
+          data: {},
+          create_user: true,
+          gotrue_meta_security: {},
+        }),
       });
 
-      if (signInError) {
-        throw signInError;
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as
+          | { msg?: string; error_description?: string; error?: string }
+          | null;
+        const safeMessage =
+          payload?.msg || payload?.error_description || payload?.error;
+        throw new Error(safeMessage || "Unable to send the sign-in email.");
       }
 
       setMessage("Check your email for a LessonForge magic link.");
