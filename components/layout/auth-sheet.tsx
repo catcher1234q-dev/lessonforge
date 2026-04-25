@@ -8,6 +8,7 @@ import { Apple, Chrome, KeyRound, LoaderCircle, LogOut, Mail, X } from "lucide-r
 
 import {
   getSupabaseBrowserClient,
+  getSupabasePasswordlessBrowserClient,
   hasSupabaseEnv,
 } from "@/lib/supabase/client";
 import { trackFunnelEvent } from "@/lib/analytics/events";
@@ -148,7 +149,7 @@ export function AuthSheet({
       setError(null);
       setMessage(null);
 
-      const supabase = getSupabaseBrowserClient();
+      const supabase = getSupabasePasswordlessBrowserClient();
       rememberAuthNextPath(getNextPath());
       const { error: signInError } = await supabase.auth.signInWithOtp({
         email: email.trim(),
