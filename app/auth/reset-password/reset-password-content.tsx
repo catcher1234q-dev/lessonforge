@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import type { EmailOtpType } from "@supabase/supabase-js";
 
 import { SectionIntro } from "@/components/shared/section-intro";
 import { secondaryActionLinkClassName } from "@/components/shared/secondary-action-link";
@@ -24,6 +25,8 @@ export function ResetPasswordContent() {
   const [message, setMessage] = useState("Checking your password reset link...");
 
   const recoveryCode = searchParams.get("code");
+  const recoveryType = searchParams.get("type");
+  const recoveryTokenHash = searchParams.get("token_hash");
   const recoveryError = searchParams.get("error_description");
 
   const canSubmit = useMemo(
@@ -53,8 +56,34 @@ export function ResetPasswordContent() {
 
       try {
         const supabase = getSupabaseBrowserClient();
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        const accessToken = hashParams.get("access_token");
+        const refreshToken = hashParams.get("refresh_token");
+        const hashType = hashParams.get("type");
 
-        if (recoveryCode) {
+        if (accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (error) {
+            setState("error");
+            setMessage(error.message);
+            return;
+          }
+        } else if (recoveryTokenHash && recoveryType === "recovery") {
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: recoveryTokenHash,
+            type: "recovery" satisfies EmailOtpType,
+          });
+
+          if (error) {
+            setState("error");
+            setMessage(error.message);
+            return;
+          }
+        } else if (recoveryCode && recoveryType !== "recovery" && hashType !== "recovery") {
           const { error } = await supabase.auth.exchangeCodeForSession(recoveryCode);
 
           if (error) {
@@ -71,7 +100,7 @@ export function ResetPasswordContent() {
         if (!session) {
           setState("error");
           setMessage(
-            "This password reset link is missing or has expired. Request a new reset email and try again.",
+            "This password reset link is missing required recovery details or has expired. Request a new reset email and try again.",
           );
           return;
         }
@@ -89,7 +118,7 @@ export function ResetPasswordContent() {
     }
 
     void prepareResetSession();
-  }, [recoveryCode, recoveryError]);
+  }, [recoveryCode, recoveryError, recoveryTokenHash, recoveryType]);
 
   async function handlePasswordReset() {
     if (password.length < 8) {
