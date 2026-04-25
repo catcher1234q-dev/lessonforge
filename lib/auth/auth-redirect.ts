@@ -1,3 +1,6 @@
+import { env } from "@/lib/config/env";
+import { siteConfig } from "@/lib/config/site";
+
 const AUTH_REDIRECT_STORAGE_KEY = "lessonforge-auth-next-path";
 
 export function sanitizeAuthNextPath(nextPath: string | null | undefined) {
@@ -59,4 +62,39 @@ export function hasSupabasePkceCodeVerifier() {
   }
 
   return false;
+}
+
+function normalizeOrigin(candidate: string) {
+  try {
+    return new URL(candidate).origin;
+  } catch {
+    return siteConfig.productionUrl;
+  }
+}
+
+export function getClientAuthOrigin() {
+  const isProduction = process.env.NODE_ENV === "production";
+  const fallbackOrigin = isProduction
+    ? env.NEXT_PUBLIC_SITE_URL || siteConfig.productionUrl
+    : env.NEXT_PUBLIC_SITE_URL || env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+  if (typeof window === "undefined") {
+    return normalizeOrigin(fallbackOrigin);
+  }
+
+  const browserOrigin = normalizeOrigin(window.location.origin);
+
+  if (isProduction && browserOrigin.includes("localhost")) {
+    return normalizeOrigin(fallbackOrigin);
+  }
+
+  return browserOrigin;
+}
+
+export function buildClientAuthCallbackUrl() {
+  return `${getClientAuthOrigin()}/auth/callback`;
+}
+
+export function buildClientAuthResetPasswordUrl() {
+  return `${getClientAuthOrigin()}/auth/reset-password`;
 }

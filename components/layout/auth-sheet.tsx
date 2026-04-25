@@ -11,12 +11,12 @@ import {
   hasSupabaseEnv,
 } from "@/lib/supabase/client";
 import { trackFunnelEvent } from "@/lib/analytics/events";
-import { rememberAuthNextPath } from "@/lib/auth/auth-redirect";
-import { syncViewerCookie } from "@/lib/auth/viewer-sync";
 import {
-  buildAuthCallbackUrl,
-  buildAuthResetPasswordUrl,
-} from "@/lib/config/site";
+  buildClientAuthCallbackUrl,
+  buildClientAuthResetPasswordUrl,
+  rememberAuthNextPath,
+} from "@/lib/auth/auth-redirect";
+import { syncViewerCookie } from "@/lib/auth/viewer-sync";
 
 type AuthSheetProps = {
   triggerLabel?: string;
@@ -49,7 +49,11 @@ export function AuthSheet({
   }
 
   function getAuthCallbackUrl() {
-    return buildAuthCallbackUrl(getNextPath());
+    return buildClientAuthCallbackUrl();
+  }
+
+  function getResetPasswordUrl() {
+    return buildClientAuthResetPasswordUrl();
   }
 
   async function completeSignedInSession(session: Session | null) {
@@ -260,7 +264,7 @@ export function AuthSheet({
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email.trim(),
         {
-          redirectTo: buildAuthResetPasswordUrl(),
+          redirectTo: getResetPasswordUrl(),
         },
       );
 
