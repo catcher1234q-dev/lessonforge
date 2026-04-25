@@ -3,12 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import type { EmailOtpType } from "@supabase/supabase-js";
 
 import { SectionIntro } from "@/components/shared/section-intro";
 import { secondaryActionLinkClassName } from "@/components/shared/secondary-action-link";
 import { StartHerePanel } from "@/components/shared/start-here-panel";
 import {
   clearRememberedAuthNextPath,
+  hasSupabasePkceCodeVerifier,
   readRememberedAuthNextPath,
   sanitizeAuthNextPath,
 } from "@/lib/auth/auth-redirect";
@@ -30,7 +32,7 @@ export function CallbackContent() {
     () =>
       searchParams.get("next")
         ? sanitizeAuthNextPath(searchParams.get("next"))
-        : readRememberedAuthNextPath(),
+        : readRememberedAuthNextPath("/account"),
     [searchParams],
   );
 
@@ -45,40 +47,104 @@ export function CallbackContent() {
       }
 
       const errorDescription = searchParams.get("error_description");
+      const authMessage = searchParams.get("auth_message");
       if (errorDescription) {
         setState("error");
         setMessage(errorDescription);
         return;
       }
 
+      if (authMessage) {
+        setState("error");
+        setMessage(authMessage);
+        return;
+      }
+
       const code = searchParams.get("code");
-      if (!code) {
+      const tokenHash = searchParams.get("token_hash");
+      const callbackType = searchParams.get("type");
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+
+      if (!code && !tokenHash && !(accessToken && refreshToken)) {
         setState("error");
         setMessage("No sign-in code was returned from the provider.");
         return;
       }
 
-      const supabase = getSupabaseBrowserClient();
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      try {
+        const supabase = getSupabaseBrowserClient();
+        let authError: Error | null = null;
 
-      if (error) {
+        if (accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (error) {
+            authError = error;
+          }
+        } else if (
+          tokenHash &&
+          (callbackType === "email" || callbackType === "magiclink")
+        ) {
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: callbackType as Extract<EmailOtpType, "email" | "magiclink">,
+          });
+
+          if (error) {
+            authError = error;
+          }
+        } else if (code) {
+          if (!hasSupabasePkceCodeVerifier()) {
+            setState("error");
+            setMessage("Your magic link expired or could not be verified. Please request a new link.");
+            return;
+          }
+
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+          if (error) {
+            authError = error;
+          }
+        }
+
+        if (authError) {
+          setState("error");
+          setMessage(authError.message);
+          return;
+        }
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!session) {
+          setState("error");
+          setMessage("Your magic link expired or could not be verified. Please request a new link.");
+          return;
+        }
+
+        await syncViewerCookie({ session, preserveCurrentRole: true });
+        await fetch("/api/auth/profile-sync", {
+          method: "POST",
+        }).catch(() => null);
+        clearRememberedAuthNextPath();
+
+        setState("success");
+        setMessage("Sign-in successful. Redirecting back to the website...");
+        router.replace(nextPath);
+      } catch (caughtError) {
         setState("error");
-        setMessage(error.message);
-        return;
+        setMessage(
+          caughtError instanceof Error
+            ? caughtError.message
+            : "Unable to complete the sign-in link.",
+        );
       }
-
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      await syncViewerCookie({ session, preserveCurrentRole: true });
-      await fetch("/api/auth/profile-sync", {
-        method: "POST",
-      }).catch(() => null);
-      clearRememberedAuthNextPath();
-
-      setState("success");
-      setMessage("Sign-in successful. Redirecting back to the website...");
-      router.replace(nextPath);
     }
 
     void handleCallback();

@@ -23,14 +23,14 @@ export function rememberAuthNextPath(nextPath: string) {
   );
 }
 
-export function readRememberedAuthNextPath() {
+export function readRememberedAuthNextPath(fallback = "/") {
   if (typeof window === "undefined") {
-    return "/";
+    return fallback;
   }
 
-  return sanitizeAuthNextPath(
-    window.localStorage.getItem(AUTH_REDIRECT_STORAGE_KEY),
-  );
+  const storedValue = window.localStorage.getItem(AUTH_REDIRECT_STORAGE_KEY);
+
+  return storedValue ? sanitizeAuthNextPath(storedValue) : fallback;
 }
 
 export function clearRememberedAuthNextPath() {
@@ -39,4 +39,24 @@ export function clearRememberedAuthNextPath() {
   }
 
   window.localStorage.removeItem(AUTH_REDIRECT_STORAGE_KEY);
+}
+
+export function hasSupabasePkceCodeVerifier() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  for (let index = 0; index < window.localStorage.length; index += 1) {
+    const key = window.localStorage.key(index);
+
+    if (!key || !key.endsWith("-code-verifier")) {
+      continue;
+    }
+
+    if (window.localStorage.getItem(key)) {
+      return true;
+    }
+  }
+
+  return false;
 }
