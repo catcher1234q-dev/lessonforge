@@ -38,6 +38,15 @@ export type RecommendedAction = {
   priority: "high" | "medium" | "low";
 };
 
+type SellerOnboardingSignalProfile = SellerProfileDraft & {
+  paypalMerchantId?: string;
+  paypalPayoutsEnabled?: boolean;
+  paypalConsentGranted?: boolean;
+  stripeAccountId?: string;
+  stripeChargesEnabled?: boolean;
+  stripePayoutsEnabled?: boolean;
+};
+
 function scoreStatus(ok: boolean): CheckStatus {
   return ok ? "healthy" : "down";
 }
@@ -237,7 +246,11 @@ function buildCheckoutSignals(orders: OrderRecord[], refunds: RefundRequestRecor
 function buildOnboardingSignals(profiles: SellerProfileDraft[]) {
   return sortNewest(
     profiles
-      .filter((profile) => profile.onboardingCompleted || profile.paypalMerchantId || profile.stripeAccountId)
+      .map((profile) => profile as SellerOnboardingSignalProfile)
+      .filter(
+        (profile) =>
+          profile.onboardingCompleted || profile.paypalMerchantId || profile.stripeAccountId,
+      )
       .filter(
         (profile) =>
           !(profile.paypalMerchantId && profile.paypalPayoutsEnabled && profile.paypalConsentGranted) &&
