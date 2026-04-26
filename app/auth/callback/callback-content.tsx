@@ -43,7 +43,9 @@ export function CallbackContent() {
         return;
       }
 
-      const errorDescription = searchParams.get("error_description");
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const errorDescription =
+        searchParams.get("error_description") || hashParams.get("error_description");
       const authMessage = searchParams.get("auth_message");
       if (errorDescription) {
         setState("error");
@@ -60,7 +62,6 @@ export function CallbackContent() {
       const code = searchParams.get("code");
       const tokenHash = searchParams.get("token_hash");
       const callbackType = searchParams.get("type");
-      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
       const accessToken = hashParams.get("access_token");
       const refreshToken = hashParams.get("refresh_token");
       const hashType = hashParams.get("type");

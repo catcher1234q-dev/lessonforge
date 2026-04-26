@@ -65,7 +65,11 @@ export function getSupabaseBrowserClient() {
   }
 
   try {
-    browserClient = createBrowserClient(config.url, config.anonKey);
+    browserClient = createBrowserClient(config.url, config.anonKey, {
+      auth: {
+        flowType: "implicit",
+      },
+    });
   } catch (error) {
     console.error(
       "[lessonforge:supabase-client] Browser client initialization failed.",
