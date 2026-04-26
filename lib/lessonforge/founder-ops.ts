@@ -6,7 +6,14 @@ import { getPersistenceReadiness } from "@/lib/lessonforge/persistence-readiness
 import { getProductPublishBlockers } from "@/lib/lessonforge/product-validation";
 import { getSupabaseServerAdminClient, hasSupabaseServerEnv } from "@/lib/supabase/server";
 import { env } from "@/lib/config/env";
-import type { PrivateFeedbackRecord, ProductRecord, RefundRequestRecord, ReportRecord, SellerProfileDraft } from "@/types";
+import type {
+  OrderRecord,
+  PrivateFeedbackRecord,
+  ProductRecord,
+  RefundRequestRecord,
+  ReportRecord,
+  SellerProfileDraft,
+} from "@/types";
 
 export type CheckStatus = "healthy" | "attention" | "down";
 
@@ -198,7 +205,7 @@ function buildFeedbackSignal(entry: PrivateFeedbackRecord, fallbackTitle: string
   };
 }
 
-function buildCheckoutSignals(orders: Awaited<ReturnType<typeof listOrders>>, refunds: RefundRequestRecord[]) {
+function buildCheckoutSignals(orders: OrderRecord[], refunds: RefundRequestRecord[]) {
   const failedOrPendingOrders = sortNewest(
     orders
       .filter((order) => order.paymentStatus === "failed" || order.paymentStatus === "pending")
