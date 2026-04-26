@@ -214,20 +214,64 @@ export function AuthSheet({
       rememberAuthNextPath(getNextPath());
 
       if (isCreateAccountEntry) {
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email: email.trim(),
-          password,
-          options: {
-            emailRedirectTo: buildClientAuthCallbackUrl(),
-          },
-        });
-
-        if (signUpError) {
-          throw signUpError;
+        const config = getSupabasePublicConfig();
+        if (!config) {
+          throw new Error(
+            "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+          );
         }
 
-        if (data.session) {
-          await completeSignedInSession(data.session);
+        const response = await fetch(
+          `${config.url}/auth/v1/signup?redirect_to=${encodeURIComponent(buildClientAuthCallbackUrl())}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: config.anonKey,
+              Authorization: `Bearer ${config.anonKey}`,
+            },
+            body: JSON.stringify({
+              email: email.trim(),
+              password,
+              data: {},
+            }),
+          },
+        );
+
+        const payload = (await response.json().catch(() => null)) as
+          | {
+              error_description?: string;
+              msg?: string;
+              error?: string;
+              access_token?: string;
+              refresh_token?: string;
+            }
+          | null;
+
+        if (!response.ok) {
+          throw new Error(
+            payload?.error_description ||
+              payload?.msg ||
+              payload?.error ||
+              "Unable to create the account.",
+          );
+        }
+
+        if (payload?.error_description || payload?.error) {
+          throw new Error(payload.error_description || payload.error);
+        }
+
+        if (payload?.access_token && payload?.refresh_token) {
+          const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+            access_token: payload.access_token,
+            refresh_token: payload.refresh_token,
+          });
+
+          if (sessionError) {
+            throw sessionError;
+          }
+
+          await completeSignedInSession(sessionData.session);
           setMessage("Account created. You are signed in and ready to continue.");
           setPassword("");
           return;
