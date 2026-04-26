@@ -213,7 +213,7 @@ function buildCheckoutSignals(orders: OrderRecord[], refunds: RefundRequestRecor
         title: `${order.productTitle} checkout needs review`,
         detail:
           order.paymentStatus === "failed"
-            ? `Checkout failed for ${order.buyerEmail || "a buyer"} using ${order.paymentProvider || "the payment provider"}.`
+            ? `Checkout failed for ${order.buyerEmail || "a buyer"}. Review the payment event details in the admin workspace.`
             : `Checkout is still pending for ${order.buyerEmail || "a buyer"}.`,
         createdAt: order.purchasedAt,
         href: "/admin",
