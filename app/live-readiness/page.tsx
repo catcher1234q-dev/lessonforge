@@ -1,13 +1,59 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SectionIntro } from "@/components/shared/section-intro";
 import { secondaryActionLinkClassName } from "@/components/shared/secondary-action-link";
+import { getOwnerAccessContext } from "@/lib/auth/owner-access";
 import { getIntegrationReadiness } from "@/lib/lessonforge/integration-readiness";
 import { getPersistenceReadiness } from "@/lib/lessonforge/persistence-readiness";
+import { buildNoIndexMetadata } from "@/lib/seo/metadata";
+
+export const metadata: Metadata = buildNoIndexMetadata(
+  "Live Readiness",
+  "Private LessonForgeHub launch-readiness page.",
+);
 
 export default async function LiveReadinessPage() {
+  const ownerAccess = await getOwnerAccessContext();
+
+  if (!ownerAccess.isOwner) {
+    return (
+      <main className="page-shell min-h-screen">
+        <SiteHeader />
+
+        <section className="px-5 pb-20 pt-10 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl rounded-[36px] border border-black/5 bg-white p-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
+            <SectionIntro
+              body="This operations page is private because it references internal launch checks, configuration status, and setup details that are not part of the public marketplace experience."
+              eyebrow="Private operations page"
+              level="h1"
+              title="Live readiness access is private."
+              titleClassName="text-4xl leading-tight"
+            />
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                className="inline-flex items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+                href="/owner-access"
+              >
+                Open private access
+              </Link>
+              <Link
+                className={secondaryActionLinkClassName("px-5 py-3")}
+                href="/marketplace"
+              >
+                Open marketplace
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <SiteFooter />
+      </main>
+    );
+  }
+
   const [integrationReadiness, persistenceReadiness] = await Promise.all([
     getIntegrationReadiness(),
     getPersistenceReadiness(),

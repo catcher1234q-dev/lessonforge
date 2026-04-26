@@ -12,7 +12,7 @@ const questions = [
   {
     question: "What happens after I buy a resource?",
     answer:
-      "You can return to your library to reopen purchased classroom resources, download the file again, and find support if something needs attention.",
+      "You can return to your library to reopen purchased classroom resources, download the file again, and contact support at support@lessonforgehub.com if something needs attention.",
   },
   {
     question: "What kind of products are sold here?",
@@ -27,7 +27,7 @@ const questions = [
   {
     question: "How do sellers get paid?",
     answer:
-      "Sellers complete payout onboarding, choose a plan, and see the payout percentage before they start selling. Refunds, disputes, or rights issues can affect payout timing.",
+      "Sellers complete payout onboarding, choose a plan, and see the payout percentage before they start selling. They must only upload original or properly licensed classroom resources, and refunds, disputes, or rights issues can affect payout timing.",
   },
   {
     question: "Where do I go if something looks wrong?",

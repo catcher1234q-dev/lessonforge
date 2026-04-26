@@ -233,7 +233,7 @@ export function PricingPreview({
           <div className="rounded-[1rem] bg-white px-4 py-3">
             <p className="font-semibold text-ink">Good to know</p>
             <p className="mt-1">
-              Plans and payments run through the platform's payment flow. Support and policy pages stay easy to find.
+              LessonForgeHub sells digital educational resources. Buyers receive library access after a confirmed purchase, and support and policy pages stay easy to find before and after checkout.
             </p>
           </div>
         </div>

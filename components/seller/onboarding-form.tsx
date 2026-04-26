@@ -346,7 +346,7 @@ export function SellerOnboardingForm() {
         </p>
 
         <div className="mt-6 rounded-[1.25rem] border border-amber-100 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-950">
-          Sellers must upload original work or content they have rights to distribute. Copyrighted, stolen, misleading, or unauthorized resale content is not allowed.
+          Sellers must upload original work or content they have rights to distribute. Copyrighted publisher materials, copied worksheets, trademarked characters, answer keys you do not own, protected curriculum content, misleading files, and unauthorized resale content are not allowed.
         </div>
 
         <div className="mt-4 rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-ink-soft">
@@ -364,7 +364,7 @@ export function SellerOnboardingForm() {
             <Link className="font-semibold text-brand transition hover:text-brand-700" href="/refund-policy">
               Refund Policy
             </Link>
-            .
+            . LessonForgeHub may remove listings or restrict seller access when content violates marketplace policy.
           </p>
         </div>
 

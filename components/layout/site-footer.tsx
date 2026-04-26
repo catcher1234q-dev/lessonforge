@@ -13,7 +13,7 @@ export function SiteFooter() {
               {siteConfig.productName}
             </p>
             <p className="mt-3 max-w-sm text-sm leading-6 text-ink-soft">
-              A teacher-focused marketplace for original digital classroom resources, secure digital downloads, and seller payouts managed through the platform.
+              A teacher-focused marketplace for original digital classroom resources, digital delivery after purchase, and seller payouts managed through the platform.
             </p>
             <p className="mt-3 max-w-sm text-sm leading-6 text-ink-soft">
               LessonForgeHub is operated by LessonForge LLC, a registered U.S. business.
@@ -104,22 +104,22 @@ export function SiteFooter() {
               </p>
               <div className="mt-3 grid gap-2.5 text-sm text-ink-soft">
                 <Link className="py-1 transition hover:text-ink" href="/terms">
-                  Terms
+                  Terms of Service
                 </Link>
                 <Link className="py-1 transition hover:text-ink" href="/privacy">
-                  Privacy
+                  Privacy Policy
                 </Link>
                 <Link className="py-1 transition hover:text-ink" href="/refund-policy">
-                  Refund policy
+                  Refund Policy
                 </Link>
                 <Link className="py-1 transition hover:text-ink" href="/seller-agreement">
-                  Seller policy
+                  Seller Agreement
                 </Link>
                 <Link className="py-1 transition hover:text-ink" href="/payout-policy">
-                  Payout policy
+                  Payout Policy
                 </Link>
                 <Link className="py-1 transition hover:text-ink" href="/copyright-policy">
-                  Copyright policy
+                  Copyright Policy
                 </Link>
                 <Link className="py-1 transition hover:text-ink" href="/about">
                   About
@@ -157,22 +157,22 @@ export function SiteFooter() {
             </p>
             <div className="flex flex-wrap gap-x-4 gap-y-2">
               <Link className="transition hover:text-ink" href="/terms">
-                Terms
+                Terms of Service
               </Link>
               <Link className="transition hover:text-ink" href="/privacy">
-                Privacy
+                Privacy Policy
               </Link>
               <Link className="transition hover:text-ink" href="/refund-policy">
-                Refunds
+                Refund Policy
               </Link>
               <Link className="transition hover:text-ink" href="/seller-agreement">
-                Seller policy
+                Seller Agreement
               </Link>
               <Link className="transition hover:text-ink" href="/payout-policy">
-                Payout policy
+                Payout Policy
               </Link>
               <Link className="transition hover:text-ink" href="/copyright-policy">
-                Copyright policy
+                Copyright Policy
               </Link>
               <Link className="transition hover:text-ink" href="/about">
                 About

@@ -47,7 +47,7 @@ const policyLinks = [
   { label: "Terms of Service", href: "/terms" },
   { label: "Privacy Policy", href: "/privacy" },
   { label: "Refund Policy", href: "/refund-policy" },
-  { label: "Seller Policy", href: "/seller-agreement" },
+  { label: "Seller Agreement", href: "/seller-agreement" },
   { label: "Payout Policy", href: "/payout-policy" },
   { label: "Copyright Policy", href: "/copyright-policy" },
   { label: "About LessonForgeHub", href: "/about" },
@@ -91,6 +91,9 @@ export default function SupportPage() {
                   </p>
                   <p className="mt-2">
                     If you need help with a digital download, include the product title, order details, and what went wrong so support can review it faster.
+                  </p>
+                  <p className="mt-2">
+                    Buyers receive access through their LessonForgeHub library after a confirmed digital purchase.
                   </p>
                 </div>
               </div>
@@ -161,7 +164,7 @@ export default function SupportPage() {
                   Review the plain-language marketplace rules.
                 </h2>
                 <p className="mt-2 max-w-3xl text-sm leading-7 text-ink-soft">
-                  These pages explain the current expectations for buying digital resources, selling original educational materials, handling personal information, and reviewing refund requests.
+                  These pages explain the current expectations for buying digital resources, receiving library access after purchase, selling original educational materials, handling personal information, and reviewing refund requests.
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap lg:justify-end">
