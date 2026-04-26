@@ -202,6 +202,12 @@ export default async function AdminPage() {
                   </Link>
                   <Link
                     className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
+                    href="/founder/operations"
+                  >
+                    Monitoring dashboard
+                  </Link>
+                  <Link
+                    className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
                     href="/marketplace"
                   >
                     Back to storefront

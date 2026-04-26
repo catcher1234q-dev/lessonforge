@@ -171,6 +171,12 @@ export default async function FounderPage() {
                   </Link>
                   <Link
                     className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
+                    href="/founder/operations"
+                  >
+                    Open monitoring dashboard
+                  </Link>
+                  <Link
+                    className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
                     href="/marketplace"
                   >
                     Back to storefront
