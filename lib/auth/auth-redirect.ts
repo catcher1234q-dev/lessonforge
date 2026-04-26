@@ -64,6 +64,19 @@ export function hasSupabasePkceCodeVerifier() {
   return false;
 }
 
+export function getAuthNextPathFromSearchParams(
+  searchParams: URLSearchParams,
+  fallback = "/account",
+) {
+  const requestedNextPath = searchParams.get("next");
+
+  if (requestedNextPath) {
+    return sanitizeAuthNextPath(requestedNextPath);
+  }
+
+  return readRememberedAuthNextPath(fallback);
+}
+
 function normalizeOrigin(candidate: string) {
   try {
     return new URL(candidate).origin;
@@ -97,4 +110,10 @@ export function buildClientAuthCallbackUrl() {
 
 export function buildClientAuthResetPasswordUrl() {
   return `${getClientAuthOrigin()}/auth/reset-password`;
+}
+
+export function buildClientAuthRecoveryUrl() {
+  const callbackUrl = new URL(buildClientAuthCallbackUrl());
+  callbackUrl.searchParams.set("next", "/account/reset-password");
+  return callbackUrl.toString();
 }

@@ -56,51 +56,56 @@ export function ResetPasswordContent() {
 
       try {
         const supabase = getSupabaseBrowserClient();
-        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-        const accessToken = hashParams.get("access_token");
-        const refreshToken = hashParams.get("refresh_token");
-        const hashType = hashParams.get("type");
-
-        if (accessToken && refreshToken) {
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-
-          if (error) {
-            setState("error");
-            setMessage(error.message);
-            return;
-          }
-        } else if (recoveryTokenHash && recoveryType === "recovery") {
-          const { error } = await supabase.auth.verifyOtp({
-            token_hash: recoveryTokenHash,
-            type: "recovery" satisfies EmailOtpType,
-          });
-
-          if (error) {
-            setState("error");
-            setMessage(error.message);
-            return;
-          }
-        } else if (recoveryCode && recoveryType !== "recovery" && hashType !== "recovery") {
-          const { error } = await supabase.auth.exchangeCodeForSession(recoveryCode);
-
-          if (error) {
-            setState("error");
-            setMessage(error.message);
-            return;
-          }
-        }
-
-        const {
+        let {
           data: { session },
         } = await supabase.auth.getSession();
 
         if (!session) {
+          const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+          const accessToken = hashParams.get("access_token");
+          const refreshToken = hashParams.get("refresh_token");
+
+          if (accessToken && refreshToken) {
+            const { error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+
+            if (error) {
+              setState("error");
+              setMessage(error.message);
+              return;
+            }
+          } else if (recoveryTokenHash && recoveryType === "recovery") {
+            const { error } = await supabase.auth.verifyOtp({
+              token_hash: recoveryTokenHash,
+              type: "recovery" satisfies EmailOtpType,
+            });
+
+            if (error) {
+              setState("error");
+              setMessage(error.message);
+              return;
+            }
+          } else if (recoveryCode && recoveryType === "recovery") {
+            const { error } = await supabase.auth.exchangeCodeForSession(recoveryCode);
+
+            if (error) {
+              setState("error");
+              setMessage(error.message);
+              return;
+            }
+          }
+        }
+
+        ({
+          data: { session },
+        } = await supabase.auth.getSession());
+
+        if (!session) {
           setState("error");
           setMessage(
-            "This password reset link is missing required recovery details or has expired. Request a new reset email and try again.",
+            "LessonForge could not confirm a valid recovery session for this page. Request a new password reset email, open the newest link, and let it pass through the callback page first.",
           );
           return;
         }
@@ -212,7 +217,7 @@ export function ResetPasswordContent() {
                 {
                   label: "Try next",
                   detail:
-                    "Request a new reset email from the sign-in form and open the newest email link on the same device.",
+                    "Request a new reset email from the sign-in form, open the newest email, and let LessonForge route through the callback page before you set a new password.",
                 },
               ]
             : state === "success"
@@ -293,16 +298,16 @@ export function ResetPasswordContent() {
         {state === "error" ? (
           <Link
             className="inline-flex items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
-            href="/"
+            href="/account"
           >
             Return to sign in
           </Link>
         ) : null}
         <Link
           className={secondaryActionLinkClassName("px-5 py-3")}
-          href={state === "success" ? "/account" : "/marketplace"}
+          href={state === "success" ? "/account" : "/account"}
         >
-          {state === "success" ? "Open account" : "Open marketplace"}
+          {state === "success" ? "Open account" : "Request new reset email"}
         </Link>
       </div>
     </div>

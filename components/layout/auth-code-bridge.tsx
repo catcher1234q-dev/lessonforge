@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import {
-  hasSupabasePkceCodeVerifier,
   readRememberedAuthNextPath,
   sanitizeAuthNextPath,
 } from "@/lib/auth/auth-redirect";
@@ -25,6 +24,10 @@ export function AuthCodeBridge() {
     }
 
     if (pathname === "/auth/reset-password") {
+      return;
+    }
+
+    if (pathname === "/account/reset-password") {
       return;
     }
 
@@ -52,13 +55,6 @@ export function AuthCodeBridge() {
 
     if (!params.get("next")) {
       params.set("next", nextPath);
-    }
-
-    if (code && !hasSupabasePkceCodeVerifier() && !tokenHash && !accessToken) {
-      params.set(
-        "auth_message",
-        "This sign-in link could not be verified in this browser session. Request a new link and open it on the same device and browser.",
-      );
     }
 
     const queryString = params.toString();

@@ -1,3 +1,4 @@
+import { createServerClient } from "@supabase/ssr";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 type SupabaseServerConfig = {
@@ -7,6 +8,25 @@ type SupabaseServerConfig = {
 };
 
 let adminClient: SupabaseClient | null = null;
+
+type SupabaseCookie = {
+  name: string;
+  value: string;
+  options?: {
+    domain?: string;
+    expires?: Date;
+    sameSite?: boolean | "lax" | "strict" | "none";
+    secure?: boolean;
+    httpOnly?: boolean;
+    maxAge?: number;
+    path?: string;
+  };
+};
+
+type SupabaseCookieAdapter = {
+  getAll: () => Array<{ name: string; value: string }>;
+  setAll?: (cookies: SupabaseCookie[]) => void;
+};
 
 function hasNonPlaceholderValue(value?: string | null, placeholders: string[] = []) {
   if (!value) {
@@ -84,3 +104,26 @@ export function getSupabaseServerAdminClient() {
 
   return adminClient;
 }
+
+export function createSupabaseServerAuthClient(cookieAdapter: SupabaseCookieAdapter) {
+  const config = getSupabaseServerConfig();
+
+  if (!config) {
+    throw new Error(
+      "Missing NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, or SUPABASE_SERVICE_ROLE_KEY.",
+    );
+  }
+
+  return createServerClient(config.url, config.anonKey, {
+    cookies: {
+      getAll() {
+        return cookieAdapter.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookieAdapter.setAll?.(cookiesToSet);
+      },
+    },
+  });
+}
+
+export type { SupabaseCookie, SupabaseCookieAdapter };

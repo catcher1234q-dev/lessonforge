@@ -10,9 +10,8 @@ import { secondaryActionLinkClassName } from "@/components/shared/secondary-acti
 import { StartHerePanel } from "@/components/shared/start-here-panel";
 import {
   clearRememberedAuthNextPath,
+  getAuthNextPathFromSearchParams,
   hasSupabasePkceCodeVerifier,
-  readRememberedAuthNextPath,
-  sanitizeAuthNextPath,
 } from "@/lib/auth/auth-redirect";
 import {
   getSupabaseBrowserClient,
@@ -29,12 +28,10 @@ export function CallbackContent() {
   const [message, setMessage] = useState("Signing you in to LessonForge...");
 
   const nextPath = useMemo(
-    () =>
-      searchParams.get("next")
-        ? sanitizeAuthNextPath(searchParams.get("next"))
-        : readRememberedAuthNextPath("/account"),
+    () => getAuthNextPathFromSearchParams(searchParams, "/account"),
     [searchParams],
   );
+  const expectsPasswordReset = nextPath === "/account/reset-password";
 
   useEffect(() => {
     async function handleCallback() {
@@ -66,10 +63,19 @@ export function CallbackContent() {
       const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
       const accessToken = hashParams.get("access_token");
       const refreshToken = hashParams.get("refresh_token");
+      const hashType = hashParams.get("type");
+      const isRecoveryFlow =
+        expectsPasswordReset ||
+        callbackType === "recovery" ||
+        hashType === "recovery";
 
       if (!code && !tokenHash && !(accessToken && refreshToken)) {
         setState("error");
-        setMessage("No sign-in code was returned from the provider.");
+        setMessage(
+          isRecoveryFlow
+            ? "This reset link did not include the recovery details needed to update your password. Request a fresh reset email and try again."
+            : "No sign-in code was returned from the provider.",
+        );
         return;
       }
 
@@ -88,11 +94,13 @@ export function CallbackContent() {
           }
         } else if (
           tokenHash &&
-          (callbackType === "email" || callbackType === "magiclink")
+          (callbackType === "email" ||
+            callbackType === "magiclink" ||
+            callbackType === "recovery")
         ) {
           const { error } = await supabase.auth.verifyOtp({
             token_hash: tokenHash,
-            type: callbackType as Extract<EmailOtpType, "email" | "magiclink">,
+            type: callbackType as Extract<EmailOtpType, "email" | "magiclink" | "recovery">,
           });
 
           if (error) {
@@ -102,7 +110,9 @@ export function CallbackContent() {
           if (!hasSupabasePkceCodeVerifier()) {
             setState("error");
             setMessage(
-              "This sign-in link could not be verified in this browser session. Request a new link and open it on the same device and browser.",
+              isRecoveryFlow
+                ? "This reset link could not be verified in this browser session. Request a new password reset email and open the newest link in the same browser."
+                : "This sign-in link could not be verified in this browser session. Request a new link and open it on the same device and browser.",
             );
             return;
           }
@@ -116,7 +126,11 @@ export function CallbackContent() {
 
         if (authError) {
           setState("error");
-          setMessage(authError.message);
+          setMessage(
+            isRecoveryFlow
+              ? `LessonForge could not finish the password reset handoff: ${authError.message}`
+              : authError.message,
+          );
           return;
         }
 
@@ -127,7 +141,9 @@ export function CallbackContent() {
         if (!session) {
           setState("error");
           setMessage(
-            "LessonForge could not confirm a signed-in session from this link. Request a new link and try again.",
+            isRecoveryFlow
+              ? "LessonForge could not confirm a recovery session from this reset link. Request a new reset email and try again."
+              : "LessonForge could not confirm a signed-in session from this link. Request a new link and try again.",
           );
           return;
         }
@@ -139,20 +155,26 @@ export function CallbackContent() {
         clearRememberedAuthNextPath();
 
         setState("success");
-        setMessage("Sign-in successful. Redirecting back to the website...");
+        setMessage(
+          isRecoveryFlow
+            ? "Recovery verified. Redirecting you to choose a new password..."
+            : "Sign-in successful. Redirecting back to the website...",
+        );
         router.replace(nextPath);
       } catch (caughtError) {
         setState("error");
         setMessage(
           caughtError instanceof Error
             ? caughtError.message
-            : "Unable to complete the sign-in link.",
+            : isRecoveryFlow
+              ? "Unable to complete the password reset link."
+              : "Unable to complete the sign-in link.",
         );
       }
     }
 
     void handleCallback();
-  }, [nextPath, router, searchParams]);
+  }, [expectsPasswordReset, nextPath, router, searchParams]);
 
   return (
     <div className="w-full max-w-xl rounded-[2rem] border border-ink/5 bg-white p-8 text-center shadow-soft-xl">
@@ -246,15 +268,15 @@ export function CallbackContent() {
           <>
             <Link
               className="inline-flex items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
-              href="/"
+              href="/account"
             >
-              Return home
+              Back to sign in
             </Link>
             <Link
               className={secondaryActionLinkClassName("px-5 py-3")}
-              href="/marketplace"
+              href={expectsPasswordReset ? "/account" : "/marketplace"}
             >
-              Open marketplace
+              {expectsPasswordReset ? "Request new reset email" : "Open marketplace"}
             </Link>
           </>
         ) : null}

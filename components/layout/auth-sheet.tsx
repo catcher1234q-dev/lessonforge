@@ -8,11 +8,12 @@ import { Apple, Chrome, KeyRound, LoaderCircle, LogOut, Mail, X } from "lucide-r
 
 import {
   getSupabaseBrowserClient,
-  getSupabasePublicConfig,
   hasSupabaseEnv,
 } from "@/lib/supabase/client";
 import { trackFunnelEvent } from "@/lib/analytics/events";
 import {
+  buildClientAuthCallbackUrl,
+  buildClientAuthRecoveryUrl,
   rememberAuthNextPath,
 } from "@/lib/auth/auth-redirect";
 import { syncViewerCookie } from "@/lib/auth/viewer-sync";
@@ -45,34 +46,6 @@ export function AuthSheet({
   function getNextPath() {
     const queryString = searchParams.toString();
     return pathname ? `${pathname}${queryString ? `?${queryString}` : ""}` : "/";
-  }
-
-  function getBrowserAuthOrigin() {
-    if (typeof window !== "undefined") {
-      const browserOrigin = window.location.origin;
-      const fallbackOrigin = "https://lessonforgehub.com";
-
-      if (
-        process.env.NODE_ENV === "production" &&
-        browserOrigin.includes("localhost") &&
-        window.location.hostname !== "localhost" &&
-        window.location.hostname !== "127.0.0.1"
-      ) {
-        return fallbackOrigin;
-      }
-
-      return browserOrigin;
-    }
-
-    return process.env.NEXT_PUBLIC_SITE_URL || "https://lessonforgehub.com";
-  }
-
-  function getAuthCallbackUrl() {
-    return `${getBrowserAuthOrigin()}/auth/callback`;
-  }
-
-  function getResetPasswordUrl() {
-    return `${getBrowserAuthOrigin()}/auth/reset-password`;
   }
 
   async function completeSignedInSession(session: Session | null) {
@@ -108,7 +81,7 @@ export function AuthSheet({
 
       const supabase = getSupabaseBrowserClient();
       rememberAuthNextPath(getNextPath());
-      const redirectTo = getAuthCallbackUrl();
+      const redirectTo = buildClientAuthCallbackUrl();
       const { error: signInError } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
@@ -149,39 +122,18 @@ export function AuthSheet({
       setError(null);
       setMessage(null);
 
-      const supabaseConfig = getSupabasePublicConfig();
-      if (!supabaseConfig) {
-        throw new Error(
-          "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY.",
-        );
-      }
-
+      const supabase = getSupabaseBrowserClient();
       rememberAuthNextPath(getNextPath());
-      const otpUrl = new URL(`${supabaseConfig.url}/auth/v1/otp`);
-      otpUrl.searchParams.set("redirect_to", getAuthCallbackUrl());
-
-      const response = await fetch(otpUrl.toString(), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: supabaseConfig.anonKey,
-          Authorization: `Bearer ${supabaseConfig.anonKey}`,
+      const { error: signInError } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          emailRedirectTo: buildClientAuthCallbackUrl(),
+          shouldCreateUser: true,
         },
-        body: JSON.stringify({
-          email: email.trim(),
-          data: {},
-          create_user: true,
-          gotrue_meta_security: {},
-        }),
       });
 
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as
-          | { msg?: string; error_description?: string; error?: string }
-          | null;
-        const safeMessage =
-          payload?.msg || payload?.error_description || payload?.error;
-        throw new Error(safeMessage || "Unable to send the sign-in email.");
+      if (signInError) {
+        throw signInError;
       }
 
       setMessage("Check your email for a LessonForge magic link.");
@@ -236,7 +188,7 @@ export function AuthSheet({
           email: email.trim(),
           password,
           options: {
-            emailRedirectTo: getAuthCallbackUrl(),
+            emailRedirectTo: buildClientAuthCallbackUrl(),
           },
         });
 
@@ -305,7 +257,7 @@ export function AuthSheet({
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email.trim(),
         {
-          redirectTo: getResetPasswordUrl(),
+          redirectTo: buildClientAuthRecoveryUrl(),
         },
       );
 
@@ -313,7 +265,9 @@ export function AuthSheet({
         throw resetError;
       }
 
-      setMessage("Check your email for a password reset link from LessonForge.");
+      setMessage(
+        "Check your email for a password reset link from LessonForge. Open the newest email in the same browser so we can finish the secure reset handoff.",
+      );
     } catch (caughtError) {
       setError(
         caughtError instanceof Error

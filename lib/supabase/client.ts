@@ -1,7 +1,7 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 let browserClient: SupabaseClient | null = null;
-let passwordlessBrowserClient: SupabaseClient | null = null;
 
 function hasNonPlaceholderValue(value?: string | null, placeholders: string[] = []) {
   if (!value) {
@@ -65,11 +65,7 @@ export function getSupabaseBrowserClient() {
   }
 
   try {
-    browserClient = createClient(config.url, config.anonKey, {
-      auth: {
-        flowType: "pkce",
-      },
-    });
+    browserClient = createBrowserClient(config.url, config.anonKey);
   } catch (error) {
     console.error(
       "[lessonforge:supabase-client] Browser client initialization failed.",
@@ -79,34 +75,4 @@ export function getSupabaseBrowserClient() {
   }
 
   return browserClient;
-}
-
-export function getSupabasePasswordlessBrowserClient() {
-  if (passwordlessBrowserClient) {
-    return passwordlessBrowserClient;
-  }
-
-  const config = getSupabaseConfig();
-
-  if (!config) {
-    throw new Error(
-      "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY.",
-    );
-  }
-
-  try {
-    passwordlessBrowserClient = createClient(config.url, config.anonKey, {
-      auth: {
-        flowType: "implicit",
-      },
-    });
-  } catch (error) {
-    console.error(
-      "[lessonforge:supabase-passwordless-client] Browser client initialization failed.",
-      error instanceof Error ? error.message : error,
-    );
-    throw error;
-  }
-
-  return passwordlessBrowserClient;
 }
