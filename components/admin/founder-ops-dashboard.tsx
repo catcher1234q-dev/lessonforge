@@ -108,6 +108,13 @@ export function FounderOpsDashboard({
           <p className="mt-2 text-sm leading-6 text-ink-soft">{snapshot.emailStatus.detail}</p>
         </article>
         <article className="rounded-[1.5rem] border border-black/5 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+          <p className="text-sm text-ink-soft">App issue signals</p>
+          <p className="mt-2 text-4xl font-semibold text-ink">{snapshot.appIssueSignals.length}</p>
+          <p className="mt-2 text-sm leading-6 text-ink-soft">
+            Read-only issue hints from route failures, auth setup gaps, and recent support-style bug reports.
+          </p>
+        </article>
+        <article className="rounded-[1.5rem] border border-black/5 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
           <p className="text-sm text-ink-soft">Policy review queue</p>
           <p className="mt-2 text-4xl font-semibold text-ink">{snapshot.policyQueue.length}</p>
           <p className="mt-2 text-sm leading-6 text-ink-soft">
@@ -214,6 +221,9 @@ export function FounderOpsDashboard({
             <p>
               Production site URL set: <span className="font-semibold text-ink">{snapshot.emailStatus.siteUrlConfigured ? "Yes" : "No"}</span>
             </p>
+            <p>
+              Sentry configured: <span className="font-semibold text-ink">{snapshot.monitoringStatus.sentryConfigured ? "Yes" : "No"}</span>
+            </p>
           </div>
           <div className="mt-6">
             <QueueList
@@ -225,6 +235,21 @@ export function FounderOpsDashboard({
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
+        <section className="rounded-[2rem] border border-black/5 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:p-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand">
+            App issue signals
+          </p>
+          <h2 className="mt-2 text-2xl font-semibold text-ink">
+            Foundational issues worth checking before they become support tickets.
+          </h2>
+          <div className="mt-6">
+            <QueueList
+              emptyMessage="No recent app issue signals were found. Add Sentry and uptime alerts for deeper production visibility."
+              items={snapshot.appIssueSignals}
+            />
+          </div>
+        </section>
+
         <section className="rounded-[2rem] border border-black/5 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:p-8">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand">
             Checkout and payments

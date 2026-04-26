@@ -26,7 +26,7 @@ export async function SiteHeader() {
         },
         {
           description: "review seller plans and choose the one that fits your business",
-          href: "/#pricing",
+          href: "/pricing",
           label: "Pricing",
         },
       ]}

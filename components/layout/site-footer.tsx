@@ -89,7 +89,7 @@ export function SiteFooter() {
                 <Link className="py-1 transition hover:text-ink" href="/#subjects">
                   Subjects
                 </Link>
-                <Link className="py-1 transition hover:text-ink" href="/#pricing">
+                <Link className="py-1 transition hover:text-ink" href="/pricing">
                   Pricing
                 </Link>
                 <Link className="py-1 transition hover:text-ink" href="/#faq">

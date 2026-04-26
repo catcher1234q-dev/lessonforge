@@ -97,7 +97,7 @@ export default async function FounderOperationsPage() {
                   <div className="rounded-[1.5rem] bg-slate-50 p-5 text-sm leading-7 text-ink-soft">
                     <p className="font-semibold text-ink">Approve the important actions</p>
                     <p className="mt-1">
-                      AI can draft recommendations, but human approval is still required for money, sellers, accounts, or legal actions.
+                      AI may draft recommendations, but founder approval is required for refunds, seller removals, account actions, product takedowns, payout changes, or legal and copyright decisions.
                     </p>
                   </div>
                 </div>
@@ -122,8 +122,10 @@ export default async function FounderOperationsPage() {
                   Safety rules
                 </p>
                 <div className="mt-5 space-y-2 text-sm leading-7 text-white/75">
+                  <p>AI may draft recommendations only</p>
                   <p>No automatic refunds</p>
                   <p>No automatic seller bans or removals</p>
+                  <p>No automatic account actions or product takedowns</p>
                   <p>No automatic payout changes</p>
                   <p>No automatic legal or copyright decisions</p>
                 </div>

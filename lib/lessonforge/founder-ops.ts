@@ -38,6 +38,11 @@ export type RecommendedAction = {
   priority: "high" | "medium" | "low";
 };
 
+export type MonitoringStatus = {
+  sentryConfigured: boolean;
+  sentryDetail: string;
+};
+
 type SellerOnboardingSignalProfile = SellerProfileDraft & {
   paypalMerchantId?: string;
   paypalPayoutsEnabled?: boolean;
@@ -185,6 +190,17 @@ function getEmailAuthStatus() {
     smtpConfigured,
     senderConfigured,
     siteUrlConfigured,
+  };
+}
+
+function getMonitoringStatus(): MonitoringStatus {
+  const sentryConfigured = Boolean(process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN);
+
+  return {
+    sentryConfigured,
+    sentryDetail: sentryConfigured
+      ? "Sentry DSN is present, so app errors can be sent once the Sentry project is connected."
+      : "Sentry is not configured yet. Add a DSN before relying on app issue alerts outside this founder view.",
   };
 }
 
@@ -373,6 +389,7 @@ function buildDisputeQueue(refunds: RefundRequestRecord[], reports: ReportRecord
 function buildRecommendedActions(input: {
   checks: SiteHealthCheck[];
   emailStatus: ReturnType<typeof getEmailAuthStatus>;
+  monitoringStatus: MonitoringStatus;
   signupSignals: OpsSignal[];
   checkoutSignals: OpsSignal[];
   onboardingSignals: OpsSignal[];
@@ -395,6 +412,14 @@ function buildRecommendedActions(input: {
       title: "Finish auth email setup",
       detail: "SMTP or production email settings still need attention. This affects signup, magic link, and password reset reliability.",
       priority: "high",
+    });
+  }
+
+  if (!input.monitoringStatus.sentryConfigured) {
+    actions.push({
+      title: "Finish external error monitoring setup",
+      detail: "Sentry is not configured yet. Add the DSN before launch so production errors do not hide inside support inboxes.",
+      priority: "medium",
     });
   }
 
@@ -453,6 +478,9 @@ export async function getFounderOpsSnapshot(origin: string) {
     products,
     homepageCheck,
     marketplaceCheck,
+    supportCheck,
+    pricingCheck,
+    healthEndpointCheck,
     accountCheck,
     sellerUploadCheck,
     supabaseCheck,
@@ -467,12 +495,16 @@ export async function getFounderOpsSnapshot(origin: string) {
     listPersistedProducts(),
     runSimpleCheck(origin, "/", "Homepage"),
     runSimpleCheck(origin, "/marketplace", "Marketplace"),
+    runSimpleCheck(origin, "/support", "Support page"),
+    runSimpleCheck(origin, "/pricing", "Pricing page"),
+    runSimpleCheck(origin, "/api/health", "Health endpoint"),
     runProtectedRouteCheck(origin, "/account", "Sign in to open your buyer tools.", "Account route"),
     runProtectedRouteCheck(origin, "/sell/products/new", "Sign in to open your seller tools.", "Seller upload route"),
     getSupabaseHealthCheck(),
   ]);
 
   const emailStatus = getEmailAuthStatus();
+  const monitoringStatus = getMonitoringStatus();
   const authFeedbackSignals = feedback
     .filter((entry) =>
       matchesKeyword(entry, ["sign in", "login", "log in", "magic link", "reset password", "signup", "sign up"]),
@@ -493,7 +525,9 @@ export async function getFounderOpsSnapshot(origin: string) {
   const checks: SiteHealthCheck[] = [
     homepageCheck,
     marketplaceCheck,
-    await runSimpleCheck(origin, "/support", "Support page"),
+    supportCheck,
+    pricingCheck,
+    healthEndpointCheck,
     accountCheck,
     sellerUploadCheck,
     supabaseCheck,
@@ -502,6 +536,12 @@ export async function getFounderOpsSnapshot(origin: string) {
       label: "Auth email config",
       status: emailStatus.status,
       detail: emailStatus.detail,
+    },
+    {
+      key: "sentry-config",
+      label: "Sentry monitoring config",
+      status: monitoringStatus.sentryConfigured ? "healthy" : "attention",
+      detail: monitoringStatus.sentryDetail,
     },
     {
       key: "integration-readiness",
@@ -526,9 +566,26 @@ export async function getFounderOpsSnapshot(origin: string) {
   const supportSignals = buildSupportSignals(feedback);
   const policyQueue = buildPolicyQueue(products, reports);
   const disputeQueue = buildDisputeQueue(refundRequests, reports);
+  const appIssueSignals = sortNewest<OpsSignal>(
+    [
+      ...checks
+        .filter((check) => check.status !== "healthy")
+        .map((check) => ({
+          title: `${check.label} needs attention`,
+          detail: check.detail,
+        })),
+      ...feedback
+        .filter((entry) =>
+          matchesKeyword(entry, ["error", "broken", "failed", "500", "crash", "bug"]),
+        )
+        .slice(0, 4)
+        .map((entry) => buildFeedbackSignal(entry, "A user reported an app issue")),
+    ].slice(0, 8) as OpsSignal[],
+  );
   const recommendedActions = buildRecommendedActions({
     checks,
     emailStatus,
+    monitoringStatus,
     signupSignals,
     checkoutSignals,
     onboardingSignals,
@@ -541,7 +598,9 @@ export async function getFounderOpsSnapshot(origin: string) {
     generatedAt: new Date().toISOString(),
     checks,
     emailStatus,
+    monitoringStatus,
     signupSignals,
+    appIssueSignals,
     checkoutSignals,
     onboardingSignals,
     uploadSignals,
