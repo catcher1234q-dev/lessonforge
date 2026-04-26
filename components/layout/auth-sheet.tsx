@@ -8,6 +8,7 @@ import { Apple, Chrome, KeyRound, LoaderCircle, LogOut, Mail, X } from "lucide-r
 
 import {
   getSupabaseBrowserClient,
+  getSupabasePublicConfig,
   hasSupabaseEnv,
 } from "@/lib/supabase/client";
 import { trackFunnelEvent } from "@/lib/analytics/events";
@@ -122,18 +123,47 @@ export function AuthSheet({
       setError(null);
       setMessage(null);
 
-      const supabase = getSupabaseBrowserClient();
-      rememberAuthNextPath(getNextPath());
-      const { error: signInError } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: {
-          emailRedirectTo: buildClientAuthCallbackUrl(),
-          shouldCreateUser: true,
-        },
-      });
+      const config = getSupabasePublicConfig();
+      if (!config) {
+        throw new Error(
+          "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+        );
+      }
 
-      if (signInError) {
-        throw signInError;
+      rememberAuthNextPath(getNextPath());
+      const response = await fetch(
+        `${config.url}/auth/v1/otp?redirect_to=${encodeURIComponent(buildClientAuthCallbackUrl())}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: config.anonKey,
+            Authorization: `Bearer ${config.anonKey}`,
+          },
+          body: JSON.stringify({
+            email: email.trim(),
+            data: {},
+            create_user: true,
+            gotrue_meta_security: {},
+          }),
+        },
+      );
+
+      const payload = (await response.json().catch(() => null)) as
+        | { error_description?: string; msg?: string; error?: string }
+        | null;
+
+      if (!response.ok) {
+        throw new Error(
+          payload?.error_description ||
+            payload?.msg ||
+            payload?.error ||
+            "Unable to send the sign-in email.",
+        );
+      }
+
+      if (payload?.error_description || payload?.error) {
+        throw new Error(payload.error_description || payload.error);
       }
 
       setMessage("Check your email for a LessonForge magic link.");
@@ -253,16 +283,43 @@ export function AuthSheet({
       setError(null);
       setMessage(null);
 
-      const supabase = getSupabaseBrowserClient();
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        email.trim(),
+      const config = getSupabasePublicConfig();
+      if (!config) {
+        throw new Error(
+          "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+        );
+      }
+
+      const response = await fetch(
+        `${config.url}/auth/v1/recover?redirect_to=${encodeURIComponent(buildClientAuthRecoveryUrl())}`,
         {
-          redirectTo: buildClientAuthRecoveryUrl(),
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: config.anonKey,
+            Authorization: `Bearer ${config.anonKey}`,
+          },
+          body: JSON.stringify({
+            email: email.trim(),
+          }),
         },
       );
 
-      if (resetError) {
-        throw resetError;
+      const payload = (await response.json().catch(() => null)) as
+        | { error_description?: string; msg?: string; error?: string }
+        | null;
+
+      if (!response.ok) {
+        throw new Error(
+          payload?.error_description ||
+            payload?.msg ||
+            payload?.error ||
+            "Unable to send the password reset email.",
+        );
+      }
+
+      if (payload?.error_description || payload?.error) {
+        throw new Error(payload.error_description || payload.error);
       }
 
       setMessage(
