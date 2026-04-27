@@ -21,6 +21,23 @@ import {
 import { formatCurrency } from "@/lib/marketplace/config";
 import { buildNoIndexMetadata, buildPageMetadata } from "@/lib/seo/metadata";
 
+function getBestForChips(listing: NonNullable<Awaited<ReturnType<typeof getMarketplaceListingBySlug>>>) {
+  const normalized = `${listing.subject} ${listing.resourceType} ${listing.format} ${listing.tags.join(" ")}`.toLowerCase();
+  const chips = new Set<string>();
+
+  if (/intervention|small group/.test(normalized)) chips.add("small group");
+  if (/center|task card|rotation|phonics|jobs/.test(normalized)) chips.add("centers");
+  if (/independent|practice|memory book|passage|worksheet/.test(normalized)) chips.add("independent practice");
+  if (/review|prep|assessment|reteach|fraction|math/.test(normalized)) chips.add("review");
+
+  for (const fallback of ["small group", "centers", "independent practice", "review"]) {
+    if (chips.size >= 4) break;
+    chips.add(fallback);
+  }
+
+  return Array.from(chips).slice(0, 4);
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -81,6 +98,7 @@ export default async function ProductDetailPage({
   const answerKeyIncluded = listing.includedItems.some((item) =>
     /answer/i.test(item),
   );
+  const bestFor = getBestForChips(listing);
   const reportHref = `/report-product?productId=${encodeURIComponent(listing.id)}&title=${encodeURIComponent(listing.title)}&returnTo=${encodeURIComponent(currentListingHref)}`;
 
   return (
@@ -117,6 +135,9 @@ export default async function ProductDetailPage({
                 <h1 className="mt-4 font-[family-name:var(--font-display)] text-4xl leading-tight text-ink sm:text-5xl">
                   {listing.title}
                 </h1>
+                <p className="mt-3 text-base font-semibold text-[#9b7a10]">
+                  Use this tomorrow in your classroom.
+                </p>
                 <p className="mt-4 max-w-3xl text-lg leading-8 text-ink">
                   {listing.shortDescription}
                 </p>
@@ -148,6 +169,22 @@ export default async function ProductDetailPage({
                       {tag}
                     </span>
                   ))}
+                </div>
+
+                <div className="mt-6 rounded-[24px] border border-[#d4af37]/18 bg-[#fff9ea] px-5 py-4">
+                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#9b7a10]">
+                    Best for
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {bestFor.map((item) => (
+                      <span
+                        key={item}
+                        className="rounded-full border border-[#d4af37]/20 bg-white px-4 py-2 text-sm font-medium text-ink"
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </section>
 

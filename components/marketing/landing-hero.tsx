@@ -1,67 +1,55 @@
-import { ArrowRight, BookOpenCheck, ShieldCheck, Wallet } from "lucide-react";
+import { ArrowRight, BookOpenCheck, ShieldCheck, Sparkles, Wallet } from "lucide-react";
 import Link from "next/link";
 
 export function LandingHero() {
   return (
     <section className="relative overflow-hidden px-5 pb-6 pt-6 sm:px-6 lg:px-8 lg:pb-10 lg:pt-8">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[28rem] bg-[radial-gradient(circle_at_top_left,rgba(212,175,55,0.18),transparent_36%),radial-gradient(circle_at_top_right,rgba(255,255,255,0.08),transparent_28%)]" />
       <div className="mx-auto grid w-full max-w-6xl gap-5 lg:grid-cols-[1.12fr_0.88fr] lg:items-start">
         <div className="animate-fade-up">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-brand/10 bg-brand-soft px-4 py-2 text-sm font-medium text-brand-700">
-            <BookOpenCheck className="h-4 w-4" />
-            Digital marketplace for teacher-made resources
-          </div>
-
-          <h1 className="font-[family-name:var(--font-display)] text-4xl leading-tight tracking-tight text-ink sm:text-6xl lg:text-7xl">
-            Find classroom resources fast.
-          </h1>
-
-          <p className="mt-4 max-w-xl text-lg leading-8 text-ink-soft sm:text-xl">
-            LessonForge is a marketplace for teacher-created digital classroom resources. Sellers upload original materials they create, and buyers purchase downloadable resources for classroom use.
-          </p>
-
-          <p className="mt-2 max-w-xl text-base leading-7 text-ink-soft">
-            LessonForgeHub sells digital educational downloads only. No physical products are sold or shipped.
-          </p>
-
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Link
-              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-brand px-6 py-3.5 text-base font-semibold text-white transition hover:bg-brand-700 sm:w-auto"
-              data-analytics-event="homepage_cta_clicked"
-              data-analytics-props={JSON.stringify({ cta: "browse_resources", destination: "/marketplace" })}
-              href="/marketplace"
-            >
-              Browse Marketplace
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-ink/10 bg-white px-6 py-3.5 text-base font-semibold text-ink transition hover:border-ink/20 hover:bg-surface-muted sm:w-auto"
-              data-analytics-event="homepage_cta_clicked"
-              data-analytics-props={JSON.stringify({ cta: "start_selling", destination: "/sell/onboarding" })}
-              href="/sell/onboarding"
-            >
-              Start Selling
-            </Link>
-          </div>
-
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-[1.15rem] border border-emerald-100 bg-emerald-50/70 px-4 py-3.5 text-sm leading-6 text-emerald-900">
-              <p className="font-semibold">For sellers</p>
-              <p className="mt-1">
-                Upload original classroom resources and show real previews.
-              </p>
+          <div className="overflow-hidden rounded-[2rem] border border-[#d4af37]/20 bg-[#17181c] px-6 py-7 text-white shadow-[0_30px_100px_rgba(15,23,42,0.28)] sm:px-8 sm:py-9">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#d4af37]/25 bg-white/5 px-4 py-2 text-sm font-medium text-[#f2d77a]">
+              <Sparkles className="h-4 w-4" />
+              Premium teacher marketplace
             </div>
-            <div className="rounded-[1.15rem] border border-amber-100 bg-amber-50/80 px-4 py-3.5 text-sm leading-6 text-amber-900">
-              <p className="font-semibold">For buyers</p>
-              <p className="mt-1">
-                Preview first, buy with confidence, and reopen files from your library later.
-              </p>
+
+            <h1 className="max-w-4xl font-[family-name:var(--font-display)] text-4xl leading-tight tracking-tight text-white sm:text-6xl lg:text-7xl">
+              Sell your teaching resources and keep more of what you earn
+            </h1>
+
+            <p className="mt-5 max-w-2xl text-lg leading-8 text-white/80 sm:text-xl">
+              Clean previews. Simple uploads. Built for teachers.
+            </p>
+
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <Link
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#d4af37] px-6 py-3.5 text-base font-semibold text-slate-950 transition hover:bg-[#e4c763] sm:w-auto"
+                data-analytics-event="homepage_cta_clicked"
+                data-analytics-props={JSON.stringify({ cta: "browse_resources", destination: "/marketplace" })}
+                href="/marketplace"
+              >
+                Browse resources
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3.5 text-base font-semibold text-white transition hover:border-white/25 hover:bg-white/10 sm:w-auto"
+                data-analytics-event="homepage_cta_clicked"
+                data-analytics-props={JSON.stringify({ cta: "start_selling", destination: "/sell/onboarding" })}
+                href="/sell/onboarding"
+              >
+                Start selling
+              </Link>
             </div>
+
+            <p className="mt-6 text-sm font-medium uppercase tracking-[0.18em] text-white/62">
+              Early marketplace. First resources live. More added weekly.
+            </p>
           </div>
         </div>
 
-        <div className="rounded-[1.55rem] border border-white/70 bg-white/90 p-4 shadow-soft-xl">
-          <div className="rounded-[1.35rem] bg-slate-950 px-4 py-4 text-white">
-            <p className="text-sm text-white/60">Good to know</p>
+        <div className="rounded-[1.8rem] border border-black/5 bg-white p-4 shadow-soft-xl">
+          <div className="rounded-[1.45rem] bg-[#17181c] px-4 py-4 text-white">
+            <p className="text-sm text-[#f2d77a]">Good to know</p>
             <h2 className="mt-2 text-lg font-semibold">
               The basics are clear right away.
             </h2>
@@ -75,7 +63,7 @@ export function LandingHero() {
                 <span>Digital purchases stay tied to your library after checkout.</span>
               </div>
               <div className="flex items-start gap-3 rounded-2xl bg-white/5 p-3.5">
-                <BookOpenCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+                <BookOpenCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#f2d77a]" />
                 <span>Support, refund rules, and seller policies stay easy to find.</span>
               </div>
             </div>

@@ -51,6 +51,44 @@ function getResultLabel(count: number, subject: string, query: string) {
   return `${count} listing${count === 1 ? "" : "s"} in the marketplace`;
 }
 
+function groupMarketplaceListings(listings: Awaited<ReturnType<typeof filterMarketplaceListings>>) {
+  const groups = [
+    {
+      title: "Featured resources",
+      description: "A strong first look at real classroom resources with live previews.",
+      items: listings.slice(0, 4),
+    },
+    {
+      title: "Math",
+      description: "Intervention, fractions, task cards, and review-focused math resources.",
+      items: listings.filter((listing) => listing.subject === "Math").slice(0, 4),
+    },
+    {
+      title: "Literacy",
+      description: "Reading, writing, and passage-based resources teachers can preview quickly.",
+      items: listings.filter((listing) => listing.subject === "Reading" || listing.subject === "Writing").slice(0, 4),
+    },
+    {
+      title: "Classroom systems",
+      description: "Routines, jobs, and classroom-management resources built for daily use.",
+      items: listings.filter((listing) => {
+        const normalized = `${listing.subject} ${listing.resourceType} ${listing.title}`.toLowerCase();
+        return /classroom|jobs|procedure|morning/.test(normalized);
+      }).slice(0, 4),
+    },
+    {
+      title: "Seasonal resources",
+      description: "Time-sensitive classroom resources that fit back-to-school and end-of-year needs.",
+      items: listings.filter((listing) => {
+        const normalized = `${listing.subject} ${listing.resourceType} ${listing.title}`.toLowerCase();
+        return /seasonal|back to school|end of year/.test(normalized);
+      }).slice(0, 4),
+    },
+  ] as const;
+
+  return groups.filter((group) => group.items.length > 0);
+}
+
 export default async function MarketplacePage({
   searchParams,
 }: {
@@ -73,6 +111,7 @@ export default async function MarketplacePage({
     undefined,
     sort,
   );
+  const groupedListings = !query && subject === "All" ? groupMarketplaceListings(listings) : [];
 
   return (
     <main className="page-shell min-h-screen">
@@ -90,13 +129,13 @@ export default async function MarketplacePage({
                   Browse teacher-created classroom resources.
                 </h1>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-ink-soft sm:text-base">
-                  Review previews, compare resources quickly, and open the product page for details before you buy.
+                  Review larger previews, compare resources quickly, and open the product page for details before you buy.
                 </p>
               </div>
 
-              <div className="rounded-[24px] border border-brand/10 bg-brand-soft/40 p-4 sm:min-w-[260px]">
+              <div className="rounded-[24px] border border-[#d4af37]/18 bg-[#fff9ea] p-4 sm:min-w-[260px]">
                 <Link
-                  className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+                  className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                   href="/sell/products/new"
                 >
                   Start Selling
@@ -155,6 +194,47 @@ export default async function MarketplacePage({
             </p>
             <p>Open any listing to preview pages, check details, and buy.</p>
           </section>
+
+          {groupedListings.length ? (
+            <section className="space-y-8">
+              {groupedListings.map((group, groupIndex) => (
+                <section
+                  key={group.title}
+                  className="rounded-[28px] border border-black/5 bg-white px-5 py-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:px-6"
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand">
+                        {group.title}
+                      </p>
+                      <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-soft">
+                        {group.description}
+                      </p>
+                    </div>
+                    {groupIndex === 0 ? (
+                      <Link
+                        className="inline-flex items-center gap-2 text-sm font-semibold text-brand transition hover:text-brand-700"
+                        href="/marketplace?sort=best-match"
+                      >
+                        View full marketplace
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    ) : null}
+                  </div>
+                  <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {group.items.map((listing) => (
+                      <ProductCard
+                        featured={group.title === "Featured resources"}
+                        key={`${group.title}-${listing.id}`}
+                        listing={listing}
+                        returnTo={returnTo}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </section>
+          ) : null}
 
           {listings.length ? (
             <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

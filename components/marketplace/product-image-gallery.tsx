@@ -48,9 +48,9 @@ export function ProductImageGallery({
 
   return (
     <>
-      <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+      <div className="grid gap-5 lg:grid-cols-[1.35fr_0.65fr]">
         <button
-          className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-100 shadow-[0_16px_40px_rgba(15,23,42,0.08)]"
+          className="overflow-hidden rounded-[30px] border border-slate-200 bg-slate-100 shadow-[0_18px_50px_rgba(15,23,42,0.10)]"
           onClick={() => setIsLightboxOpen(true)}
           type="button"
         >
@@ -71,7 +71,7 @@ export function ProductImageGallery({
           </div>
           <img
             alt={`${title} preview ${selectedIndex + 1}`}
-            className="h-full max-h-[760px] w-full bg-slate-100 object-contain"
+            className="h-full max-h-[860px] w-full bg-slate-100 object-contain"
             decoding="async"
             loading="eager"
             sizes="(min-width: 1024px) 60vw, 100vw"
@@ -79,7 +79,7 @@ export function ProductImageGallery({
           />
         </button>
 
-        <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
           {galleryImages.map((image, index) => (
             <button
               key={`${image.url}-${index}`}
@@ -92,7 +92,7 @@ export function ProductImageGallery({
               <div className="overflow-hidden bg-slate-100">
                 <img
                   alt={`${title} gallery image ${index + 1}`}
-                  className="h-44 w-full bg-slate-100 object-contain p-2 transition duration-300 group-hover:scale-[1.02]"
+                  className="h-52 w-full bg-slate-100 object-contain p-2 transition duration-300 group-hover:scale-[1.02]"
                   decoding="async"
                   loading="lazy"
                   sizes="(min-width: 1024px) 28vw, (min-width: 640px) 33vw, 100vw"
