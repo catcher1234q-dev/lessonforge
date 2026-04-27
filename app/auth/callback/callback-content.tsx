@@ -11,7 +11,6 @@ import { StartHerePanel } from "@/components/shared/start-here-panel";
 import {
   clearRememberedAuthNextPath,
   getAuthNextPathFromSearchParams,
-  hasSupabasePkceCodeVerifier,
 } from "@/lib/auth/auth-redirect";
 import {
   getSupabaseBrowserClient,
@@ -32,6 +31,7 @@ export function CallbackContent() {
     [searchParams],
   );
   const expectsPasswordReset = nextPath === "/account/reset-password";
+  const oauthCompleted = searchParams.get("oauth") === "complete";
 
   useEffect(() => {
     async function handleCallback() {
@@ -70,7 +70,18 @@ export function CallbackContent() {
         callbackType === "recovery" ||
         hashType === "recovery";
 
-      if (!code && !tokenHash && !(accessToken && refreshToken)) {
+      if (code) {
+        const params = new URLSearchParams(searchParams.toString());
+
+        if (!params.get("next")) {
+          params.set("next", nextPath);
+        }
+
+        window.location.replace(`/auth/callback/exchange?${params.toString()}`);
+        return;
+      }
+
+      if (!oauthCompleted && !tokenHash && !(accessToken && refreshToken)) {
         setState("error");
         setMessage(
           isRecoveryFlow
@@ -103,22 +114,6 @@ export function CallbackContent() {
             token_hash: tokenHash,
             type: callbackType as Extract<EmailOtpType, "email" | "magiclink" | "recovery">,
           });
-
-          if (error) {
-            authError = error;
-          }
-        } else if (code) {
-          if (!hasSupabasePkceCodeVerifier()) {
-            setState("error");
-            setMessage(
-              isRecoveryFlow
-                ? "This reset link could not be verified in this browser session. Request a new password reset email and open the newest link in the same browser."
-                : "This sign-in link could not be verified in this browser session. Request a new link and open it on the same device and browser.",
-            );
-            return;
-          }
-
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
 
           if (error) {
             authError = error;
