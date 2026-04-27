@@ -6,10 +6,6 @@ import Link from "next/link";
 
 import { trackFunnelEvent } from "@/lib/analytics/events";
 import { normalizePlanKey, planConfig, type PlanKey } from "@/lib/config/plans";
-import {
-  buildConnectedSellerFromProfile,
-  getSellerConnectionProviderLabel,
-} from "@/lib/payments/seller-connection";
 import { buildSellerPlanCheckoutHref } from "@/lib/stripe/seller-plan-billing";
 import type { ConnectedSeller, SellerProfileDraft } from "@/types";
 
@@ -51,6 +47,50 @@ function buildFallbackProfile(viewer?: {
 
 function formatPrice(monthlyPriceUsd: number) {
   return monthlyPriceUsd === 0 ? "$0/month" : `$${monthlyPriceUsd}/month`;
+}
+
+function buildConnectedSellerFromProfile(profile: SellerProfileDraft): ConnectedSeller | null {
+  if (profile.paypalMerchantId) {
+    return {
+      accountId: profile.paypalMerchantId,
+      displayName: profile.displayName || profile.storeName || "Seller",
+      email: profile.email,
+      provider: "paypal",
+      status:
+        profile.paypalPayoutsEnabled && profile.paypalConsentGranted
+          ? "connected"
+          : "setup_incomplete",
+      payoutsEnabled: profile.paypalPayoutsEnabled,
+    };
+  }
+
+  if (profile.stripeAccountId) {
+    return {
+      accountId: profile.stripeAccountId,
+      displayName: profile.displayName || profile.storeName || "Seller",
+      email: profile.email,
+      provider: "stripe",
+      status:
+        profile.stripeChargesEnabled && profile.stripePayoutsEnabled
+          ? "connected"
+          : "setup_incomplete",
+      chargesEnabled: profile.stripeChargesEnabled,
+      payoutsEnabled: profile.stripePayoutsEnabled,
+    };
+  }
+
+  return null;
+}
+
+function getSellerConnectionProviderLabel(
+  connectedSeller: ConnectedSeller | null,
+  profile: SellerProfileDraft,
+) {
+  if (connectedSeller?.provider === "stripe" || profile.stripeAccountId) {
+    return "Stripe";
+  }
+
+  return "PayPal";
 }
 
 export function SellerOnboardingForm() {
