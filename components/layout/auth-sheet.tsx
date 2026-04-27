@@ -434,8 +434,8 @@ export function AuthSheet({
       </button>
 
       {isOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-[2rem] border border-white/70 bg-white p-6 shadow-soft-xl">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/45 px-4 py-4 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:py-6">
+          <div className="mx-auto w-full max-w-md overflow-y-auto overscroll-contain rounded-[2rem] border border-white/70 bg-white p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-soft-xl max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)]">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand">

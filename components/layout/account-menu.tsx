@@ -98,7 +98,7 @@ export function AccountMenu({ adminHref, isOwner, session }: AccountMenuProps) {
       </button>
 
       {isOpen ? (
-        <div className="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-72 rounded-[1.5rem] border border-ink/5 bg-white p-3 shadow-soft-xl">
+        <div className="fixed inset-x-4 top-[calc(env(safe-area-inset-top)+5rem)] z-50 overflow-y-auto overscroll-contain rounded-[1.5rem] border border-ink/5 bg-white p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-soft-xl max-h-[calc(100dvh-6rem-env(safe-area-inset-top))] sm:absolute sm:inset-x-auto sm:right-0 sm:top-[calc(100%+0.75rem)] sm:w-72 sm:max-h-[calc(100dvh-6rem)]">
           <div className="rounded-[1.25rem] bg-surface-subtle p-4">
             <p className="text-xs uppercase tracking-[0.24em] text-ink-muted">
               Signed in as
