@@ -18,7 +18,7 @@ export const metadata: Metadata = buildPageMetadata({
 const supportPaths = [
   {
     title: "Buyer purchase help",
-    body: "Open your library to download files again, revisit a purchased listing, report an issue, or start a refund request when a file is broken, missing, or clearly misleading.",
+    body: "Open your library to download files again, revisit a purchased listing, report an issue, or start a refund request when a file is broken, missing, corrupted, inaccessible, or clearly misleading.",
     href: "/library?view=support",
     action: "Open buyer support",
   },
@@ -30,14 +30,16 @@ const supportPaths = [
   },
   {
     title: "Policy questions",
-    body: "Review terms, privacy expectations, seller rules, and refund rules so you know how LessonForgeHub handles digital access, listings, support, and disputes.",
+    body: "Review terms, privacy expectations, seller rules, refund rules, digital delivery details, and dispute handling so you know how LessonForgeHub handles digital access, listings, support, and disputes.",
     href: "/refund-policy",
     action: "Read refund policy",
   },
 ] as const;
 
 const riskNotes = [
-  "Digital resources are usually final after delivery unless there is a real access, broken-file, misleading-listing, duplicate-charge, or rights problem.",
+  "All products sold on LessonForgeHub are digital downloads. No physical items are shipped.",
+  "All purchases provide access to downloadable digital resources.",
+  "Due to the nature of digital products, all sales are final once access has been granted unless there is a duplicate purchase, corrupted or inaccessible file, or a product significantly not as described.",
   "Refunds are typically denied when access works, the listing was accurate, or the buyer changed their mind.",
   "Refunded purchases may lose protected download access.",
   "Sellers are responsible for accurate listings, working files, and rights to sell their materials.",
@@ -73,14 +75,14 @@ export default function SupportPage() {
                 <div className="mt-6 rounded-[1.5rem] border border-brand/10 bg-brand-soft/60 px-5 py-4 text-sm leading-6 text-ink-soft">
                   <p className="font-semibold text-ink">Support email</p>
                   <a
-                    className="mt-1 inline-flex items-center gap-2 font-semibold text-brand transition hover:text-brand-700"
+                    className="mt-1 inline-flex items-center gap-2 text-lg font-semibold text-brand transition hover:text-brand-700"
                     href={`mailto:${siteConfig.supportEmail}`}
                   >
                     <Mail className="h-4 w-4" />
                     {siteConfig.supportEmail}
                   </a>
                   <p className="mt-2">
-                    Support inquiries are typically answered within 24 to 48 hours.
+                    We respond to all support requests within 24–48 hours.
                   </p>
                   <p className="mt-2">
                     LessonForge LLC
@@ -93,7 +95,13 @@ export default function SupportPage() {
                     If you need help with a digital download, include the product title, order details, and what went wrong so support can review it faster.
                   </p>
                   <p className="mt-2">
-                    Buyers receive access through their LessonForgeHub library after a confirmed digital purchase.
+                    All products sold on LessonForgeHub are digital downloads. No physical items are shipped. All purchases provide access to downloadable digital resources through the buyer account and/or a download link after purchase.
+                  </p>
+                  <p className="mt-2">
+                    If you experience an issue with a purchase, please contact support before filing a payment dispute. We will review and respond within 24–48 hours.
+                  </p>
+                  <p className="mt-2">
+                    We aim to resolve all issues quickly to avoid the need for external disputes.
                   </p>
                 </div>
               </div>

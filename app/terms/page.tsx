@@ -17,6 +17,9 @@ const sections = [
       "LessonForgeHub is operated by LessonForge LLC, a registered U.S. business.",
       "LessonForge LLC is located at 2730 Dale St. North, Roseville, MN 55113.",
       "LessonForgeHub is a digital marketplace for teacher-created classroom resources. Buyers use the platform to purchase digital downloads, and sellers use the platform to upload and sell original teaching materials.",
+      "All products sold on LessonForgeHub are digital downloads. No physical items are shipped.",
+      "All purchases provide access to downloadable digital resources.",
+      "LessonForgeHub operates as a marketplace. Individual sellers provide digital resources, and LessonForgeHub facilitates delivery and payment processing.",
       "LessonForgeHub is not the seller of record for individual products. Products are sold by independent sellers on the marketplace.",
       "By using the site, you agree to use it for lawful classroom, publishing, and purchasing activity. You should not upload content you do not own, attempt to bypass access controls, misuse private admin or owner areas, or interfere with the website.",
     ],
@@ -26,6 +29,7 @@ const sections = [
     body: [
       "Users must be at least 18 years old to open a seller account and sell on LessonForgeHub.",
       "Sellers are responsible for making sure they own or have rights to sell what they publish. Listings should be accurate, classroom-appropriate, and include the preview and thumbnail requirements needed for publication.",
+      "Sellers are responsible for the accuracy and quality of their resources. LessonForgeHub may review and take action on content that violates platform standards.",
       "LessonForgeHub may review, flag, remove, or hold listings that appear misleading, broken, unsafe, copied without rights, or otherwise unfit for the marketplace.",
       "Sellers are responsible for the quality, accuracy, file access, license terms, copyright compliance, and rights-to-sell confirmation for their resources.",
       "Sellers are also responsible for taxes, reporting, and other legal obligations tied to their marketplace earnings.",
@@ -42,7 +46,10 @@ const sections = [
   {
     title: "Digital purchases and access",
     body: [
-      "LessonForgeHub sells digital classroom resources. Once a buyer receives access to a purchased resource, the sale is generally final unless the refund policy applies.",
+      "LessonForgeHub sells digital classroom resources. All products sold on LessonForgeHub are digital downloads. No physical items are shipped.",
+      "All purchases provide access to downloadable digital resources.",
+      "All products are delivered digitally. After purchase, users receive immediate access through their account and/or a download link.",
+      "Once a buyer receives access to a purchased resource, the sale is generally final unless the refund policy applies.",
       "Purchased access may depend on verified payment status, product status, fraud checks, refund status, and moderation decisions.",
       "Buyers should not resell, repost, publicly share, or redistribute purchased files unless the product license clearly allows it.",
     ],
@@ -53,6 +60,8 @@ const sections = [
       "Payments are processed through a third-party payment provider. LessonForgeHub records the order, access, fee, plan, and seller payout information needed to support each sale.",
       "LessonForgeHub facilitates payment processing between buyers and sellers. Funds are collected and distributed through third-party payment providers in accordance with platform policies.",
       "Customers should be able to find the refund policy, support contact, and seller content rules before or after a purchase.",
+      "If you experience an issue with a purchase, please contact support before filing a payment dispute. We will review and respond within 24–48 hours.",
+      "We aim to resolve all issues quickly to avoid the need for external disputes.",
       "Seller payouts may be delayed, adjusted, held, reversed, or reduced when a sale is refunded, disputed, charged back, suspected of fraud, or tied to a rights or file-access problem.",
       "LessonForgeHub may use order records, access records, listing details, support messages, and refund history to review payment disputes and protect the marketplace.",
     ],
