@@ -72,6 +72,7 @@ export default async function ProductDetailPage({
   const storefrontAction = getStorefrontAction({
     returnTo,
     sellerId: listing.sellerId,
+    sellerName: listing.sellerName,
   });
   const relatedListings = await getRelatedListings(listing.subject, listing.id);
   const previewHeroImage = listing.thumbnailUrl ?? listing.previewAssets[0]?.previewUrl ?? null;
@@ -346,7 +347,11 @@ export default async function ProductDetailPage({
                         </Link>
                         .
                       </p>
-                      <p>Products are sold by independent sellers on LessonForgeHub.</p>
+                      <p>
+                        {listing.sellerName === "LessonForge Marketplace"
+                          ? "This starter resource is provided directly through LessonForge Marketplace."
+                          : "Products are sold by independent sellers on LessonForgeHub."}
+                      </p>
                     </div>
                   </div>
 
@@ -415,10 +420,12 @@ export default async function ProductDetailPage({
 
               <section className="rounded-[28px] border border-black/5 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand">
-                  Seller example
+                  Source
                 </p>
                 <h2 className="mt-3 text-2xl font-semibold text-ink">{listing.sellerName}</h2>
-                <p className="mt-2 text-sm text-ink-soft">{listing.sellerHandle}</p>
+                {listing.sellerHandle ? (
+                  <p className="mt-2 text-sm text-ink-soft">{listing.sellerHandle}</p>
+                ) : null}
                 <div className="mt-4 inline-flex rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand">
                   {listing.sellerTrustLabel}
                 </div>

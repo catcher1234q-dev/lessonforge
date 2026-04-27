@@ -6,6 +6,10 @@ import Link from "next/link";
 
 import { trackFunnelEvent } from "@/lib/analytics/events";
 import { normalizePlanKey, planConfig, type PlanKey } from "@/lib/config/plans";
+import {
+  buildConnectedSellerFromProfile,
+  getSellerConnectionProviderLabel,
+} from "@/lib/payments/seller-connection";
 import { buildSellerPlanCheckoutHref } from "@/lib/stripe/seller-plan-billing";
 import type { ConnectedSeller, SellerProfileDraft } from "@/types";
 
@@ -26,24 +30,6 @@ function buildSavedProfile(profile: SellerProfileDraft) {
     onboardingCompleted: Boolean(
       profile.displayName && profile.email && profile.storeName && profile.storeHandle,
     ),
-  };
-}
-
-function buildConnectedSeller(profile: SellerProfileDraft): ConnectedSeller | null {
-  if (!profile.stripeAccountId) {
-    return null;
-  }
-
-  return {
-    accountId: profile.stripeAccountId,
-    chargesEnabled: profile.stripeChargesEnabled,
-    email: profile.email,
-    displayName: profile.displayName || profile.storeName || "Seller",
-    payoutsEnabled: profile.stripePayoutsEnabled,
-    status:
-      profile.stripeChargesEnabled && profile.stripePayoutsEnabled
-        ? "connected"
-        : "setup_incomplete",
   };
 }
 
@@ -77,6 +63,7 @@ export function SellerOnboardingForm() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [returnState, setReturnState] = useState<"connected" | "refresh" | "complete" | null>(null);
   const selectedPlan = planConfig[normalizePlanKey(selectedPlanKey)];
+  const payoutProviderLabel = getSellerConnectionProviderLabel(connectedSeller, profile);
   const profileBasicsComplete = Boolean(
     profile.displayName.trim() &&
       profile.email.trim() &&
@@ -84,7 +71,7 @@ export function SellerOnboardingForm() {
       profile.storeHandle.trim(),
   );
   const payoutsConnected = connectedSeller?.status === "connected";
-  const payoutsStarted = Boolean(profile.stripeAccountId || connectedSeller);
+  const payoutsStarted = Boolean(profile.paypalMerchantId || profile.stripeAccountId || connectedSeller);
   const setupSteps = [
     {
       label: "Store profile",
@@ -162,8 +149,10 @@ export function SellerOnboardingForm() {
 
         let nextProfile = baseProfile;
 
-        if (baseProfile.stripeAccountId) {
-          const connectResponse = await fetch("/api/stripe/connect");
+        if (baseProfile.paypalMerchantId || baseProfile.stripeAccountId) {
+          const connectResponse = await fetch(
+            baseProfile.paypalMerchantId ? "/api/paypal/connect" : "/api/stripe/connect",
+          );
           const connectPayload = connectResponse.ok
             ? ((await connectResponse.json()) as {
                 profile?: SellerProfileDraft;
@@ -179,7 +168,7 @@ export function SellerOnboardingForm() {
         }
 
         setProfile(nextProfile);
-        setConnectedSeller(buildConnectedSeller(nextProfile));
+        setConnectedSeller(buildConnectedSellerFromProfile(nextProfile));
 
         const productsResponse = await fetch("/api/lessonforge/products").catch(() => null);
         if (productsResponse?.ok) {
@@ -197,8 +186,15 @@ export function SellerOnboardingForm() {
           );
         }
 
-        if (nextProfile.stripeAccountId) {
-          if (nextProfile.stripeChargesEnabled && nextProfile.stripePayoutsEnabled) {
+        if (nextProfile.paypalMerchantId || nextProfile.stripeAccountId) {
+          if (
+            (nextProfile.paypalMerchantId &&
+              nextProfile.paypalPayoutsEnabled &&
+              nextProfile.paypalConsentGranted) ||
+            (!nextProfile.paypalMerchantId &&
+              nextProfile.stripeChargesEnabled &&
+              nextProfile.stripePayoutsEnabled)
+          ) {
             setReturnState("connected");
             setMessage(
               `${nextProfile.displayName || "Seller"} finished payout setup. Your seller account is ready for the dashboard and product flow.`,
@@ -273,7 +269,7 @@ export function SellerOnboardingForm() {
       } else {
         setSelectedPlanKey(normalizePlanKey(savedProfile.sellerPlanKey));
       }
-      setConnectedSeller(buildConnectedSeller(savedProfile));
+      setConnectedSeller(buildConnectedSellerFromProfile(savedProfile));
       trackFunnelEvent("seller_profile_saved", {
         selectedPlan: selectedPlanKey,
         savedPlan: savedProfile.sellerPlanKey,
@@ -295,7 +291,7 @@ export function SellerOnboardingForm() {
     }
   }
 
-  async function handleConnectStripe() {
+  async function handleConnectPayouts() {
     if (
       !profile.displayName.trim() ||
       !profile.email.trim() ||
@@ -311,8 +307,7 @@ export function SellerOnboardingForm() {
     try {
       setIsConnecting(true);
       setMessage(null);
-      console.log("Connecting payout onboarding");
-      trackFunnelEvent("seller_stripe_connect_clicked", {
+      trackFunnelEvent("seller_payout_connect_clicked", {
         selectedPlan: selectedPlanKey,
       });
 
@@ -322,7 +317,7 @@ export function SellerOnboardingForm() {
         return;
       }
 
-      window.location.href = "/api/stripe/connect?redirectToStripe=1";
+      window.location.href = "/api/paypal/connect?redirectToPayPal=1";
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Unable to start seller onboarding.",
@@ -428,7 +423,7 @@ export function SellerOnboardingForm() {
             <input
               className="mt-2 w-full rounded-[1.25rem] border border-ink/10 bg-surface-subtle px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
               onChange={(event) => updateProfile("displayName", event.target.value)}
-              placeholder="Avery Johnson"
+              placeholder="Your name"
               value={profile.displayName}
             />
           </label>
@@ -605,11 +600,11 @@ export function SellerOnboardingForm() {
           </button>
           <button
             className="inline-flex items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
-            data-analytics-event="seller_stripe_connect_button_pressed"
+            data-analytics-event="seller_payout_connect_button_pressed"
             data-analytics-props={JSON.stringify({ selectedPlan: selectedPlanKey })}
             disabled={isConnecting || isSaving}
             onClick={() => {
-              void handleConnectStripe();
+              void handleConnectPayouts();
             }}
             type="button"
           >
@@ -656,9 +651,9 @@ export function SellerOnboardingForm() {
           <h2 className="mt-4 text-lg font-semibold text-ink">Current payout state</h2>
           <p className="mt-2 text-sm leading-6 text-ink-soft">
             {connectedSeller?.status === "connected"
-              ? `Connected seller account: ${connectedSeller.displayName} (${connectedSeller.email})`
+              ? `Connected ${payoutProviderLabel} seller account: ${connectedSeller.displayName} (${connectedSeller.email})`
               : connectedSeller?.status === "setup_incomplete"
-                ? `A payout account was found for ${connectedSeller.displayName} (${connectedSeller.email}), but onboarding is still incomplete.`
+                ? `A ${payoutProviderLabel} payout account was found for ${connectedSeller.displayName} (${connectedSeller.email}), but onboarding is still incomplete.`
                 : "No connected payout account was detected yet."}
           </p>
           <div className="mt-4 rounded-[1rem] bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft">
@@ -671,7 +666,7 @@ export function SellerOnboardingForm() {
             <div className="flex items-start gap-3">
               <CheckCircle2 className="mt-0.5 h-4 w-4 text-brand" />
               <p>
-                The payment provider may ask for identity and bank details. That is normal for payout setup and helps keep money movement secure.
+                {payoutProviderLabel} may ask for identity and bank details. That is normal for payout setup and helps keep money movement secure.
               </p>
             </div>
           </div>

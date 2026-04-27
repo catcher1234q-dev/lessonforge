@@ -60,7 +60,15 @@ export function getMarketplaceReturnActionLabel(returnTo: string) {
 export function getStorefrontAction(input: {
   returnTo: string;
   sellerId: string;
+  sellerName?: string;
 }) {
+  if ((input.sellerName ?? "").trim() === "LessonForge Marketplace") {
+    return {
+      href: "/marketplace",
+      label: "Browse starter resources",
+    };
+  }
+
   const canonicalStorefront = `/store/${input.sellerId}`;
   const isCurrentStorefront = input.returnTo.startsWith(canonicalStorefront);
 

@@ -24,26 +24,26 @@ PREVIEW_DIR = ROOT / "public" / "catalog-previews"
 
 SELLERS = {
     "avery": {
-        "sellerName": "Avery Johnson",
-        "sellerHandle": "@teachwithavery",
+        "sellerName": "LessonForge Marketplace",
+        "sellerHandle": "Platform starter resource",
         "sellerId": "avery-johnson",
         "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_AVERY",
     },
     "monica": {
-        "sellerName": "Monica Rivera",
-        "sellerHandle": "@literacywithmonica",
+        "sellerName": "LessonForge Marketplace",
+        "sellerHandle": "Platform starter resource",
         "sellerId": "monica-rivera",
         "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_MONICA",
     },
     "theo": {
-        "sellerName": "Theo Barnes",
-        "sellerHandle": "@sciencewiththeo",
+        "sellerName": "LessonForge Marketplace",
+        "sellerHandle": "Platform starter resource",
         "sellerId": "theo-barnes",
         "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_THEO",
     },
     "priya": {
-        "sellerName": "Priya Ellis",
-        "sellerHandle": "@socialstudieswithpriya",
+        "sellerName": "LessonForge Marketplace",
+        "sellerHandle": "Platform starter resource",
         "sellerId": "priya-ellis",
         "sellerStripeAccountEnvKey": "STRIPE_CONNECTED_ACCOUNT_PRIYA",
     },

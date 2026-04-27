@@ -12,6 +12,9 @@ export type MarketplaceReviewSummary = {
   verifiedPurchaseOnly: boolean;
 };
 
+export const PLATFORM_MARKETPLACE_NAME = "LessonForge Marketplace";
+export const PLATFORM_MARKETPLACE_SUBLABEL = "Platform starter resource";
+
 export type MarketplaceListing = {
   id: string;
   slug: string;
@@ -65,6 +68,10 @@ export type MarketplaceListing = {
       freshnessBoost: number;
   };
 };
+
+export function isPlatformMarketplaceLabel(value?: string | null) {
+  return (value ?? "").trim() === PLATFORM_MARKETPLACE_NAME;
+}
 
 type MarketplaceListingOverrides = Partial<
   Pick<
@@ -205,13 +212,15 @@ export function toMarketplaceListing(
       resource.fullDescription ||
       `${resource.summary} This listing is designed for teachers who want a polished ready-to-use resource without sacrificing flexibility. Sellers can keep improving the asset over time, and buyers get clearer trust signals before purchasing.`,
     resourceType: resource.resourceType || resource.format,
-    sellerName: resource.sellerName ?? "Teacher seller",
-    sellerHandle: resource.sellerHandle ?? "@lessonforge-seller",
+    sellerName: resource.sellerName ?? PLATFORM_MARKETPLACE_NAME,
+    sellerHandle: resource.sellerHandle ?? PLATFORM_MARKETPLACE_SUBLABEL,
     sellerId: resource.sellerId ?? resource.id,
     sellerListingCount: 1,
     sellerAverageRating: buildReviewSummary(index).averageRating,
     sellerTotalReviewCount: buildReviewSummary(index).reviewCount,
-    sellerTrustLabel: "Original teacher-created listing",
+    sellerTrustLabel: isPlatformMarketplaceLabel(resource.sellerName)
+      ? "Marketplace starter resource"
+      : "Original teacher-created listing",
     priceCents,
     demoOnly: resource.demoOnly,
     freshnessScore:

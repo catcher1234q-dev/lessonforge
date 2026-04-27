@@ -2,6 +2,8 @@ import "server-only";
 
 import {
   marketplaceListings as demoMarketplaceListings,
+  PLATFORM_MARKETPLACE_NAME,
+  isPlatformMarketplaceLabel,
   toMarketplaceListing,
   type MarketplaceListing,
 } from "@/lib/demo/catalog";
@@ -233,10 +235,15 @@ function enrichPersistedListing(
 }
 
 function buildSellerTrustLabel(values: {
+  sellerName?: string;
   listingCount: number;
   totalReviewCount: number;
   averageRating: number;
 }) {
+  if (isPlatformMarketplaceLabel(values.sellerName)) {
+    return "Marketplace starter resource";
+  }
+
   if (values.totalReviewCount >= 25 && values.averageRating >= 4.8) {
     return "Trusted seller";
   }
@@ -300,6 +307,7 @@ function attachSellerTrustSignals(listings: MarketplaceListing[]) {
       sellerAverageRating: averageRating,
       sellerTotalReviewCount: metrics.totalReviewCount,
       sellerTrustLabel: buildSellerTrustLabel({
+        sellerName: listing.sellerName,
         listingCount: metrics.listingCount,
         totalReviewCount: metrics.totalReviewCount,
         averageRating,
@@ -648,8 +656,8 @@ export async function getMarketplaceSellerWithPersistedListings(sellerId: string
   if (!demoSeller) {
     return {
       id: sellerId,
-      name: persistedSellerListings[0]?.sellerName ?? "Seller",
-      handle: persistedSellerListings[0]?.sellerHandle ?? "@lessonforge-seller",
+      name: persistedSellerListings[0]?.sellerName ?? PLATFORM_MARKETPLACE_NAME,
+      handle: persistedSellerListings[0]?.sellerHandle ?? "Platform starter resource",
       listingCount: persistedSellerListings.length,
       averageRating: Number(
         (
