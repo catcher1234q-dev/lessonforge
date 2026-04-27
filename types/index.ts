@@ -9,6 +9,7 @@ export type SubjectHub = {
 
 export type ProductRecord = {
   id: string;
+  slug?: string;
   title: string;
   subject: string;
   gradeBand: string;
@@ -25,6 +26,8 @@ export type ProductRecord = {
   licenseType?: string;
   fileTypes?: string[];
   includedItems?: string[];
+  howToUse?: string[];
+  fileList?: string[];
   previewLabels?: string[];
   previewPages?: number[];
   thumbnailUrl?: string;
@@ -40,6 +43,8 @@ export type ProductRecord = {
   sellerId?: string;
   sellerStripeAccountEnvKey?: string;
   sellerStripeAccountId?: string;
+  sellerPayPalMerchantEnvKey?: string;
+  sellerPayPalMerchantId?: string;
   priceCents?: number;
   isPurchasable?: boolean;
   productStatus?:
@@ -70,6 +75,7 @@ export type ConnectedSeller = {
   accountId: string;
   displayName: string;
   email: string;
+  provider?: "paypal" | "stripe";
   status?: "connected" | "setup_incomplete";
   chargesEnabled?: boolean;
   payoutsEnabled?: boolean;
@@ -97,6 +103,10 @@ export type SellerProfileDraft = {
   stripeOnboardingStatus?: string;
   stripeChargesEnabled?: boolean;
   stripePayoutsEnabled?: boolean;
+  paypalMerchantId?: string;
+  paypalOnboardingStatus?: string;
+  paypalPayoutsEnabled?: boolean;
+  paypalConsentGranted?: boolean;
 };
 
 export type OrderRecord = {
@@ -110,9 +120,13 @@ export type OrderRecord = {
   amountCents: number;
   sellerShareCents: number;
   platformShareCents: number;
+  paymentProvider?: "paypal" | "stripe";
   paymentStatus?: "pending" | "paid" | "failed" | "refunded";
   stripeCheckoutSessionId?: string;
   stripePaymentIntentId?: string;
+  paypalOrderId?: string;
+  paypalCaptureId?: string;
+  payoutStatus?: "pending" | "paid" | "failed" | "held" | "refunded";
   versionLabel: string;
   accessType: string;
   updatedLabel: string;
@@ -199,6 +213,10 @@ export type SubscriptionRecord = {
   availableCredits: number;
   cycleLabel: string;
   rolloverPolicy: "none";
+  status?: "trialing" | "active" | "past_due" | "canceled" | "paused" | "incomplete";
+  paymentProvider?: "paypal" | "stripe";
+  paypalSubscriptionId?: string;
+  stripeSubscriptionId?: string;
 };
 
 export type UsageLedgerEntry = {

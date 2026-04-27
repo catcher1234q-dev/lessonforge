@@ -40,6 +40,8 @@ export type MarketplaceListing = {
   licenseType: "Single classroom" | "Multiple classroom";
   fileTypes: string[];
   includedItems: string[];
+  howToUse: string[];
+  fileList: string[];
   previewSlides: string[];
   previewAssets: ManagedPreviewAsset[];
   thumbnailUrl?: string;
@@ -111,6 +113,21 @@ function inferIncludedItems(title: string, format: string) {
   ];
 }
 
+function inferHowToUse(title: string, subject: string) {
+  return [
+    `Introduce ${title.toLowerCase()} during whole-group ${subject.toLowerCase()} instruction.`,
+    "Model one sample together, then move students into independent or partner practice.",
+    "Use the answer support or teacher notes to review errors and reteach the next day.",
+  ];
+}
+
+function inferFileList(format: string, pageCount: number) {
+  return [
+    `${pageCount > 0 ? `${pageCount}-page ` : ""}printable ${format.toLowerCase()} PDF`,
+    "Teacher notes and answer support",
+  ];
+}
+
 function buildPreviewSlides(title: string, subject: string, format: string) {
   const lower = format.toLowerCase();
 
@@ -169,7 +186,7 @@ export function toMarketplaceListing(
   const priceCents = resource.priceCents ?? 0;
   const fileTypes = resource.fileTypes?.length ? resource.fileTypes : inferFileTypes(resource.format);
   const previewSlides = buildPreviewSlides(resource.title, resource.subject, resource.format);
-  const slug = slugify(resource.title);
+  const slug = resource.slug ?? slugify(resource.title);
 
   return {
     id: resource.id,
@@ -213,6 +230,14 @@ export function toMarketplaceListing(
       resource.includedItems?.length
         ? resource.includedItems
         : inferIncludedItems(resource.title, resource.format),
+    howToUse:
+      resource.howToUse?.length
+        ? resource.howToUse
+        : inferHowToUse(resource.title, resource.subject),
+    fileList:
+      resource.fileList?.length
+        ? resource.fileList
+        : inferFileList(resource.format, resource.pageCount ?? 0),
     previewSlides: resource.previewLabels?.length ? resource.previewLabels : previewSlides,
     previewAssets: buildManagedPreviewAssets({
       productId: resource.id,

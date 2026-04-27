@@ -2,6 +2,7 @@ import seedMarketplaceProducts from "@/data/seed-marketplace-products.json";
 
 export type LaunchProductAssetSeed = {
   id: string;
+  slug?: string;
   title: string;
   subject: string;
   gradeBand: string;
@@ -16,6 +17,8 @@ export type LaunchProductAssetSeed = {
   licenseType: string;
   fileTypes: string[];
   includedItems: string[];
+  howToUse?: string[];
+  fileList?: string[];
   previewLabels: string[];
   previewPages: number[];
   thumbnailUrl: string;

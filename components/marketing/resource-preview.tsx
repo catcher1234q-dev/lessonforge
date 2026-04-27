@@ -82,7 +82,13 @@ type SellerStatusResponse = {
 };
 
 function getSellerStatusKey(resource: ProductRecord) {
-  return resource.sellerStripeAccountId ?? resource.sellerStripeAccountEnvKey ?? null;
+  return (
+    resource.sellerPayPalMerchantId ??
+    resource.sellerPayPalMerchantEnvKey ??
+    resource.sellerStripeAccountId ??
+    resource.sellerStripeAccountEnvKey ??
+    null
+  );
 }
 
 function getCheckoutStatus(
@@ -99,11 +105,11 @@ function getCheckoutStatus(
     return "connect_required";
   }
 
-  if (resource.sellerStripeAccountId) {
+  if (resource.sellerPayPalMerchantId || resource.sellerStripeAccountId) {
     return "live";
   }
 
-  if (resource.sellerStripeAccountEnvKey) {
+  if (resource.sellerPayPalMerchantEnvKey || resource.sellerStripeAccountEnvKey) {
     return "onboarding_required";
   }
 
@@ -175,12 +181,12 @@ export function ResourcePreview() {
       const displayName = params.get("seller_name");
 
       if (accountId && email && displayName) {
-        const seller = { accountId, email, displayName };
+        const seller = { accountId, email, displayName, provider: "paypal" as const };
         setConnectedSeller(seller);
         setSellerDisplayName(displayName);
         setSellerEmail(email);
         setSellerMessage(
-          `${displayName} is connected to Stripe. If Stripe still needs details, finish onboarding to enable live payouts.`,
+          `${displayName} is connected for payouts. If the payment provider still needs details, finish onboarding to enable live payouts.`,
         );
         window.localStorage.setItem(
           CONNECTED_SELLER_STORAGE_KEY,
@@ -211,14 +217,17 @@ export function ResourcePreview() {
 
     setUploadedResources((current) =>
       current.map((resource) =>
-        resource.sellerStripeAccountId
+        resource.sellerStripeAccountId || resource.sellerPayPalMerchantId
           ? resource
           : {
               ...resource,
               sellerName: resource.sellerName || connectedSeller.displayName,
               sellerHandle: resource.sellerHandle || `(${connectedSeller.email})`,
               sellerId: resource.sellerId || connectedSeller.email,
-              sellerStripeAccountId: connectedSeller.accountId,
+              sellerStripeAccountId:
+                connectedSeller.provider === "stripe" ? connectedSeller.accountId : undefined,
+              sellerPayPalMerchantId:
+                connectedSeller.provider === "paypal" ? connectedSeller.accountId : undefined,
               isPurchasable: true,
             },
       ),
@@ -246,7 +255,7 @@ export function ResourcePreview() {
 
       sellerAccountMap.set(key, {
         key,
-        accountId: resource.sellerStripeAccountId,
+        accountId: resource.sellerPayPalMerchantId ?? resource.sellerStripeAccountId,
         sellerAccountEnvKey: resource.sellerStripeAccountEnvKey,
       });
     }
@@ -385,7 +394,10 @@ export function ResourcePreview() {
       sellerName: connectedSeller?.displayName || sellerDisplayName || undefined,
       sellerHandle: sellerEmail ? `(${sellerEmail})` : undefined,
       sellerId: sellerEmail || `seller-${Date.now()}`,
-      sellerStripeAccountId: connectedSeller?.accountId,
+      sellerStripeAccountId:
+        connectedSeller?.provider === "stripe" ? connectedSeller.accountId : undefined,
+      sellerPayPalMerchantId:
+        connectedSeller?.provider === "paypal" ? connectedSeller.accountId : undefined,
       priceCents: parsedPrice,
       isPurchasable: Boolean(connectedSeller?.accountId),
     };
@@ -422,6 +434,7 @@ export function ResourcePreview() {
         body: JSON.stringify({
           displayName: sellerDisplayName.trim(),
           email: sellerEmail.trim(),
+          returnTo: `${window.location.pathname}${window.location.search}`,
         }),
       });
 
@@ -481,7 +494,12 @@ export function ResourcePreview() {
   }
 
   async function handleExistingSellerOnboarding(resource: ProductRecord) {
-    if (!resource.sellerStripeAccountEnvKey && !resource.sellerStripeAccountId) {
+    if (
+      !resource.sellerPayPalMerchantEnvKey &&
+      !resource.sellerPayPalMerchantId &&
+      !resource.sellerStripeAccountEnvKey &&
+      !resource.sellerStripeAccountId
+    ) {
       setCheckoutMessage(
         "This listing does not have a seller payout account to reconnect yet.",
       );
@@ -498,9 +516,10 @@ export function ResourcePreview() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          accountId: resource.sellerStripeAccountId,
+          accountId: resource.sellerPayPalMerchantId ?? resource.sellerStripeAccountId,
           sellerAccountEnvKey: resource.sellerStripeAccountEnvKey,
           displayName: resource.sellerName,
+          returnTo: `${window.location.pathname}${window.location.search}`,
         }),
       });
 
@@ -695,15 +714,15 @@ export function ResourcePreview() {
                         >
                           <LinkIcon className="h-4 w-4" />
                           {connectedSeller?.accountId
-                            ? "Reconnect Stripe payouts"
+                            ? "Reconnect payout setup"
                             : isConnectingSeller
-                              ? "Opening Stripe onboarding"
-                              : "Connect Stripe payouts"}
+                              ? "Opening payout onboarding"
+                              : "Connect payouts"}
                         </button>
                         <p className="text-sm leading-6 text-ink-soft">
                           {connectedSeller?.accountId
                             ? `Connected seller account: ${connectedSeller.displayName}`
-                            : `Sellers keep ${getTeacherPayoutShareLabel()} of each sale before Stripe fees.`}
+                            : `Sellers keep ${getTeacherPayoutShareLabel()} of each sale before provider fees, when applicable.`}
                         </p>
                       </div>
                     </div>
@@ -1017,7 +1036,7 @@ export function ResourcePreview() {
                           {selectedResourceCheckoutStatus === "live"
                             ? "This listing can open a live marketplace checkout flow right now."
                             : selectedResourceCheckoutStatus === "onboarding_required"
-                              ? `This seller has started payout setup, but onboarding is still incomplete.${selectedSellerStatus?.requirements?.length ? ` Stripe is still requesting: ${selectedSellerStatus.requirements.slice(0, 2).join(", ")}.` : ""} You can still preview the purchase flow.`
+                              ? `This seller has started payout setup, but onboarding is still incomplete.${selectedSellerStatus?.requirements?.length ? ` The payment provider is still requesting: ${selectedSellerStatus.requirements.slice(0, 2).join(", ")}.` : ""} You can still preview the purchase flow.`
                               : "This resource still needs seller payout setup before it can go live for real purchases."}
 
                           {selectedResourceCheckoutStatus === "onboarding_required" ? (
@@ -1047,7 +1066,7 @@ export function ResourcePreview() {
                               {formatCurrency(calculateSellerPayout(selectedResource.priceCents))}
                             </p>
                             <p className="mt-1 text-xs text-white/55">
-                              {getTeacherPayoutShareLabel()} of the sale before Stripe fees
+                              {getTeacherPayoutShareLabel()} of the sale before provider fees, when applicable
                             </p>
                           </div>
                           <div className="rounded-[1.25rem] bg-white/5 p-4">
@@ -1088,7 +1107,7 @@ export function ResourcePreview() {
                           </div>
                           <p className="mt-3 text-xs leading-6 text-white/55">
                             {selectedResourceCheckoutStatus === "live"
-                              ? "Stripe Checkout shows eligible methods dynamically based on dashboard settings, currency, buyer location, and connected-account compatibility."
+                              ? "The checkout surface shows eligible payment methods dynamically based on provider settings, currency, buyer location, and seller compatibility."
                               : selectedResourceCheckoutStatus === "onboarding_required"
                                 ? "This listing stays in preview mode until the seller finishes payout onboarding."
                                 : "This listing needs seller payout setup before it can use live checkout."}

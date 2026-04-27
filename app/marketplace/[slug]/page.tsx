@@ -116,6 +116,9 @@ export default async function ProductDetailPage({
                 <h1 className="mt-4 font-[family-name:var(--font-display)] text-4xl leading-tight text-ink sm:text-5xl">
                   {listing.title}
                 </h1>
+                <p className="mt-4 max-w-3xl text-lg leading-8 text-ink">
+                  {listing.shortDescription}
+                </p>
                 <p className="mt-4 max-w-3xl text-base leading-8 text-ink-soft sm:text-lg">
                   {listing.fullDescription}
                 </p>
@@ -208,6 +211,20 @@ export default async function ProductDetailPage({
                     </ul>
                   </div>
                   <div>
+                    <p className="text-sm font-semibold text-ink">How to use</p>
+                    <ul className="mt-4 space-y-3 text-sm leading-6 text-ink-soft">
+                      {listing.howToUse.map((item) => (
+                        <li key={item} className="flex items-start gap-3">
+                          <BadgeCheck className="mt-1 h-4 w-4 shrink-0 text-brand" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+                  <div>
                     <p className="text-sm font-semibold text-ink">File types</p>
                     <div className="mt-4 flex flex-wrap gap-3">
                       {listing.fileTypes.map((fileType) => (
@@ -220,6 +237,17 @@ export default async function ProductDetailPage({
                         </span>
                       ))}
                     </div>
+                    <p className="mt-5 text-sm font-semibold text-ink">Files included</p>
+                    <ul className="mt-4 space-y-3 text-sm leading-6 text-ink-soft">
+                      {listing.fileList.map((item) => (
+                        <li key={item} className="flex items-start gap-3">
+                          <FileText className="mt-1 h-4 w-4 shrink-0 text-brand" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
                     <div className="mt-5 grid gap-3 text-sm leading-6 text-ink-soft">
                       {answerKeyIncluded ? (
                         <p className="rounded-2xl bg-slate-50 px-4 py-3">

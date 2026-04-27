@@ -124,6 +124,7 @@ const demoPreviewResources: DemoResource[] = [
 
 const seededLaunchResources: DemoResource[] = launchProductAssetSeeds.map((seed) => ({
   id: seed.id,
+  slug: seed.slug,
   title: seed.title,
   subject: seed.subject,
   gradeBand: seed.gradeBand,
