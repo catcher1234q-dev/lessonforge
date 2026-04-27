@@ -3,7 +3,6 @@ import Link from "next/link";
 
 import { FinalCTA } from "@/components/marketing/final-cta";
 import { FAQPreview } from "@/components/marketing/faq-preview";
-import { FirstTimeGuide } from "@/components/marketing/first-time-guide";
 import { LandingHero } from "@/components/marketing/landing-hero";
 import { PricingPreview } from "@/components/marketing/pricing-preview";
 import { SubjectShowcase } from "@/components/marketing/subject-showcase";
@@ -27,22 +26,19 @@ export const metadata: Metadata = buildPageMetadata({
 const whyCards = [
   {
     title: "Clear previews",
-    body: "Teachers can see real pages before they buy, which builds trust fast.",
   },
   {
     title: "Simple selling",
-    body: "Start with one strong classroom file instead of a complicated storefront setup.",
   },
   {
     title: "Teacher-first marketplace",
-    body: "The site is focused on classroom resources, clean details, and practical use.",
   },
 ] as const;
 
 const howItWorks = [
   "Browse or upload",
   "Preview before buying",
-  "Use or sell with confidence",
+  "Use or sell",
 ] as const;
 
 function pickHomepagePreviewLabel(subject: string) {
@@ -110,7 +106,6 @@ export default async function HomePage() {
         </div>
       </section>
       <div className="space-y-4 pb-4 sm:space-y-6 sm:pb-6">
-        <FirstTimeGuide />
         <section className="px-5 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-6xl rounded-[2rem] border border-black/5 bg-white px-6 py-8 shadow-soft-xl sm:px-8">
             <div className="max-w-2xl">
@@ -132,6 +127,14 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
+        <div className="px-5 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-6xl">
+            <p className="text-sm font-medium leading-6 text-ink-soft">
+              Early marketplace. Real previews, digital delivery after purchase, and simple support paths stay easy to find.
+            </p>
+          </div>
+        </div>
+        <TrustStrip />
         <section className="px-5 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-6xl rounded-[2rem] border border-black/5 bg-white px-6 py-8 shadow-soft-xl sm:px-8">
             <div className="max-w-2xl">
@@ -142,11 +145,10 @@ export default async function HomePage() {
                 Built to feel simpler, clearer, and more trustworthy.
               </h2>
             </div>
-            <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <div className="mt-6 grid gap-3 md:grid-cols-3">
               {whyCards.map((card) => (
-                <div key={card.title} className="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-5">
+                <div key={card.title} className="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-4">
                   <h3 className="text-xl font-semibold text-ink">{card.title}</h3>
-                  <p className="mt-2 text-sm leading-7 text-ink-soft">{card.body}</p>
                 </div>
               ))}
             </div>
@@ -154,8 +156,8 @@ export default async function HomePage() {
         </section>
         <section className="px-5 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-6xl rounded-[2rem] border border-black/5 bg-white px-6 py-8 shadow-soft-xl sm:px-8">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-              <div className="max-w-2xl">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-xl">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand">
                   How it works
                 </p>
@@ -163,13 +165,13 @@ export default async function HomePage() {
                   Browse or sell without the clutter.
                 </h2>
               </div>
-              <div className="grid flex-1 gap-4 sm:grid-cols-3">
+              <div className="grid flex-1 gap-3 sm:grid-cols-3">
                 {howItWorks.map((step, index) => (
-                  <div key={step} className="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-5">
-                    <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#9b7a10]">
+                  <div key={step} className="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9b7a10]">
                       Step {index + 1}
                     </p>
-                    <p className="mt-3 text-lg font-semibold text-ink">{step}</p>
+                    <p className="mt-2 text-base font-semibold text-ink">{step}</p>
                   </div>
                 ))}
               </div>
@@ -177,7 +179,7 @@ export default async function HomePage() {
           </div>
         </section>
         <section className="px-5 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-6xl rounded-[2rem] border border-brand/15 bg-brand-soft/30 px-6 py-8 shadow-soft-xl sm:px-8">
+          <div className="mx-auto max-w-6xl rounded-[2rem] border border-brand/10 bg-brand-soft/20 px-6 py-7 shadow-soft-xl sm:px-8">
             <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
               <div className="max-w-2xl">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand">
@@ -201,7 +203,6 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
-        <TrustStrip />
       </div>
       <SubjectShowcase />
       <PricingPreview />
