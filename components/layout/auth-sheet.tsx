@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Provider, Session } from "@supabase/supabase-js";
 import { Apple, Chrome, KeyRound, LoaderCircle, LogOut, Mail, X } from "lucide-react";
@@ -43,6 +43,23 @@ export function AuthSheet({
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen || typeof document === "undefined") {
+      return;
+    }
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, [isOpen]);
 
   function getNextPath() {
     const queryString = searchParams.toString();
@@ -434,8 +451,8 @@ export function AuthSheet({
       </button>
 
       {isOpen ? (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/45 px-4 py-4 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:py-6">
-          <div className="mx-auto w-full max-w-md overflow-y-auto overscroll-contain rounded-[2rem] border border-white/70 bg-white p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-soft-xl max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)]">
+        <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/45 px-4 py-4 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:py-6">
+          <div className="mx-auto flex h-full w-full max-w-md flex-col rounded-[2rem] border border-white/70 bg-white p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-soft-xl max-h-[calc(100dvh-2rem)] sm:h-auto sm:max-h-[calc(100dvh-3rem)]">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand">
@@ -458,182 +475,184 @@ export function AuthSheet({
               </button>
             </div>
 
-            <div className="mt-8 grid gap-3">
-              <button
-                className="flex items-center justify-between rounded-2xl border border-ink/10 bg-white px-4 py-4 text-left transition hover:border-brand/30 hover:bg-brand-soft/40 disabled:cursor-not-allowed disabled:opacity-70"
-                disabled={isLoading}
-                onClick={() => void handleOAuth("google")}
-              >
-                <span className="flex items-center gap-3">
-                  <Chrome className="h-5 w-5 text-brand" />
-                  <span>
-                    <span className="block text-sm font-semibold text-ink">
-                      Continue with Google
-                    </span>
-                    <span className="block text-xs text-ink-muted">
-                      Best for school Google Workspace accounts
-                    </span>
-                  </span>
-                </span>
-              </button>
-
-              <button
-                className="flex items-center justify-between rounded-2xl border border-ink/10 bg-white px-4 py-4 text-left transition hover:border-brand/30 hover:bg-brand-soft/40 disabled:cursor-not-allowed disabled:opacity-70"
-                disabled={isLoading}
-                onClick={() => void handleOAuth("apple")}
-              >
-                <span className="flex items-center gap-3">
-                  <Apple className="h-5 w-5 text-ink" />
-                  <span>
-                    <span className="block text-sm font-semibold text-ink">
-                      Continue with Apple
-                    </span>
-                    <span className="block text-xs text-ink-muted">
-                      Fast private sign-in for personal devices
+            <div className="mt-8 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
+              <div className="grid gap-3">
+                <button
+                  className="flex items-center justify-between rounded-2xl border border-ink/10 bg-white px-4 py-4 text-left transition hover:border-brand/30 hover:bg-brand-soft/40 disabled:cursor-not-allowed disabled:opacity-70"
+                  disabled={isLoading}
+                  onClick={() => void handleOAuth("google")}
+                >
+                  <span className="flex items-center gap-3">
+                    <Chrome className="h-5 w-5 text-brand" />
+                    <span>
+                      <span className="block text-sm font-semibold text-ink">
+                        Continue with Google
+                      </span>
+                      <span className="block text-xs text-ink-muted">
+                        Best for school Google Workspace accounts
+                      </span>
                     </span>
                   </span>
-                </span>
-              </button>
+                </button>
 
-              <div className="rounded-2xl border border-ink/10 bg-white p-4">
-                <label className="block text-sm font-semibold text-ink">
-                  Continue with Email
-                </label>
-                <p className="mt-1 text-xs text-ink-muted">
-                  Use email and password for the most reliable sign-in, or request a magic link.
-                </p>
-                <div className="mt-3 inline-flex rounded-full border border-ink/10 bg-surface-subtle p-1">
-                  <button
-                    className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
-                      emailMode === "password"
-                        ? "bg-white text-ink shadow-sm"
-                        : "text-ink-soft hover:text-ink"
-                    }`}
-                    onClick={() => setEmailMode("password")}
-                    type="button"
-                  >
-                    Email + Password
-                  </button>
-                  <button
-                    className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
-                      emailMode === "magic-link"
-                        ? "bg-white text-ink shadow-sm"
-                        : "text-ink-soft hover:text-ink"
-                    }`}
-                    onClick={() => setEmailMode("magic-link")}
-                    type="button"
-                  >
-                    Magic Link
-                  </button>
-                </div>
-                <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-                  <div className="relative flex-1">
-                    <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
-                    <input
-                      className="w-full rounded-full border border-ink/10 bg-surface-subtle py-3 pl-10 pr-4 text-sm text-ink outline-none transition focus:border-brand"
-                      onChange={(event) => setEmail(event.target.value)}
-                      placeholder="teacher@school.org"
-                      type="email"
-                      value={email}
-                    />
+                <button
+                  className="flex items-center justify-between rounded-2xl border border-ink/10 bg-white px-4 py-4 text-left transition hover:border-brand/30 hover:bg-brand-soft/40 disabled:cursor-not-allowed disabled:opacity-70"
+                  disabled={isLoading}
+                  onClick={() => void handleOAuth("apple")}
+                >
+                  <span className="flex items-center gap-3">
+                    <Apple className="h-5 w-5 text-ink" />
+                    <span>
+                      <span className="block text-sm font-semibold text-ink">
+                        Continue with Apple
+                      </span>
+                      <span className="block text-xs text-ink-muted">
+                        Fast private sign-in for personal devices
+                      </span>
+                    </span>
+                  </span>
+                </button>
+
+                <div className="rounded-2xl border border-ink/10 bg-white p-4">
+                  <label className="block text-sm font-semibold text-ink">
+                    Continue with Email
+                  </label>
+                  <p className="mt-1 text-xs text-ink-muted">
+                    Use email and password for the most reliable sign-in, or request a magic link.
+                  </p>
+                  <div className="mt-3 inline-flex rounded-full border border-ink/10 bg-surface-subtle p-1">
+                    <button
+                      className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
+                        emailMode === "password"
+                          ? "bg-white text-ink shadow-sm"
+                          : "text-ink-soft hover:text-ink"
+                      }`}
+                      onClick={() => setEmailMode("password")}
+                      type="button"
+                    >
+                      Email + Password
+                    </button>
+                    <button
+                      className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
+                        emailMode === "magic-link"
+                          ? "bg-white text-ink shadow-sm"
+                          : "text-ink-soft hover:text-ink"
+                      }`}
+                      onClick={() => setEmailMode("magic-link")}
+                      type="button"
+                    >
+                      Magic Link
+                    </button>
                   </div>
-                </div>
-                {emailMode === "password" ? (
-                  <>
-                    <div className="relative mt-3">
-                      <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
+                  <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+                    <div className="relative flex-1">
+                      <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
                       <input
                         className="w-full rounded-full border border-ink/10 bg-surface-subtle py-3 pl-10 pr-4 text-sm text-ink outline-none transition focus:border-brand"
-                        onChange={(event) => setPassword(event.target.value)}
-                        placeholder={isCreateAccountEntry ? "Create a password" : "Enter your password"}
-                        type="password"
-                        value={password}
+                        onChange={(event) => setEmail(event.target.value)}
+                        placeholder="teacher@school.org"
+                        type="email"
+                        value={email}
                       />
                     </div>
-                    {!isCreateAccountEntry ? (
-                      <div className="mt-3 flex items-center justify-between gap-3">
-                        <p className="text-xs leading-5 text-ink-muted">
-                          Use your account password for the quickest way back into checkout.
-                        </p>
-                        <button
-                          className="text-xs font-semibold text-brand transition hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
-                          disabled={isLoading}
-                          onClick={() => void handlePasswordReset()}
-                          type="button"
-                        >
-                          Forgot password?
-                        </button>
+                  </div>
+                  {emailMode === "password" ? (
+                    <>
+                      <div className="relative mt-3">
+                        <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
+                        <input
+                          className="w-full rounded-full border border-ink/10 bg-surface-subtle py-3 pl-10 pr-4 text-sm text-ink outline-none transition focus:border-brand"
+                          onChange={(event) => setPassword(event.target.value)}
+                          placeholder={isCreateAccountEntry ? "Create a password" : "Enter your password"}
+                          type="password"
+                          value={password}
+                        />
                       </div>
-                    ) : null}
+                      {!isCreateAccountEntry ? (
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <p className="text-xs leading-5 text-ink-muted">
+                            Use your account password for the quickest way back into checkout.
+                          </p>
+                          <button
+                            className="text-xs font-semibold text-brand transition hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
+                            disabled={isLoading}
+                            onClick={() => void handlePasswordReset()}
+                            type="button"
+                          >
+                            Forgot password?
+                          </button>
+                        </div>
+                      ) : null}
+                      <button
+                        className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
+                        disabled={isLoading}
+                        onClick={() => void handlePasswordAuth()}
+                        type="button"
+                      >
+                        {isCreateAccountEntry ? "Create Account" : "Sign In"}
+                      </button>
+                      <p className="mt-2 text-xs leading-5 text-ink-muted">
+                        {isCreateAccountEntry
+                          ? "Create a buyer account with an email and password so you can sign in again before checkout."
+                          : "Sign in directly with your email and password before starting checkout."}
+                      </p>
+                    </>
+                  ) : (
                     <button
                       className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
                       disabled={isLoading}
-                      onClick={() => void handlePasswordAuth()}
+                      onClick={() => void handleMagicLink()}
                       type="button"
                     >
-                      {isCreateAccountEntry ? "Create Account" : "Sign In"}
+                      Send Magic Link
                     </button>
-                    <p className="mt-2 text-xs leading-5 text-ink-muted">
-                      {isCreateAccountEntry
-                        ? "Create a buyer account with an email and password so you can sign in again before checkout."
-                        : "Sign in directly with your email and password before starting checkout."}
-                    </p>
-                  </>
-                ) : (
-                  <button
-                    className="mt-3 inline-flex w-full items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70"
-                    disabled={isLoading}
-                    onClick={() => void handleMagicLink()}
-                    type="button"
-                  >
-                    Send Magic Link
-                  </button>
-                )}
+                  )}
+                </div>
               </div>
+
+              {isLoading ? (
+                <div className="mt-5 inline-flex items-center gap-2 text-sm text-ink-soft">
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                  Working on your sign-in request...
+                </div>
+              ) : null}
+
+              {message ? (
+                <div className="mt-5 rounded-2xl border border-brand/10 bg-brand-soft px-4 py-3 text-sm leading-6 text-brand-700">
+                  {message}
+                </div>
+              ) : null}
+
+              {error ? (
+                <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
+                  {error}
+                </div>
+              ) : null}
+
+              <div className="mt-6 rounded-2xl bg-surface-subtle px-4 py-3 text-xs leading-6 text-ink-muted">
+                By continuing, teachers agree to LessonForge&apos;s{" "}
+                <Link className="font-semibold text-ink transition hover:text-brand" href="/terms">
+                  Terms
+                </Link>{" "}
+                and{" "}
+                <Link className="font-semibold text-ink transition hover:text-brand" href="/privacy">
+                  Privacy Policy
+                </Link>
+                .
+              </div>
+
+              {hasSupabaseEnv() ? (
+                <button
+                  className="mt-4 inline-flex items-center gap-2 pb-[env(safe-area-inset-bottom)] text-sm font-medium text-ink-soft transition hover:text-ink"
+                  disabled={isLoading}
+                  onClick={() => void handleSignOut()}
+                  type="button"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </button>
+              ) : null}
             </div>
-
-            {isLoading ? (
-              <div className="mt-5 inline-flex items-center gap-2 text-sm text-ink-soft">
-                <LoaderCircle className="h-4 w-4 animate-spin" />
-                Working on your sign-in request...
-              </div>
-            ) : null}
-
-            {message ? (
-              <div className="mt-5 rounded-2xl border border-brand/10 bg-brand-soft px-4 py-3 text-sm leading-6 text-brand-700">
-                {message}
-              </div>
-            ) : null}
-
-            {error ? (
-              <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
-                {error}
-              </div>
-            ) : null}
-
-            <div className="mt-6 rounded-2xl bg-surface-subtle px-4 py-3 text-xs leading-6 text-ink-muted">
-              By continuing, teachers agree to LessonForge&apos;s{" "}
-              <Link className="font-semibold text-ink transition hover:text-brand" href="/terms">
-                Terms
-              </Link>{" "}
-              and{" "}
-              <Link className="font-semibold text-ink transition hover:text-brand" href="/privacy">
-                Privacy Policy
-              </Link>
-              .
-            </div>
-
-            {hasSupabaseEnv() ? (
-              <button
-                className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-ink-soft transition hover:text-ink"
-                disabled={isLoading}
-                onClick={() => void handleSignOut()}
-                type="button"
-              >
-                <LogOut className="h-4 w-4" />
-                Sign out
-              </button>
-            ) : null}
           </div>
         </div>
       ) : null}
