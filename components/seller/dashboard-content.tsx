@@ -348,9 +348,9 @@ function getSellerListingFilterReason(
 function getSellerFilterEmptyState(filter: SellerListingFilter, hasResources: boolean) {
   if (!hasResources) {
     return {
-      title: "No uploaded resources yet",
-      body: "Create your first listing to start building a real storefront, give buyers something to browse, and unlock sales and earnings tracking here.",
-      actionLabel: "Create first listing",
+      title: "You don’t have any products yet",
+      body: "Start by uploading your first resource. Your first product is the hardest, but it gets easier after that.",
+      actionLabel: "Upload your first product",
       actionHref: "/sell/products/new",
     };
   }

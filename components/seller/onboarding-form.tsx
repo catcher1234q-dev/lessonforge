@@ -374,11 +374,51 @@ export function SellerOnboardingForm() {
           Seller onboarding
         </p>
         <h1 className="mt-4 font-[family-name:var(--font-display)] text-4xl leading-tight text-ink sm:text-5xl">
-          Finish setup and create your first listing.
+          Start selling on LessonForgeHub.
         </h1>
         <p className="mt-4 max-w-2xl text-base leading-7 text-ink-soft sm:text-lg">
-          Keep this simple: finish setup, then create one product. Only upload classroom resources you created yourself or have clear rights to sell.
+          LessonForgeHub is a teacher-focused marketplace for original classroom resources. Start with a simple store profile, connect payouts, and upload one resource you would feel good sharing with another teacher tomorrow.
         </p>
+
+        <div className="mt-6 rounded-[1.25rem] border border-slate-200 bg-slate-50 px-5 py-5">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-700">
+            Start selling in 3 steps
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-[1rem] bg-white px-4 py-4 text-sm leading-6 text-ink-soft">
+              <p className="font-semibold text-ink">1. Create your store profile</p>
+              <p className="mt-1">Add the basic details buyers need to recognize your store.</p>
+            </div>
+            <div className="rounded-[1rem] bg-white px-4 py-4 text-sm leading-6 text-ink-soft">
+              <p className="font-semibold text-ink">2. Connect payouts</p>
+              <p className="mt-1">Finish payout setup so your resources can sell for real.</p>
+            </div>
+            <div className="rounded-[1rem] bg-white px-4 py-4 text-sm leading-6 text-ink-soft">
+              <p className="font-semibold text-ink">3. Upload your first resource</p>
+              <p className="mt-1">Start with one strong classroom file instead of a full catalog.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-[1.25rem] border border-emerald-100 bg-emerald-50 px-5 py-5">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-800">
+            Why sell here
+          </p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-[1rem] bg-white px-4 py-4 text-sm leading-6 text-ink-soft">
+              <p className="font-semibold text-ink">Keep more of your earnings</p>
+              <p className="mt-1">Pick the seller plan that fits where you are starting.</p>
+            </div>
+            <div className="rounded-[1rem] bg-white px-4 py-4 text-sm leading-6 text-ink-soft">
+              <p className="font-semibold text-ink">Simple uploads</p>
+              <p className="mt-1">Focus on one real resource first instead of a complicated setup.</p>
+            </div>
+            <div className="rounded-[1rem] bg-white px-4 py-4 text-sm leading-6 text-ink-soft">
+              <p className="font-semibold text-ink">Teacher-focused marketplace</p>
+              <p className="mt-1">Everything is built around classroom resources and practical teacher needs.</p>
+            </div>
+          </div>
+        </div>
 
         <div className="mt-6 rounded-[1.25rem] border border-amber-100 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-950">
           Sellers must upload original work or content they have rights to distribute. Copyrighted publisher materials, copied worksheets, trademarked characters, answer keys you do not own, protected curriculum content, misleading files, and unauthorized resale content are not allowed.
@@ -675,10 +715,10 @@ export function SellerOnboardingForm() {
               </>
             ) : (
               <>
-                <p>A recognizable store identity on listings and storefront pages.</p>
+                <p>A simple store setup that tells buyers who you are and what you make.</p>
                 <p>Payout setup is required before products can sell through the marketplace.</p>
+                <p>Your first upload should be a classroom resource you already use and have rights to sell.</p>
                 <p>Refunds, disputes, chargebacks, or rights issues can delay, adjust, or reverse seller earnings while they are reviewed.</p>
-                <p>A clearer next step into your first listing when setup is complete.</p>
               </>
             )}
           </div>
