@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Provider, Session } from "@supabase/supabase-js";
-import { Apple, Chrome, KeyRound, LoaderCircle, LogOut, Mail, X } from "lucide-react";
+import { Chrome, KeyRound, LoaderCircle, LogOut, Mail, X } from "lucide-react";
 import { createPortal } from "react-dom";
 
 import {
@@ -452,7 +452,7 @@ export function AuthSheet({
                 Sign in to LessonForge
               </h2>
               <p className="mt-3 text-sm leading-6 text-ink-soft">
-                Use Google, Apple, email and password, or a magic link to open your buyer and seller account spaces.
+                Use Google, email and password, or a magic link to open your buyer and seller account spaces.
               </p>
             </div>
 
@@ -484,24 +484,6 @@ export function AuthSheet({
                   </span>
                 </span>
               </button>
-
-            <button
-              className="flex items-center justify-between rounded-2xl border border-ink/10 bg-white px-4 py-4 text-left transition hover:border-brand/30 hover:bg-brand-soft/40 disabled:cursor-not-allowed disabled:opacity-70"
-              disabled={isLoading}
-              onClick={() => void handleOAuth("apple")}
-            >
-              <span className="flex items-center gap-3">
-                <Apple className="h-5 w-5 text-ink" />
-                <span>
-                  <span className="block text-sm font-semibold text-ink">
-                    Continue with Apple
-                  </span>
-                  <span className="block text-xs text-ink-muted">
-                    Fast private sign-in for personal devices
-                  </span>
-                </span>
-              </span>
-            </button>
 
             <div className="rounded-2xl border border-ink/10 bg-white p-4">
               <label className="block text-sm font-semibold text-ink">
