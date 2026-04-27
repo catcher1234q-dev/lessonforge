@@ -435,49 +435,55 @@ export function AuthSheet({
   }
 
   const modalContent = isOpen ? (
-    <div className="fixed inset-0 z-[9999] overflow-hidden bg-slate-950/45 px-4 py-4 backdrop-blur-sm sm:flex sm:items-center sm:justify-center sm:py-6">
-      <div className="mx-auto flex h-full w-full max-w-md flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-white p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-soft-xl max-h-[calc(100dvh-2rem)] sm:h-auto sm:max-h-[calc(100dvh-3rem)]">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand">
-              Welcome Back
-            </p>
-            <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-ink">
-              Sign in to LessonForge
-            </h2>
-            <p className="mt-3 text-sm leading-6 text-ink-soft">
-              Use Google, Apple, email and password, or a magic link to open your buyer and seller account spaces.
-            </p>
+    <div
+      aria-modal="true"
+      className="fixed inset-0 isolate z-[2147483647]"
+      role="dialog"
+    >
+      <div className="absolute inset-0 bg-slate-950/60" />
+      <div className="relative flex h-[100dvh] w-screen overflow-hidden px-4 py-4 sm:items-center sm:justify-center sm:py-6">
+        <div className="relative z-10 mx-auto flex h-full w-full max-w-md flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-white p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-soft-xl max-h-[calc(100dvh-2rem)] sm:h-auto sm:max-h-[calc(100dvh-3rem)]">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand">
+                Welcome Back
+              </p>
+              <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl text-ink">
+                Sign in to LessonForge
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-ink-soft">
+                Use Google, Apple, email and password, or a magic link to open your buyer and seller account spaces.
+              </p>
+            </div>
+
+            <button
+              aria-label="Close sign in"
+              className="rounded-full p-2 text-ink-soft transition hover:bg-surface-muted"
+              onClick={() => setIsOpen(false)}
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
 
-          <button
-            aria-label="Close sign in"
-            className="rounded-full p-2 text-ink-soft transition hover:bg-surface-muted"
-            onClick={() => setIsOpen(false)}
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="mt-8 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
-          <div className="grid gap-3">
-            <button
-              className="flex items-center justify-between rounded-2xl border border-ink/10 bg-white px-4 py-4 text-left transition hover:border-brand/30 hover:bg-brand-soft/40 disabled:cursor-not-allowed disabled:opacity-70"
-              disabled={isLoading}
-              onClick={() => void handleOAuth("google")}
-            >
-              <span className="flex items-center gap-3">
-                <Chrome className="h-5 w-5 text-brand" />
-                <span>
-                  <span className="block text-sm font-semibold text-ink">
-                    Continue with Google
-                  </span>
-                  <span className="block text-xs text-ink-muted">
-                    Best for school Google Workspace accounts
+          <div className="mt-8 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
+            <div className="grid gap-3">
+              <button
+                className="flex items-center justify-between rounded-2xl border border-ink/10 bg-white px-4 py-4 text-left transition hover:border-brand/30 hover:bg-brand-soft/40 disabled:cursor-not-allowed disabled:opacity-70"
+                disabled={isLoading}
+                onClick={() => void handleOAuth("google")}
+              >
+                <span className="flex items-center gap-3">
+                  <Chrome className="h-5 w-5 text-brand" />
+                  <span>
+                    <span className="block text-sm font-semibold text-ink">
+                      Continue with Google
+                    </span>
+                    <span className="block text-xs text-ink-muted">
+                      Best for school Google Workspace accounts
+                    </span>
                   </span>
                 </span>
-              </span>
-            </button>
+              </button>
 
             <button
               className="flex items-center justify-between rounded-2xl border border-ink/10 bg-white px-4 py-4 text-left transition hover:border-brand/30 hover:bg-brand-soft/40 disabled:cursor-not-allowed disabled:opacity-70"
@@ -594,48 +600,49 @@ export function AuthSheet({
             </div>
           </div>
 
-          {isLoading ? (
-            <div className="mt-5 inline-flex items-center gap-2 text-sm text-ink-soft">
-              <LoaderCircle className="h-4 w-4 animate-spin" />
-              Working on your sign-in request...
-            </div>
-          ) : null}
+            {isLoading ? (
+              <div className="mt-5 inline-flex items-center gap-2 text-sm text-ink-soft">
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+                Working on your sign-in request...
+              </div>
+            ) : null}
 
-          {message ? (
-            <div className="mt-5 rounded-2xl border border-brand/10 bg-brand-soft px-4 py-3 text-sm leading-6 text-brand-700">
-              {message}
-            </div>
-          ) : null}
+            {message ? (
+              <div className="mt-5 rounded-2xl border border-brand/10 bg-brand-soft px-4 py-3 text-sm leading-6 text-brand-700">
+                {message}
+              </div>
+            ) : null}
 
-          {error ? (
-            <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
-              {error}
-            </div>
-          ) : null}
+            {error ? (
+              <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
+                {error}
+              </div>
+            ) : null}
 
-          <div className="mt-6 rounded-2xl bg-surface-subtle px-4 py-3 text-xs leading-6 text-ink-muted">
-            By continuing, teachers agree to LessonForge&apos;s{" "}
-            <Link className="font-semibold text-ink transition hover:text-brand" href="/terms">
-              Terms
-            </Link>{" "}
-            and{" "}
-            <Link className="font-semibold text-ink transition hover:text-brand" href="/privacy">
-              Privacy Policy
-            </Link>
-            .
+            <div className="mt-6 rounded-2xl bg-surface-subtle px-4 py-3 text-xs leading-6 text-ink-muted">
+              By continuing, teachers agree to LessonForge&apos;s{" "}
+              <Link className="font-semibold text-ink transition hover:text-brand" href="/terms">
+                Terms
+              </Link>{" "}
+              and{" "}
+              <Link className="font-semibold text-ink transition hover:text-brand" href="/privacy">
+                Privacy Policy
+              </Link>
+              .
+            </div>
+
+            {hasSupabaseEnv() ? (
+              <button
+                className="mt-4 inline-flex items-center gap-2 pb-[env(safe-area-inset-bottom)] text-sm font-medium text-ink-soft transition hover:text-ink"
+                disabled={isLoading}
+                onClick={() => void handleSignOut()}
+                type="button"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </button>
+            ) : null}
           </div>
-
-          {hasSupabaseEnv() ? (
-            <button
-              className="mt-4 inline-flex items-center gap-2 pb-[env(safe-area-inset-bottom)] text-sm font-medium text-ink-soft transition hover:text-ink"
-              disabled={isLoading}
-              onClick={() => void handleSignOut()}
-              type="button"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign out
-            </button>
-          ) : null}
         </div>
       </div>
     </div>
