@@ -54,9 +54,13 @@ function slugify(value: string) {
 
 async function resolveUniqueProductSlug(input: { id: string; title: string }) {
   const slugBase = slugify(input.title) || "resource";
-  const preferredSlug = input.id.startsWith("upload-")
-    ? slugBase
-    : `${slugBase}-${slugify(input.id) || input.id.toLowerCase()}`;
+  const uploadSuffix = slugify(input.id).replace(/^upload-/, "") || slugify(input.id) || "draft";
+
+  if (input.id.startsWith("upload-")) {
+    return `${slugBase}-${uploadSuffix}`;
+  }
+
+  const preferredSlug = `${slugBase}-${slugify(input.id) || input.id.toLowerCase()}`;
 
   const conflictingProduct = await prisma.product.findFirst({
     where: {
@@ -73,8 +77,7 @@ async function resolveUniqueProductSlug(input: { id: string; title: string }) {
   if (!conflictingProduct) {
     return preferredSlug;
   }
-
-  const stableSuffix = slugify(input.id).replace(/^upload-/, "") || slugify(input.id) || "draft";
+  const stableSuffix = slugify(input.id) || "draft";
   return `${slugBase}-${stableSuffix}`;
 }
 
