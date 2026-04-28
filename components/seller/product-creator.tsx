@@ -1460,59 +1460,81 @@ export function ProductCreator() {
       includedItems: ["Teacher-facing guide", "Student resource pages"],
     };
 
-    const response = await fetch("/api/lessonforge/products", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        product: nextProduct,
-      }),
-    });
+    try {
+      console.info("[seller.creator] saving listing", {
+        draftProductId,
+        title: nextProduct.title,
+        status: nextProduct.productStatus ?? "Draft",
+      });
+      const response = await fetch("/api/lessonforge/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          product: nextProduct,
+        }),
+      });
 
-    const payload = (await response.json()) as { error?: string; product?: ProductRecord };
+      console.info("[seller.creator] save response received", {
+        status: response.status,
+        ok: response.ok,
+      });
+      const payload = (await readJsonSafely<{ error?: string; product?: ProductRecord; listingUsage?: typeof listingUsage }>(
+        response,
+      )) ?? { error: "Unable to save the product." };
 
-    if (!response.ok || !payload.product) {
-      if ((payload as { listingUsage?: typeof listingUsage }).listingUsage) {
-        setListingUsage((payload as { listingUsage?: typeof listingUsage }).listingUsage ?? null);
+      if (!response.ok || !payload.product) {
+        if (payload.listingUsage) {
+          setListingUsage(payload.listingUsage ?? null);
+        }
+        setMessage(payload.error || "Unable to save the product.");
+        setIsSaving(false);
+        return;
       }
-      setMessage(payload.error || "Unable to save the product.");
-      setIsSaving(false);
-      return;
-    }
-    const savedProductRecord = payload.product;
-    trackFunnelEvent(
-      savedProductRecord.productStatus === "Published"
-        ? "seller_listing_published"
-        : "seller_listing_saved_draft",
-      {
-        productId: savedProductRecord.id,
-        subject,
-        resourceType,
-        status: savedProductRecord.productStatus ?? "Draft",
-        hasPreview: normalizedGallery.length > MIN_PRODUCT_INTERIOR_PREVIEW_IMAGES,
-        hasThumbnail: normalizedGallery.length > 0,
-      },
-    );
 
-    setSavedProduct({
-      id: savedProductRecord.id,
-      title: savedProductRecord.title,
-      productStatus: savedProductRecord.productStatus ?? "Draft",
-      isPurchasable: Boolean(savedProductRecord.isPurchasable),
-    });
-    setMessage("Product saved successfully. Opening your saved product…");
-    setIsSaving(false);
-    const editSearchParams = new URLSearchParams();
-    editSearchParams.set("listingUpdate", "saved");
-    editSearchParams.set("listingTitle", savedProductRecord.title);
-    if (suggestedStandard === "Standards pending seller review") {
-      editSearchParams.set("aiStatus", "skipped");
+      const savedProductRecord = payload.product;
+      console.info("[seller.creator] save payload ready", {
+        productId: savedProductRecord.id,
+        status: savedProductRecord.productStatus ?? "Draft",
+      });
+      trackFunnelEvent(
+        savedProductRecord.productStatus === "Published"
+          ? "seller_listing_published"
+          : "seller_listing_saved_draft",
+        {
+          productId: savedProductRecord.id,
+          subject,
+          resourceType,
+          status: savedProductRecord.productStatus ?? "Draft",
+          hasPreview: normalizedGallery.length > MIN_PRODUCT_INTERIOR_PREVIEW_IMAGES,
+          hasThumbnail: normalizedGallery.length > 0,
+        },
+      );
+
+      setSavedProduct({
+        id: savedProductRecord.id,
+        title: savedProductRecord.title,
+        productStatus: savedProductRecord.productStatus ?? "Draft",
+        isPurchasable: Boolean(savedProductRecord.isPurchasable),
+      });
+      setMessage("Product saved successfully. Opening your saved product…");
+      setIsSaving(false);
+      const editSearchParams = new URLSearchParams();
+      editSearchParams.set("listingUpdate", "saved");
+      editSearchParams.set("listingTitle", savedProductRecord.title);
+      if (suggestedStandard === "Standards pending seller review") {
+        editSearchParams.set("aiStatus", "skipped");
+      }
+      if (!connectedAccountId) {
+        editSearchParams.set("billingStatus", "connect-required");
+      }
+      router.push(`/sell/products/${savedProductRecord.id}/edit?${editSearchParams.toString()}`);
+    } catch (error) {
+      console.error("[seller.creator] save request failed", error);
+      setMessage(error instanceof Error ? error.message : "Unable to save the product.");
+      setIsSaving(false);
     }
-    if (!connectedAccountId) {
-      editSearchParams.set("billingStatus", "connect-required");
-    }
-    router.push(`/sell/products/${savedProductRecord.id}/edit?${editSearchParams.toString()}`);
   }
 
   return (

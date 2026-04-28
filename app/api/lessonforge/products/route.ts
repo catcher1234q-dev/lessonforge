@@ -22,6 +22,8 @@ import {
 } from "@/lib/supabase/admin-sync";
 import type { ProductRecord } from "@/types";
 
+const SAVE_PRODUCT_SIDE_EFFECT_TIMEOUT_MS = 2_000;
+
 function mergeProductSources(
   persistedProducts: ProductRecord[],
   syncedProducts: ProductRecord[],
@@ -40,6 +42,41 @@ function mergeProductSources(
   return Array.from(merged.values());
 }
 
+async function runBestEffortSaveSideEffect(
+  label: string,
+  operation: () => Promise<unknown>,
+  timeoutMs = SAVE_PRODUCT_SIDE_EFFECT_TIMEOUT_MS,
+) {
+  let timedOut = false;
+  const timeoutPromise = new Promise<null>((resolve) => {
+    setTimeout(() => {
+      timedOut = true;
+      console.warn(`[lessonforge.products.save] side effect timed out`, {
+        label,
+        timeoutMs,
+      });
+      resolve(null);
+    }, timeoutMs);
+  });
+
+  const operationPromise = operation()
+    .then(() => {
+      if (!timedOut) {
+        console.info(`[lessonforge.products.save] side effect finished`, { label });
+      }
+      return null;
+    })
+    .catch((error) => {
+      console.error(`[lessonforge.products.save] side effect failed`, {
+        label,
+        message: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    });
+
+  await Promise.race([operationPromise, timeoutPromise]);
+}
+
 export async function GET() {
   const [products, syncedProducts] = await Promise.all([
     listPersistedProducts(),
@@ -53,6 +90,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    console.info("[lessonforge.products.save] request received");
     const viewer = await getCurrentViewer();
 
     if (!(await hasAppSessionForEmail(viewer.email))) {
@@ -127,8 +165,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
 
+    console.info("[lessonforge.products.save] before DB write", {
+      productId: productToSave.id,
+      sellerId: productToSave.sellerId,
+      status: productToSave.productStatus ?? "Draft",
+    });
     const saved = await saveProduct(productToSave);
-    await syncSupabaseProductRecord(saved).catch(() => null);
+    console.info("[lessonforge.products.save] after DB write", {
+      productId: saved.id,
+      sellerId: saved.sellerId,
+    });
     const removedGalleryStoragePaths =
       previousProduct?.imageGallery
         ?.filter(
@@ -136,21 +182,36 @@ export async function POST(request: Request) {
             !saved.imageGallery?.some((nextImage) => nextImage.storagePath === image.storagePath),
         )
         .map((image) => image.storagePath) ?? [];
-    await deleteProductGalleryImages(removedGalleryStoragePaths).catch(() => null);
-    await trackMonetizationEvent({
-      sellerId: saved.sellerId || viewer.email,
-      sellerEmail: saved.sellerId || viewer.email,
-      planKey: normalizePlanKey(profile?.sellerPlanKey),
-      eventType: "listing_created",
-      source: "seller_creator",
-      metadata: {
-        productId: saved.id,
-        productStatus: saved.productStatus ?? "Draft",
-      },
-    });
+    await Promise.all([
+      runBestEffortSaveSideEffect("sync_supabase_product", () =>
+        syncSupabaseProductRecord(saved),
+      ),
+      runBestEffortSaveSideEffect("delete_removed_gallery_images", () =>
+        deleteProductGalleryImages(removedGalleryStoragePaths),
+      ),
+      runBestEffortSaveSideEffect("track_monetization_event", () =>
+        trackMonetizationEvent({
+          sellerId: saved.sellerId || viewer.email,
+          sellerEmail: saved.sellerId || viewer.email,
+          planKey: normalizePlanKey(profile?.sellerPlanKey),
+          eventType: "listing_created",
+          source: "seller_creator",
+          metadata: {
+            productId: saved.id,
+            productStatus: saved.productStatus ?? "Draft",
+          },
+        }),
+      ),
+    ]);
 
+    console.info("[lessonforge.products.save] before return", {
+      productId: saved.id,
+    });
     return NextResponse.json({ product: saved });
   } catch (error) {
+    console.error("[lessonforge.products.save] request failed", {
+      message: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json(
       {
         error:
