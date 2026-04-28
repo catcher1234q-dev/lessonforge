@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 
 import { hasAppSessionForEmail } from "@/lib/auth/app-session";
+import { getAuthenticatedAccountEmail, getOwnerAccessContext } from "@/lib/auth/owner-access";
 import { getCurrentViewer } from "@/lib/auth/viewer";
-import { listPersistedProducts } from "@/lib/lessonforge/data-access";
+import { listPersistedProducts, listSellerProfiles } from "@/lib/lessonforge/data-access";
 import {
   buildProductGalleryCoverUrl,
   buildProductGalleryPreviewUrl,
@@ -17,20 +18,32 @@ function createImageId() {
 }
 
 export async function POST(request: Request) {
-  const viewer = await getCurrentViewer();
+  const [viewer, authenticatedEmail, ownerAccess, sellerProfiles] = await Promise.all([
+    getCurrentViewer(),
+    getAuthenticatedAccountEmail(),
+    getOwnerAccessContext(),
+    listSellerProfiles(),
+  ]);
 
-  if (!(await hasAppSessionForEmail(viewer.email))) {
+  if (!authenticatedEmail || !(await hasAppSessionForEmail(authenticatedEmail))) {
     return NextResponse.json(
       { error: "Signed-in seller access required." },
       { status: 401 },
     );
   }
 
-  if (
-    viewer.role !== "seller" &&
-    viewer.role !== "admin" &&
-    viewer.role !== "owner"
-  ) {
+  const normalizedAuthenticatedEmail = authenticatedEmail.trim().toLowerCase();
+  const matchingSellerProfile = sellerProfiles.find(
+    (profile) => profile.email.trim().toLowerCase() === normalizedAuthenticatedEmail,
+  );
+  const hasSellerWorkspaceAccess =
+    viewer.role === "seller" ||
+    viewer.role === "admin" ||
+    viewer.role === "owner" ||
+    ownerAccess.isOwner ||
+    Boolean(matchingSellerProfile);
+
+  if (!hasSellerWorkspaceAccess) {
     return NextResponse.json({ error: "Seller access required." }, { status: 403 });
   }
 
@@ -61,8 +74,8 @@ export async function POST(request: Request) {
 
   if (
     existingProduct &&
-    viewer.role === "seller" &&
-    existingProduct.sellerId?.trim().toLowerCase() !== viewer.email.trim().toLowerCase()
+    !ownerAccess.isOwner &&
+    existingProduct.sellerId?.trim().toLowerCase() !== normalizedAuthenticatedEmail
   ) {
     return NextResponse.json(
       { error: "You can only manage gallery images for your own listings." },
