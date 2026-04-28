@@ -81,6 +81,48 @@ async function resolveUniqueProductSlug(input: { id: string; title: string }) {
   return `${slugBase}-${stableSuffix}`;
 }
 
+function isSlugConflictError(error: unknown) {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
+    return false;
+  }
+
+  if (error.code !== "P2002") {
+    return false;
+  }
+
+  const target = error.meta?.target;
+
+  if (Array.isArray(target)) {
+    return target.includes("slug");
+  }
+
+  if (typeof target === "string") {
+    return target.includes("slug");
+  }
+
+  return false;
+}
+
+function buildProductSlugCandidate(input: { id: string; title: string; attempt: number }) {
+  const slugBase = slugify(input.title) || "resource";
+  const normalizedId = slugify(input.id) || "draft";
+
+  if (!input.id.startsWith("upload-")) {
+    return input.attempt === 0 ? `${slugBase}-${normalizedId}` : `${slugBase}-${normalizedId}-${input.attempt}`;
+  }
+
+  if (input.attempt === 0) {
+    return slugBase;
+  }
+
+  if (input.attempt <= 5) {
+    return `${slugBase}-${input.attempt}`;
+  }
+
+  const uploadSuffix = normalizedId.replace(/^upload-/, "") || normalizedId;
+  return `${slugBase}-${uploadSuffix}-${randomUUID().slice(0, 8).toLowerCase()}`;
+}
+
 function normalizeBuyerEmail(value: string) {
   const normalized = value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
   return `${normalized || "buyer"}@lessonforge.demo`;
@@ -779,72 +821,92 @@ export async function prismaSaveProduct(product: ProductRecord) {
     onboardingCompleted: true,
   });
 
-  const slug = await resolveUniqueProductSlug({
-    id: product.id,
-    title: product.title,
-  });
   const assetPaths = buildStoredAssetPaths({
     productId: product.id,
     title: product.title,
     format: product.format,
   });
+  let lastSlugConflict: unknown;
 
-  await prisma.product.upsert({
-    where: { id: product.id },
-    update: {
-      sellerId: sellerUser.id,
-      sellerProfileId: sellerProfile.id,
-      slug,
-      title: product.title,
-      shortDescription: product.summary,
-      fullDescription: product.fullDescription ?? product.summary,
-      whatIsIncluded: (product.includedItems ?? []).join("\n"),
-      moderationNotes: product.moderationFeedback ?? null,
-      resourceType: mapResourceType(product.format),
-      status: mapProductStatus(product.productStatus),
-      basePriceCents: product.priceCents ?? 0,
-      thumbnailUrl: product.imageGallery?.[0]?.coverUrl ?? product.thumbnailUrl ?? assetPaths.thumbnailUrl,
-      previewImageUrls: serializeProductGallery(product.imageGallery ?? []),
-      previewIncluded: product.previewIncluded ?? false,
-      thumbnailIncluded: product.thumbnailIncluded ?? false,
-      rightsConfirmed: product.rightsConfirmed ?? false,
-      fileTypesSummary: product.fileTypes?.length ? product.fileTypes : [product.format],
-      subject: product.subject,
-      gradeBand: product.gradeBand,
-      standardsSummary: product.standardsTag,
-      isAiAssisted: product.createdPath === "AI assisted",
-      freshnessScore: product.freshnessScore ?? 4,
-      boostScore: product.freshnessScore ?? 4,
-      publishedAt: product.productStatus === "Published" ? new Date() : null,
-    },
-    create: {
+  for (let attempt = 0; attempt <= 6; attempt += 1) {
+    const slug = buildProductSlugCandidate({
       id: product.id,
-      sellerId: sellerUser.id,
-      sellerProfileId: sellerProfile.id,
-      slug,
       title: product.title,
-      shortDescription: product.summary,
-      fullDescription: product.fullDescription ?? product.summary,
-      whatIsIncluded: (product.includedItems ?? []).join("\n"),
-      moderationNotes: product.moderationFeedback ?? null,
-      resourceType: mapResourceType(product.format),
-      status: mapProductStatus(product.productStatus),
-      basePriceCents: product.priceCents ?? 0,
-      thumbnailUrl: product.imageGallery?.[0]?.coverUrl ?? product.thumbnailUrl ?? assetPaths.thumbnailUrl,
-      previewImageUrls: serializeProductGallery(product.imageGallery ?? []),
-      previewIncluded: product.previewIncluded ?? false,
-      thumbnailIncluded: product.thumbnailIncluded ?? false,
-      rightsConfirmed: product.rightsConfirmed ?? false,
-      fileTypesSummary: product.fileTypes?.length ? product.fileTypes : [product.format],
-      subject: product.subject,
-      gradeBand: product.gradeBand,
-      standardsSummary: product.standardsTag,
-      isAiAssisted: product.createdPath === "AI assisted",
-      freshnessScore: product.freshnessScore ?? 4,
-      boostScore: product.freshnessScore ?? 4,
-      publishedAt: product.productStatus === "Published" ? new Date() : null,
-    },
-  });
+      attempt,
+    });
+
+    try {
+      await prisma.product.upsert({
+        where: { id: product.id },
+        update: {
+          sellerId: sellerUser.id,
+          sellerProfileId: sellerProfile.id,
+          slug,
+          title: product.title,
+          shortDescription: product.summary,
+          fullDescription: product.fullDescription ?? product.summary,
+          whatIsIncluded: (product.includedItems ?? []).join("\n"),
+          moderationNotes: product.moderationFeedback ?? null,
+          resourceType: mapResourceType(product.format),
+          status: mapProductStatus(product.productStatus),
+          basePriceCents: product.priceCents ?? 0,
+          thumbnailUrl: product.imageGallery?.[0]?.coverUrl ?? product.thumbnailUrl ?? assetPaths.thumbnailUrl,
+          previewImageUrls: serializeProductGallery(product.imageGallery ?? []),
+          previewIncluded: product.previewIncluded ?? false,
+          thumbnailIncluded: product.thumbnailIncluded ?? false,
+          rightsConfirmed: product.rightsConfirmed ?? false,
+          fileTypesSummary: product.fileTypes?.length ? product.fileTypes : [product.format],
+          subject: product.subject,
+          gradeBand: product.gradeBand,
+          standardsSummary: product.standardsTag,
+          isAiAssisted: product.createdPath === "AI assisted",
+          freshnessScore: product.freshnessScore ?? 4,
+          boostScore: product.freshnessScore ?? 4,
+          publishedAt: product.productStatus === "Published" ? new Date() : null,
+        },
+        create: {
+          id: product.id,
+          sellerId: sellerUser.id,
+          sellerProfileId: sellerProfile.id,
+          slug,
+          title: product.title,
+          shortDescription: product.summary,
+          fullDescription: product.fullDescription ?? product.summary,
+          whatIsIncluded: (product.includedItems ?? []).join("\n"),
+          moderationNotes: product.moderationFeedback ?? null,
+          resourceType: mapResourceType(product.format),
+          status: mapProductStatus(product.productStatus),
+          basePriceCents: product.priceCents ?? 0,
+          thumbnailUrl: product.imageGallery?.[0]?.coverUrl ?? product.thumbnailUrl ?? assetPaths.thumbnailUrl,
+          previewImageUrls: serializeProductGallery(product.imageGallery ?? []),
+          previewIncluded: product.previewIncluded ?? false,
+          thumbnailIncluded: product.thumbnailIncluded ?? false,
+          rightsConfirmed: product.rightsConfirmed ?? false,
+          fileTypesSummary: product.fileTypes?.length ? product.fileTypes : [product.format],
+          subject: product.subject,
+          gradeBand: product.gradeBand,
+          standardsSummary: product.standardsTag,
+          isAiAssisted: product.createdPath === "AI assisted",
+          freshnessScore: product.freshnessScore ?? 4,
+          boostScore: product.freshnessScore ?? 4,
+          publishedAt: product.productStatus === "Published" ? new Date() : null,
+        },
+      });
+
+      lastSlugConflict = null;
+      break;
+    } catch (error) {
+      if (!isSlugConflictError(error)) {
+        throw error;
+      }
+
+      lastSlugConflict = error;
+    }
+  }
+
+  if (lastSlugConflict) {
+    throw lastSlugConflict;
+  }
 
   await prisma.productAsset.deleteMany({
     where: {
