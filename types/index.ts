@@ -59,6 +59,27 @@ export type ProductRecord = {
   imageGallery?: ProductGalleryImage[];
 };
 
+export type ProductThumbnailVariant =
+  | "cover"
+  | "best-page"
+  | "cropped"
+  | "branded"
+  | "multi-page";
+
+export type ProductThumbnailCrop = {
+  leftPct: number;
+  topPct: number;
+  widthPct: number;
+  heightPct: number;
+};
+
+export type ProductThumbnailSelection = {
+  variant: ProductThumbnailVariant;
+  sourceImageIds: string[];
+  crop?: ProductThumbnailCrop;
+  badgeText?: string;
+};
+
 export type ProductGalleryImage = {
   id: string;
   storagePath: string;
@@ -69,6 +90,7 @@ export type ProductGalleryImage = {
   position: number;
   coverUrl: string;
   previewUrl: string;
+  thumbnailSelection?: ProductThumbnailSelection;
 };
 
 export type ConnectedSeller = {

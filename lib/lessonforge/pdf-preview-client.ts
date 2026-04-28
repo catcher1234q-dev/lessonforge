@@ -23,11 +23,12 @@ export async function renderPdfPreviewImages(input: {
   file: File;
   maxPages: number;
 }) {
-  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const pdfModulePath = "/vendor/pdfjs/pdf.mjs";
+  const pdfjs = (await import(/* webpackIgnore: true */ pdfModulePath)) as any;
+  pdfjs.GlobalWorkerOptions.workerSrc = "/vendor/pdfjs/pdf.worker.mjs";
   const bytes = new Uint8Array(await input.file.arrayBuffer());
   const loadingTask = pdfjs.getDocument({
     data: bytes,
-    disableWorker: true,
     isEvalSupported: false,
     useSystemFonts: true,
   } as any);

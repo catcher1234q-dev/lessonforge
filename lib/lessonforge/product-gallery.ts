@@ -1,4 +1,4 @@
-import type { ProductGalleryImage, ProductRecord } from "@/types";
+import type { ProductGalleryImage, ProductRecord, ProductThumbnailSelection } from "@/types";
 
 export const MAX_PRODUCT_PREVIEW_IMAGES = 5;
 export const MAX_PRODUCT_GALLERY_IMAGES = MAX_PRODUCT_PREVIEW_IMAGES + 1;
@@ -20,6 +20,7 @@ type StoredProductGalleryImage = {
   mimeType: string;
   fileSizeBytes: number;
   position?: number;
+  thumbnailSelection?: ProductThumbnailSelection;
 };
 
 export function isAllowedProductGalleryImageType(mimeType: string) {
@@ -38,6 +39,9 @@ export function normalizeProductGallery(
   productId: string,
   images: Array<StoredProductGalleryImage | ProductGalleryImage>,
 ) {
+  const thumbnailSelection =
+    images.find((image) => image.thumbnailSelection)?.thumbnailSelection ?? undefined;
+
   return images
     .slice(0, MAX_PRODUCT_GALLERY_IMAGES)
     .map((image, index) => {
@@ -52,6 +56,7 @@ export function normalizeProductGallery(
         position: index,
         coverUrl: buildProductGalleryCoverUrl(productId, id),
         previewUrl: buildProductGalleryPreviewUrl(productId, id),
+        thumbnailSelection: index === 0 ? thumbnailSelection : undefined,
       } satisfies ProductGalleryImage;
     });
 }
@@ -67,6 +72,7 @@ export function serializeProductGallery(images: ProductGalleryImage[]) {
         mimeType: image.mimeType,
         fileSizeBytes: image.fileSizeBytes,
         position: image.position,
+        thumbnailSelection: image.thumbnailSelection,
       } satisfies StoredProductGalleryImage),
     );
 }

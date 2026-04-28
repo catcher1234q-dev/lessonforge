@@ -4,6 +4,10 @@ import { hasAppSessionForEmail } from "@/lib/auth/app-session";
 import { getCurrentViewer } from "@/lib/auth/viewer";
 import { listPersistedProducts } from "@/lib/lessonforge/data-access";
 import { downloadProductGalleryImage } from "@/lib/lessonforge/product-gallery-storage";
+import {
+  renderProductThumbnailSvg,
+  resolveThumbnailSourceImages,
+} from "@/lib/lessonforge/product-thumbnail-options";
 
 export const runtime = "nodejs";
 
@@ -67,6 +71,35 @@ export async function GET(
     const bytes = Buffer.from(await downloaded.arrayBuffer());
 
     if (mode === "cover") {
+      const selectedThumbnail = image.thumbnailSelection;
+      if (selectedThumbnail) {
+        const sourceImages = resolveThumbnailSourceImages(product.imageGallery ?? [], selectedThumbnail);
+        const sourceDataUris = await Promise.all(
+          sourceImages.map(async (sourceImage) => {
+            const sourceDownloaded =
+              sourceImage.storagePath === image.storagePath
+                ? downloaded
+                : await downloadProductGalleryImage(sourceImage.storagePath);
+            const sourceBytes = Buffer.from(await sourceDownloaded.arrayBuffer());
+            return `data:${sourceImage.mimeType};base64,${sourceBytes.toString("base64")}`;
+          }),
+        );
+        const svg = renderProductThumbnailSvg({
+          title: product.title,
+          selection: selectedThumbnail,
+          sourceImageDataUris: sourceDataUris,
+        });
+
+        return new NextResponse(svg, {
+          status: 200,
+          headers: {
+            "Content-Type": "image/svg+xml; charset=utf-8",
+            "Cache-Control": "public, max-age=3600, s-maxage=86400",
+            "X-Robots-Tag": "noindex",
+          },
+        });
+      }
+
       return new NextResponse(bytes, {
         status: 200,
         headers: {

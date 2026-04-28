@@ -1,4 +1,8 @@
 import {
+  randomUUID,
+} from "node:crypto";
+
+import {
   AiAction,
   PlanKey,
   Prisma,
@@ -51,6 +55,18 @@ function slugify(value: string) {
 function normalizeBuyerEmail(value: string) {
   const normalized = value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
   return `${normalized || "buyer"}@lessonforge.demo`;
+}
+
+function asUuidOrNull(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  )
+    ? value
+    : null;
 }
 
 function mapViewerRoleToUserRole(role?: ViewerRole): UserRole | undefined {
@@ -359,6 +375,9 @@ function toProductRecord(
       product.status === ProductStatus.PUBLISHED &&
       Boolean(product.sellerProfile?.stripeAccountId),
     productStatus: unmapProductStatus(product.status),
+    previewIncluded: product.previewIncluded,
+    thumbnailIncluded: product.thumbnailIncluded,
+    rightsConfirmed: product.rightsConfirmed,
     moderationFeedback: product.moderationNotes ?? undefined,
     createdPath: product.isAiAssisted ? "AI assisted" : "Manual upload",
     imageGallery,
@@ -466,6 +485,7 @@ async function ensureUser(input: {
       role: input.role,
     },
     create: {
+      id: randomUUID(),
       email: input.email,
       name: input.name ?? null,
       role: input.role,
@@ -632,7 +652,7 @@ export async function prismaSaveAdminAuditLog(entry: AdminAuditLog) {
   const created = await prisma.adminAuditLog.create({
     data: {
       id: entry.id,
-      actorUserId: actor?.id ?? null,
+      actorUserId: asUuidOrNull(actor?.id),
       action: entry.action,
       targetType: entry.targetType,
       targetId: entry.targetId,

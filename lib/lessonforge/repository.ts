@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { buildStoredAssetPaths } from "@/lib/lessonforge/preview-assets";
 import { normalizeProductGallery } from "@/lib/lessonforge/product-gallery";
 import {
@@ -236,7 +238,7 @@ async function saveAdminAuditLog(input: {
   metadata?: Record<string, unknown>;
 }) {
   const nextEntry: AdminAuditLog = {
-    id: `audit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: randomUUID(),
     actorEmail: input.actorEmail,
     actorRole: input.actorRole,
     action: input.action,

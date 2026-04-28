@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { AlertCircle, ArrowRight, CheckCircle2, FileUp, Lock } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { trackFunnelEvent } from "@/lib/analytics/events";
 import { ProductImageGalleryManager } from "@/components/seller/product-image-gallery-manager";
@@ -453,6 +454,7 @@ function createDraftProductId() {
 }
 
 export function ProductCreator() {
+  const router = useRouter();
   const fileInputId = useId();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [seller, setSeller] = useState<ConnectedSeller | null>(null);
@@ -1493,29 +1495,24 @@ export function ProductCreator() {
       },
     );
 
-    setTitle("");
-    setShortDescription("");
-    setFullDescription("");
-    setNotes("");
-    setPrice("12");
-    setFiles([]);
-    setStatus("Draft");
-    setCreatedPath("Manual upload");
-    setDraftProductId(createDraftProductId());
-    setImageGallery([]);
-    setPreviewIncluded(false);
-    setThumbnailIncluded(false);
-    setRightsConfirmed(false);
     setSavedProduct({
       id: savedProductRecord.id,
       title: savedProductRecord.title,
       productStatus: savedProductRecord.productStatus ?? "Draft",
       isPurchasable: Boolean(savedProductRecord.isPurchasable),
     });
-    setMessage(
-      `${savedProductRecord.title} was saved as ${savedProductRecord.productStatus}.${suggestedStandard === "Standards pending seller review" ? " AI standards scan was skipped for this save." : ""}${connectedAccountId ? "" : " Connect Stripe before published products can sell."}`,
-    );
+    setMessage("Product saved successfully. Opening your saved product…");
     setIsSaving(false);
+    const editSearchParams = new URLSearchParams();
+    editSearchParams.set("listingUpdate", "saved");
+    editSearchParams.set("listingTitle", savedProductRecord.title);
+    if (suggestedStandard === "Standards pending seller review") {
+      editSearchParams.set("aiStatus", "skipped");
+    }
+    if (!connectedAccountId) {
+      editSearchParams.set("billingStatus", "connect-required");
+    }
+    router.push(`/sell/products/${savedProductRecord.id}/edit?${editSearchParams.toString()}`);
   }
 
   return (
@@ -2120,6 +2117,8 @@ export function ProductCreator() {
                   <ProductImageGalleryManager
                     onChange={setImageGallery}
                     productId={draftProductId}
+                    gradeLabel={gradeBand}
+                    subjectLabel={subject}
                     value={imageGallery}
                   />
                 </div>

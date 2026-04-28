@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { UserRole, type Prisma } from "@prisma/client";
 
 import { normalizePlanKey, type PlanKey } from "@/lib/config/plans";
@@ -293,6 +295,7 @@ async function ensureActorUser(input?: { email?: string; role?: ViewerRole }) {
       name: input.email.split("@")[0] ?? input.email,
     },
     create: {
+      id: randomUUID(),
       email: input.email,
       role,
       name: input.email.split("@")[0] ?? input.email,
@@ -302,6 +305,31 @@ async function ensureActorUser(input?: { email?: string; role?: ViewerRole }) {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function asUuidOrNull(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  )
+    ? value
+    : null;
+}
+
+function isAdminAuditActorForeignKeyError(error: unknown) {
+  if (error instanceof Error && /admin_audit_logs_actor_user_id_fkey/i.test(error.message)) {
+    return true;
+  }
+
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "P2003"
+  );
 }
 
 function coerceAdminAiSettings(value: unknown): AdminAiSettings | null {
@@ -1603,7 +1631,8 @@ export async function updateSystemSettings(
     const actorUser = await ensureActorUser(actor);
     await prisma.adminAuditLog.create({
       data: {
-        actorUserId: actorUser?.id ?? null,
+        id: randomUUID(),
+        actorUserId: asUuidOrNull(actorUser?.id),
         action: "system.settings.updated",
         targetType: "system",
         targetId: "system-settings",
@@ -1658,7 +1687,8 @@ export async function updateAdminAiSettings(
   const actorUser = await ensureActorUser(actor);
   await prisma.adminAuditLog.create({
     data: {
-      actorUserId: actorUser?.id ?? null,
+      id: randomUUID(),
+      actorUserId: asUuidOrNull(actorUser?.id),
       action: "ai.settings.updated",
       targetType: "system",
       targetId: "admin-ai-settings",
@@ -1711,16 +1741,34 @@ export async function trackMonetizationEvent(input: {
     email: input.sellerEmail,
     role: "seller",
   });
+  const baseAuditLogData = {
+    id: randomUUID(),
+    action: "monetization.event",
+    targetType: "monetization",
+    targetId: input.eventType,
+    metadataJson: payload as Prisma.InputJsonValue,
+  } satisfies Omit<Prisma.AdminAuditLogCreateInput, "actor"> & { actorUserId?: string | null };
 
-  const entry = await prisma.adminAuditLog.create({
-    data: {
-      actorUserId: actorUser?.id ?? null,
-      action: "monetization.event",
-      targetType: "monetization",
-      targetId: input.eventType,
-      metadataJson: payload as Prisma.InputJsonValue,
-    },
-  });
+  let entry;
+  try {
+    entry = await prisma.adminAuditLog.create({
+      data: {
+        ...baseAuditLogData,
+        actorUserId: asUuidOrNull(actorUser?.id),
+      },
+    });
+  } catch (error) {
+    if (!isAdminAuditActorForeignKeyError(error)) {
+      throw error;
+    }
+
+    entry = await prisma.adminAuditLog.create({
+      data: {
+        ...baseAuditLogData,
+        actorUserId: null,
+      },
+    });
+  }
 
   return {
     id: entry.id,
@@ -1757,7 +1805,8 @@ export async function savePrivateFeedback(input: {
       : null;
     const entry = await prisma.adminAuditLog.create({
       data: {
-        actorUserId: actorUser?.id ?? null,
+        id: randomUUID(),
+        actorUserId: asUuidOrNull(actorUser?.id),
         action: "user.feedback.submitted",
         targetType: "private_feedback",
         targetId,

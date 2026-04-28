@@ -104,6 +104,10 @@ export function ProductEditor({ product }: { product: ProductRecord }) {
   const moderationGuidance = getSellerModerationGuidance(product);
   const focusedSection = searchParams.get("focus") as SellerRemediationFocus | null;
   const focusedLabel = getSellerRemediationFocusLabel(focusedSection);
+  const listingUpdateState = searchParams.get("listingUpdate");
+  const listingUpdateTitle = searchParams.get("listingTitle");
+  const aiStatus = searchParams.get("aiStatus");
+  const billingStatus = searchParams.get("billingStatus");
   const liveProduct: ProductRecord = {
     ...product,
     title,
@@ -289,6 +293,27 @@ export function ProductEditor({ product }: { product: ProductRecord }) {
             </p>
           </div>
         ) : null}
+        {listingUpdateState === "saved" ? (
+          <div
+            className="mt-4 rounded-[1.25rem] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm leading-6 text-emerald-950"
+            data-testid="seller-editor-save-success"
+          >
+            <p className="font-semibold">Product saved successfully</p>
+            <p className="mt-1">
+              {listingUpdateTitle || product.title} is saved, and your selected thumbnail should stay in place when you refresh or reopen this listing.
+            </p>
+            {aiStatus === "skipped" ? (
+              <p className="mt-2 text-emerald-900/80">
+                AI standards scan was skipped for this save.
+              </p>
+            ) : null}
+            {billingStatus === "connect-required" ? (
+              <p className="mt-2 text-emerald-900/80">
+                Connect Stripe before published products can sell.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
         {(lowAiCredits || !premiumAccess?.fullListingOptimization.unlocked) ? (
           <div className="mt-5 rounded-[1.25rem] border border-brand/15 bg-brand-soft/35 px-5 py-4 text-sm leading-6 text-ink">
             <p className="font-semibold text-ink">Upgrade to grow faster</p>
@@ -344,6 +369,7 @@ export function ProductEditor({ product }: { product: ProductRecord }) {
                 mimeType: image.mimeType,
                 fileSizeBytes: image.fileSizeBytes,
                 position: image.position,
+                thumbnailSelection: image.thumbnailSelection,
               })),
             )}
           />
@@ -524,6 +550,8 @@ export function ProductEditor({ product }: { product: ProductRecord }) {
               <ProductImageGalleryManager
                 onChange={setImageGallery}
                 productId={product.id}
+                gradeLabel={gradeBand}
+                subjectLabel={subject}
                 value={imageGallery}
               />
             </div>
