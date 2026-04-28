@@ -52,6 +52,32 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
+async function resolveUniqueProductSlug(input: { id: string; title: string }) {
+  const slugBase = slugify(input.title) || "resource";
+  const preferredSlug = input.id.startsWith("upload-")
+    ? slugBase
+    : `${slugBase}-${slugify(input.id) || input.id.toLowerCase()}`;
+
+  const conflictingProduct = await prisma.product.findFirst({
+    where: {
+      slug: preferredSlug,
+      NOT: {
+        id: input.id,
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!conflictingProduct) {
+    return preferredSlug;
+  }
+
+  const stableSuffix = slugify(input.id).replace(/^upload-/, "") || slugify(input.id) || "draft";
+  return `${slugBase}-${stableSuffix}`;
+}
+
 function normalizeBuyerEmail(value: string) {
   const normalized = value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
   return `${normalized || "buyer"}@lessonforge.demo`;
@@ -750,8 +776,10 @@ export async function prismaSaveProduct(product: ProductRecord) {
     onboardingCompleted: true,
   });
 
-  const slugBase = slugify(product.title);
-  const slug = product.id.startsWith("upload-") ? `${slugBase}` : `${slugBase}-${product.id}`;
+  const slug = await resolveUniqueProductSlug({
+    id: product.id,
+    title: product.title,
+  });
   const assetPaths = buildStoredAssetPaths({
     productId: product.id,
     title: product.title,
