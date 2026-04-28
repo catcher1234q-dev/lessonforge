@@ -35,12 +35,6 @@ const whyCards = [
   },
 ] as const;
 
-const howItWorks = [
-  "Browse or upload",
-  "Preview before buying",
-  "Use or sell",
-] as const;
-
 function pickHomepagePreviewLabel(subject: string) {
   if (subject === "Math") return "Math";
   if (subject === "Reading" || subject === "Writing") return "Literacy";
@@ -151,30 +145,6 @@ export default async function HomePage() {
                   <h3 className="text-xl font-semibold text-ink">{card.title}</h3>
                 </div>
               ))}
-            </div>
-          </div>
-        </section>
-        <section className="px-5 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-6xl rounded-[2rem] border border-black/5 bg-white px-6 py-8 shadow-soft-xl sm:px-8">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-xl">
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand">
-                  How it works
-                </p>
-                <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl leading-tight tracking-[-0.03em] text-ink sm:text-4xl">
-                  Browse or sell without the clutter.
-                </h2>
-              </div>
-              <div className="grid flex-1 gap-3 sm:grid-cols-3">
-                {howItWorks.map((step, index) => (
-                  <div key={step} className="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9b7a10]">
-                      Step {index + 1}
-                    </p>
-                    <p className="mt-2 text-base font-semibold text-ink">{step}</p>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         </section>
