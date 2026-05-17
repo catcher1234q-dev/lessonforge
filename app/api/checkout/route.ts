@@ -47,6 +47,13 @@ function getSafeAppOrigin(originHeader: string | null) {
   }
 }
 
+function isStripeConnectedAccountPermissionError(error: Error) {
+  return (
+    error.message.includes("Permission denied") &&
+    error.message.includes("does not have permission to access account")
+  );
+}
+
 export async function POST(request: Request) {
   const origin = getSafeAppOrigin(request.headers.get("origin"));
   let resource: ProductRecord | null = null;
@@ -214,7 +221,23 @@ export async function POST(request: Request) {
     const sellerStatus = await getSellerPayoutStatusDetails(
       checkoutResource.sellerStripeAccountId,
       checkoutResource.sellerStripeAccountEnvKey,
-    );
+    ).catch((error) => {
+      if (error instanceof Error && isStripeConnectedAccountPermissionError(error)) {
+        return null;
+      }
+
+      throw error;
+    });
+
+    if (!sellerStatus) {
+      return NextResponse.json(
+        {
+          error:
+            "This seller needs to reconnect payout setup before live checkout can start.",
+        },
+        { status: 409 },
+      );
+    }
 
     if (sellerStatus.status !== "live") {
       return NextResponse.json(
