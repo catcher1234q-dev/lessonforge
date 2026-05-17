@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { hasAppSessionForEmail } from "@/lib/auth/app-session";
-import { getOwnerAccessContext } from "@/lib/auth/owner-access";
+import { getAuthenticatedAccountEmail, getOwnerAccessContext } from "@/lib/auth/owner-access";
 import { getCurrentViewer } from "@/lib/auth/viewer";
 import { normalizePlanKey } from "@/lib/config/plans";
 import { checkAdminMutationRateLimit } from "@/lib/lessonforge/admin-rate-limit";
@@ -91,23 +91,16 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     console.info("[lessonforge.products.save] request received");
-    const viewer = await getCurrentViewer();
+    const [viewer, authenticatedEmail, ownerAccess] = await Promise.all([
+      getCurrentViewer(),
+      getAuthenticatedAccountEmail(),
+      getOwnerAccessContext(),
+    ]);
 
-    if (!(await hasAppSessionForEmail(viewer.email))) {
+    if (!authenticatedEmail || !(await hasAppSessionForEmail(authenticatedEmail))) {
       return NextResponse.json(
         { error: "Signed-in seller access required." },
         { status: 401 },
-      );
-    }
-
-    if (
-      viewer.role !== "seller" &&
-      viewer.role !== "admin" &&
-      viewer.role !== "owner"
-    ) {
-      return NextResponse.json(
-        { error: "Seller access required." },
-        { status: 403 },
       );
     }
 
@@ -124,13 +117,31 @@ export async function POST(request: Request) {
       listSellerProfiles(),
       listPersistedProducts(),
     ]);
+    const normalizedAuthenticatedEmail = authenticatedEmail.trim().toLowerCase();
+    const matchingSellerProfile = profiles.find(
+      (profile) => profile.email.trim().toLowerCase() === normalizedAuthenticatedEmail,
+    );
+    const hasPrivilegedProductAccess =
+      ownerAccess.isOwner || viewer.role === "admin" || viewer.role === "owner";
+    const hasSellerWorkspaceAccess =
+      viewer.role === "seller" ||
+      hasPrivilegedProductAccess ||
+      Boolean(matchingSellerProfile);
+
+    if (!hasSellerWorkspaceAccess) {
+      return NextResponse.json(
+        { error: "Seller access required." },
+        { status: 403 },
+      );
+    }
+
     const effectiveSellerId =
       body.product.sellerId ||
-      (viewer.role === "seller" ? viewer.email : undefined);
+      (!hasPrivilegedProductAccess ? authenticatedEmail : undefined);
 
     if (
-      viewer.role === "seller" &&
-      effectiveSellerId?.trim().toLowerCase() !== viewer.email.trim().toLowerCase()
+      !hasPrivilegedProductAccess &&
+      effectiveSellerId?.trim().toLowerCase() !== normalizedAuthenticatedEmail
     ) {
       return NextResponse.json(
         { error: "You can only save products for your own seller account." },
@@ -139,8 +150,11 @@ export async function POST(request: Request) {
     }
 
     const profile =
-      profiles.find((entry) => entry.email === effectiveSellerId) ??
-      profiles.find((entry) => entry.email === viewer.email);
+      profiles.find(
+        (entry) => entry.email.trim().toLowerCase() === effectiveSellerId?.trim().toLowerCase(),
+      ) ??
+      matchingSellerProfile ??
+      profiles.find((entry) => entry.email.trim().toLowerCase() === normalizedAuthenticatedEmail);
 
     const galleryAwareProduct = {
       ...body.product,
@@ -150,10 +164,10 @@ export async function POST(request: Request) {
         (body.product.imageGallery?.length ?? 0) > 0 || body.product.thumbnailIncluded,
     };
     const productToSave =
-      viewer.role === "seller"
+      !hasPrivilegedProductAccess
         ? {
             ...galleryAwareProduct,
-            sellerId: viewer.email,
+            sellerId: authenticatedEmail,
           }
         : galleryAwareProduct;
 
@@ -191,8 +205,8 @@ export async function POST(request: Request) {
       ),
       runBestEffortSaveSideEffect("track_monetization_event", () =>
         trackMonetizationEvent({
-          sellerId: saved.sellerId || viewer.email,
-          sellerEmail: saved.sellerId || viewer.email,
+          sellerId: saved.sellerId || authenticatedEmail,
+          sellerEmail: saved.sellerId || authenticatedEmail,
           planKey: normalizePlanKey(profile?.sellerPlanKey),
           eventType: "listing_created",
           source: "seller_creator",
