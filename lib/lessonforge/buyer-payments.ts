@@ -8,6 +8,7 @@ import {
 } from "@/lib/lessonforge/buyer-payment-utils";
 import { findSupabaseProductRecordById } from "@/lib/supabase/admin-sync";
 import { listPersistedProducts } from "@/lib/lessonforge/data-access";
+import { mergeProductRecord } from "@/lib/lessonforge/product-record-merge";
 import type { ProductRecord } from "@/types";
 
 function toProductRecord(resource: (typeof demoResources)[number]): ProductRecord {
@@ -40,6 +41,8 @@ function toProductRecord(resource: (typeof demoResources)[number]): ProductRecor
     sellerId: resource.sellerId,
     sellerStripeAccountEnvKey: resource.sellerStripeAccountEnvKey,
     sellerStripeAccountId: resource.sellerStripeAccountId,
+    sellerPayPalMerchantEnvKey: resource.sellerPayPalMerchantEnvKey,
+    sellerPayPalMerchantId: resource.sellerPayPalMerchantId,
     priceCents: resource.priceCents,
     isPurchasable: resource.isPurchasable,
     productStatus: resource.productStatus ?? "Published",
@@ -95,12 +98,13 @@ export async function resolveCheckoutProductById(productId: string) {
     findSupabaseProductRecordById(productId).catch(() => null),
   ]);
   const demoProduct = demoResources.find((product) => product.id === productId);
+  const persistedProduct = persistedProducts.find((product) => product.id === productId) ?? null;
 
-  return (
-    syncedProduct ??
-    persistedProducts.find((product) => product.id === productId) ??
-    (demoProduct ? toProductRecord(demoProduct) : null)
-  );
+  if (persistedProduct && syncedProduct) {
+    return mergeProductRecord(persistedProduct, syncedProduct);
+  }
+
+  return syncedProduct ?? persistedProduct ?? (demoProduct ? toProductRecord(demoProduct) : null);
 }
 
 export {

@@ -639,11 +639,6 @@ async function buildSupabaseProductRecords(productRows: SupabaseProductReadRow[]
     const sellerEmail = seller?.email?.trim().toLowerCase() ?? "";
     const title = row.title || "Untitled listing";
     const productStatus = mapSupabaseStatusToProductStatus(row.status);
-    const hasLivePayoutSetup = Boolean(
-      sellerProfile?.stripe_account_id &&
-        sellerProfile.stripe_charges_enabled &&
-        sellerProfile.stripe_payouts_enabled,
-    );
 
     return {
       id: row.id,
@@ -667,7 +662,7 @@ async function buildSupabaseProductRecords(productRows: SupabaseProductReadRow[]
       sellerHandle: sellerProfile?.store_handle ? `@${sellerProfile.store_handle}` : undefined,
       sellerStripeAccountId: sellerProfile?.stripe_account_id ?? undefined,
       priceCents: row.price,
-      isPurchasable: productStatus === "Published" && hasLivePayoutSetup,
+      isPurchasable: false,
       productStatus,
     };
   });

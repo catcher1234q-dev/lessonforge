@@ -2,14 +2,12 @@ import { NextResponse } from "next/server";
 
 import { hasAppSessionForEmail } from "@/lib/auth/app-session";
 import { getCurrentViewer } from "@/lib/auth/viewer";
-import { getStripeServerClient, isStripeServerConfigured } from "@/lib/stripe/server";
-import { getSupabaseSellerProfile } from "@/lib/supabase/admin-sync";
+import { listSellerProfiles, saveSellerProfile } from "@/lib/lessonforge/data-access";
 
 type OnboardBody = {
   email?: string;
   displayName?: string;
   accountId?: string;
-  sellerAccountEnvKey?: string;
 };
 
 export async function POST(request: Request) {
@@ -24,157 +22,67 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Seller access required." }, { status: 403 });
     }
 
-    if (!isStripeServerConfigured()) {
-      return NextResponse.json(
-        {
-          error:
-            "Stripe onboarding is not configured for live payouts yet. Add the real Stripe keys before using seller payout setup.",
-        },
-        { status: 503 },
-      );
-    }
-
     const body = (await request.json()) as OnboardBody;
-    const email = body.email?.trim().toLowerCase();
-    const displayName = body.displayName?.trim();
-    const viewerProfile =
-      viewer.role === "seller" ? await getSupabaseSellerProfile(viewer.email).catch(() => null) : null;
-    const requestedAccountId = body.accountId?.trim();
+    const email = body.email?.trim().toLowerCase() || viewer.email.trim().toLowerCase();
+    const displayName = body.displayName?.trim() || viewer.name || "Teacher seller";
+    const paypalMerchantId = body.accountId?.trim();
 
-    if (!requestedAccountId && (!email || !displayName)) {
+    if (viewer.role === "seller" && email !== viewer.email.trim().toLowerCase()) {
+      return NextResponse.json(
+        { error: "You can only update PayPal payout setup for your own seller account." },
+        { status: 403 },
+      );
+    }
+
+    if (!paypalMerchantId) {
       return NextResponse.json(
         {
           error:
-            "Display name and email are required for seller onboarding.",
+            "Add your PayPal merchant ID in seller onboarding to mark payout setup ready.",
         },
         { status: 400 },
       );
     }
 
-    if (viewer.role === "seller") {
-      if (email && email !== viewer.email.trim().toLowerCase()) {
-        return NextResponse.json(
-          { error: "You can only start Stripe onboarding for your own seller account." },
-          { status: 403 },
-        );
-      }
+    const existingProfile =
+      (await listSellerProfiles()).find(
+        (profile) => profile.email.trim().toLowerCase() === email,
+      ) ?? null;
 
-      if (
-        requestedAccountId &&
-        requestedAccountId !== (viewerProfile?.stripeAccountId ?? null)
-      ) {
-        return NextResponse.json(
-          { error: "You can only continue Stripe onboarding for your own seller account." },
-          { status: 403 },
-        );
-      }
-    }
-
-    const stripe = getStripeServerClient();
-    const origin = process.env.NEXT_PUBLIC_APP_URL || request.headers.get("origin") || "http://localhost:3000";
-    const sellerName = displayName || "Teacher seller";
-
-    if (requestedAccountId) {
-      const params = new URLSearchParams({
-        seller_onboarding: "complete",
-        seller_name: sellerName,
-      });
-
-      const refreshParams = new URLSearchParams({
-        seller_onboarding: "refresh",
-        seller_name: sellerName,
-      });
-
-      const accountLink = await stripe.v2.core.accountLinks.create({
-        account: requestedAccountId,
-        use_case: {
-          type: "account_onboarding",
-          account_onboarding: {
-            configurations: ["recipient"],
-            refresh_url: `${origin}/sell/onboarding?${refreshParams.toString()}`,
-            return_url: `${origin}/sell/onboarding?${params.toString()}`,
-            collection_options: {
-              fields: "currently_due",
-              future_requirements: "include",
-            },
-          },
-        },
-      });
-
-      return NextResponse.json({ url: accountLink.url, accountId: requestedAccountId });
-    }
-
-    if (!email) {
-      return NextResponse.json(
-        { error: "Seller email is required to create a new payout account." },
-        { status: 400 },
-      );
-    }
-
-    const account = await stripe.v2.core.accounts.create({
-      display_name: sellerName,
-      contact_email: email,
-      identity: {
-        country: "US",
-      },
-      dashboard: "express",
-      defaults: {
-        currency: "usd",
-        locales: ["en-US"],
-        responsibilities: {
-          fees_collector: "application_express",
-          losses_collector: "application",
-        },
-      },
-      configuration: {
-        recipient: {
-          capabilities: {
-            stripe_balance: {
-              stripe_transfers: {
-                requested: true,
-              },
-            },
-          },
-        },
-      },
-      metadata: {
-        sellerEmail: email,
-        sellerDisplayName: sellerName,
-      },
+    const profile = await saveSellerProfile({
+      displayName,
+      email,
+      storeName: existingProfile?.storeName || displayName,
+      storeHandle:
+        existingProfile?.storeHandle ||
+        email.split("@")[0]?.replace(/[^a-z0-9-]+/gi, "-") ||
+        "seller",
+      primarySubject: existingProfile?.primarySubject || "Math",
+      tagline: existingProfile?.tagline || "",
+      sellerPlanKey: existingProfile?.sellerPlanKey || "starter",
+      onboardingCompleted: existingProfile?.onboardingCompleted ?? true,
+      paypalMerchantId,
+      paypalOnboardingStatus: "connected",
+      paypalPayoutsEnabled: true,
+      paypalConsentGranted: true,
+      stripeAccountId: existingProfile?.stripeAccountId,
+      stripeOnboardingStatus: existingProfile?.stripeOnboardingStatus,
+      stripeChargesEnabled: existingProfile?.stripeChargesEnabled,
+      stripePayoutsEnabled: existingProfile?.stripePayoutsEnabled,
     });
 
-    const accountId = account.id;
-    const params = new URLSearchParams({
-      seller_connected: "1",
-      account_id: accountId,
-      seller_email: email,
-      seller_name: sellerName,
+    return NextResponse.json({
+      url: "/sell/onboarding?payout=paypal-ready",
+      accountId: profile.paypalMerchantId,
+      profile,
     });
-
-    const accountLink = await stripe.v2.core.accountLinks.create({
-      account: accountId,
-      use_case: {
-        type: "account_onboarding",
-        account_onboarding: {
-          configurations: ["recipient"],
-          refresh_url: `${origin}/sell/onboarding?seller_onboarding=refresh&seller_name=${encodeURIComponent(sellerName)}`,
-          return_url: `${origin}/sell/onboarding?${params.toString()}`,
-          collection_options: {
-            fields: "currently_due",
-            future_requirements: "include",
-          },
-        },
-      },
-    });
-
-    return NextResponse.json({ url: accountLink.url, accountId });
   } catch (error) {
     return NextResponse.json(
       {
         error:
           error instanceof Error
             ? error.message
-            : "Unable to start seller onboarding.",
+            : "Unable to save PayPal payout setup.",
       },
       { status: 500 },
     );

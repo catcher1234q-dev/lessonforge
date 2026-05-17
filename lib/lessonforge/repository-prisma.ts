@@ -388,6 +388,10 @@ function toSellerProfileDraft(profile: SellerProfile & { user: User }): SellerPr
     stripeOnboardingStatus: profile.stripeOnboardingStatus ?? undefined,
     stripeChargesEnabled: profile.stripeChargesEnabled,
     stripePayoutsEnabled: profile.stripePayoutsEnabled,
+    paypalMerchantId: profile.paypalMerchantId ?? undefined,
+    paypalOnboardingStatus: profile.paypalOnboardingStatus ?? undefined,
+    paypalPayoutsEnabled: Boolean(profile.paypalPayoutsEnabled),
+    paypalConsentGranted: Boolean(profile.paypalConsentGranted),
   };
 }
 
@@ -454,10 +458,15 @@ function toProductRecord(
       : "@lessonforge-seller",
     sellerId: product.seller.email,
     sellerStripeAccountId: product.sellerProfile?.stripeAccountId ?? undefined,
+    sellerPayPalMerchantId: product.sellerProfile?.paypalMerchantId ?? undefined,
     priceCents: product.basePriceCents,
     isPurchasable:
       product.status === ProductStatus.PUBLISHED &&
-      Boolean(product.sellerProfile?.stripeAccountId),
+      Boolean(
+        product.sellerProfile?.paypalMerchantId &&
+          product.sellerProfile.paypalPayoutsEnabled &&
+          product.sellerProfile.paypalConsentGranted,
+      ),
     productStatus: unmapProductStatus(product.status),
     previewIncluded: product.previewIncluded,
     thumbnailIncluded: product.thumbnailIncluded,
@@ -600,6 +609,10 @@ async function ensureSellerProfileForUser(user: User, draft?: Partial<SellerProf
       stripeOnboardingStatus: draft?.stripeOnboardingStatus ?? null,
       stripeChargesEnabled: draft?.stripeChargesEnabled ?? false,
       stripePayoutsEnabled: draft?.stripePayoutsEnabled ?? false,
+      paypalMerchantId: draft?.paypalMerchantId ?? null,
+      paypalOnboardingStatus: draft?.paypalOnboardingStatus ?? null,
+      paypalPayoutsEnabled: draft?.paypalPayoutsEnabled ?? false,
+      paypalConsentGranted: draft?.paypalConsentGranted ?? false,
     },
   });
 }
@@ -786,6 +799,10 @@ export async function prismaSaveSellerProfile(profile: SellerProfileDraft) {
       stripeOnboardingStatus: profile.stripeOnboardingStatus ?? null,
       stripeChargesEnabled: profile.stripeChargesEnabled ?? false,
       stripePayoutsEnabled: profile.stripePayoutsEnabled ?? false,
+      paypalMerchantId: profile.paypalMerchantId ?? null,
+      paypalOnboardingStatus: profile.paypalOnboardingStatus ?? null,
+      paypalPayoutsEnabled: profile.paypalPayoutsEnabled ?? false,
+      paypalConsentGranted: profile.paypalConsentGranted ?? false,
     },
     create: {
       userId: user.id,
@@ -797,6 +814,10 @@ export async function prismaSaveSellerProfile(profile: SellerProfileDraft) {
       stripeOnboardingStatus: profile.stripeOnboardingStatus ?? null,
       stripeChargesEnabled: profile.stripeChargesEnabled ?? false,
       stripePayoutsEnabled: profile.stripePayoutsEnabled ?? false,
+      paypalMerchantId: profile.paypalMerchantId ?? null,
+      paypalOnboardingStatus: profile.paypalOnboardingStatus ?? null,
+      paypalPayoutsEnabled: profile.paypalPayoutsEnabled ?? false,
+      paypalConsentGranted: profile.paypalConsentGranted ?? false,
     },
   });
 
@@ -1038,6 +1059,21 @@ export async function prismaListOrders(): Promise<OrderRecord[]> {
               : "paid",
       stripeCheckoutSessionId: order.stripeCheckoutSessionId ?? undefined,
       stripePaymentIntentId: order.stripePaymentIntentId ?? undefined,
+      paypalOrderId: order.paypalOrderId ?? undefined,
+      paypalCaptureId: order.paypalCaptureId ?? undefined,
+      paymentProvider:
+        order.paymentProvider === "stripe" || order.paymentProvider === "paypal"
+          ? order.paymentProvider
+          : undefined,
+      payoutStatus:
+        order.payoutStatus === "paid" ||
+        order.payoutStatus === "failed" ||
+        order.payoutStatus === "held" ||
+        order.payoutStatus === "refunded"
+          ? order.payoutStatus
+          : order.payoutStatus === "pending"
+            ? "pending"
+            : undefined,
       versionLabel: `Version ${item.latestEligibleVersion ?? 1}`,
       accessType: "Download + linked asset",
       updatedLabel: "Current version",
@@ -1159,6 +1195,12 @@ export async function prismaSaveOrder(order: OrderRecord) {
       taxState: null,
       sellerShareCents: order.sellerShareCents,
       platformShareCents: order.platformShareCents,
+      stripeCheckoutSessionId: order.stripeCheckoutSessionId ?? null,
+      stripePaymentIntentId: order.stripePaymentIntentId ?? null,
+      paypalOrderId: order.paypalOrderId ?? null,
+      paypalCaptureId: order.paypalCaptureId ?? null,
+      paymentProvider: order.paymentProvider ?? "paypal",
+      payoutStatus: order.payoutStatus ?? "pending",
       paidAt: new Date(order.purchasedAt),
       items: {
         create: {

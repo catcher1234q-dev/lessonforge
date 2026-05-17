@@ -7,7 +7,6 @@ import Link from "next/link";
 import { trackFunnelEvent } from "@/lib/analytics/events";
 import { PremiumSurface } from "@/components/shared/premium-surface";
 import { normalizePlanKey, planConfig, type PlanKey } from "@/lib/config/plans";
-import { buildSellerPlanCheckoutHref } from "@/lib/stripe/seller-plan-billing";
 import type { ConnectedSeller, SellerProfileDraft } from "@/types";
 
 const defaultProfile: SellerProfileDraft = {
@@ -65,33 +64,7 @@ function buildConnectedSellerFromProfile(profile: SellerProfileDraft): Connected
     };
   }
 
-  if (profile.stripeAccountId) {
-    return {
-      accountId: profile.stripeAccountId,
-      displayName: profile.displayName || profile.storeName || "Seller",
-      email: profile.email,
-      provider: "stripe",
-      status:
-        profile.stripeChargesEnabled && profile.stripePayoutsEnabled
-          ? "connected"
-          : "setup_incomplete",
-      chargesEnabled: profile.stripeChargesEnabled,
-      payoutsEnabled: profile.stripePayoutsEnabled,
-    };
-  }
-
   return null;
-}
-
-function getSellerConnectionProviderLabel(
-  connectedSeller: ConnectedSeller | null,
-  profile: SellerProfileDraft,
-) {
-  if (connectedSeller?.provider === "stripe" || profile.stripeAccountId) {
-    return "Stripe";
-  }
-
-  return "PayPal";
 }
 
 export function SellerOnboardingForm() {
@@ -104,7 +77,7 @@ export function SellerOnboardingForm() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [returnState, setReturnState] = useState<"connected" | "refresh" | "complete" | null>(null);
   const selectedPlan = planConfig[normalizePlanKey(selectedPlanKey)];
-  const payoutProviderLabel = getSellerConnectionProviderLabel(connectedSeller, profile);
+  const payoutProviderLabel = "PayPal";
   const profileBasicsComplete = Boolean(
     profile.displayName.trim() &&
       profile.email.trim() &&
@@ -112,7 +85,7 @@ export function SellerOnboardingForm() {
       profile.storeHandle.trim(),
   );
   const payoutsConnected = connectedSeller?.status === "connected";
-  const payoutsStarted = Boolean(profile.paypalMerchantId || profile.stripeAccountId || connectedSeller);
+  const payoutsStarted = Boolean(profile.paypalMerchantId || connectedSeller);
   const setupSteps = [
     {
       label: "Store profile",
@@ -190,24 +163,6 @@ export function SellerOnboardingForm() {
 
         let nextProfile = baseProfile;
 
-        if (baseProfile.paypalMerchantId || baseProfile.stripeAccountId) {
-          const connectResponse = await fetch(
-            baseProfile.paypalMerchantId ? "/api/paypal/connect" : "/api/stripe/connect",
-          );
-          const connectPayload = connectResponse.ok
-            ? ((await connectResponse.json()) as {
-                profile?: SellerProfileDraft;
-              })
-            : { profile: undefined };
-
-          if (connectPayload.profile) {
-            nextProfile = {
-              ...connectPayload.profile,
-              sellerPlanKey: normalizePlanKey(connectPayload.profile.sellerPlanKey),
-            };
-          }
-        }
-
         setProfile(nextProfile);
         setConnectedSeller(buildConnectedSellerFromProfile(nextProfile));
 
@@ -227,18 +182,14 @@ export function SellerOnboardingForm() {
           );
         }
 
-        if (nextProfile.paypalMerchantId || nextProfile.stripeAccountId) {
+        if (nextProfile.paypalMerchantId) {
           if (
-            (nextProfile.paypalMerchantId &&
-              nextProfile.paypalPayoutsEnabled &&
-              nextProfile.paypalConsentGranted) ||
-            (!nextProfile.paypalMerchantId &&
-              nextProfile.stripeChargesEnabled &&
-              nextProfile.stripePayoutsEnabled)
+            nextProfile.paypalPayoutsEnabled &&
+            nextProfile.paypalConsentGranted
           ) {
             setReturnState("connected");
             setMessage(
-              `${nextProfile.displayName || "Seller"} finished payout setup. Your seller account is ready for the dashboard and product flow.`,
+              `${nextProfile.displayName || "Seller"} saved PayPal payout setup. Your seller account is ready for the dashboard and product flow.`,
             );
           } else {
             setReturnState("refresh");
@@ -352,13 +303,28 @@ export function SellerOnboardingForm() {
         selectedPlan: selectedPlanKey,
       });
 
-      const savedProfile = await handleSaveProfile();
+      const normalizedMerchantId = profile.paypalMerchantId?.trim();
 
-      if (!savedProfile) {
+      if (!normalizedMerchantId || !profile.paypalConsentGranted) {
+        setMessage(
+          "Add your PayPal merchant ID and confirm payout permission before marking payouts ready.",
+        );
         return;
       }
 
-      window.location.href = "/api/paypal/connect?redirectToPayPal=1";
+      const savedProfile = await handleSaveProfile({
+        ...profile,
+        paypalMerchantId: normalizedMerchantId,
+        paypalConsentGranted: true,
+        paypalPayoutsEnabled: true,
+        paypalOnboardingStatus: "connected",
+      });
+
+      if (savedProfile) {
+        setReturnState("connected");
+        setConnectedSeller(buildConnectedSellerFromProfile(savedProfile));
+        setMessage("PayPal payout setup saved. Products can use PayPal checkout once published.");
+      }
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Unable to start seller onboarding.",
@@ -650,23 +616,46 @@ export function SellerOnboardingForm() {
                 {selectedPlan.label} gives you {selectedPlan.sellerSharePercent}% seller payout, unlimited product uploads, and {selectedPlan.creditGrantLabel.toLowerCase()}.
               </p>
               <p className="mt-2 text-ink-soft">
-                {selectedPlan.key === "starter"
-                  ? "Starter is active right away after you save."
-                  : `${selectedPlan.label} is a paid plan. Save your seller profile first, then use checkout to activate it for real.`}
+                Paid seller plan checkout is paused while LessonForgeHub finishes the PayPal plan path. PayPal is the active payment path for buyer checkout and seller payout readiness.
               </p>
-              {selectedPlan.key !== "starter" ? (
-                <Link
-                  className="mt-4 inline-flex items-center justify-center rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
-                  href={buildSellerPlanCheckoutHref({
-                    planKey: selectedPlan.key,
-                    returnTo: "/sell/onboarding",
-                  })}
-                >
-                  Continue to {selectedPlan.label} checkout
-                </Link>
-              ) : null}
             </div>
           </div>
+        </div>
+
+        <div className="mt-8 rounded-[1.35rem] border border-emerald-100 bg-emerald-50/80 p-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-800">
+            PayPal payout setup
+          </p>
+          <p className="mt-2 text-sm leading-6 text-ink-soft">
+            PayPal is the active payment provider for LessonForgeHub checkout. Add the seller PayPal merchant ID and confirm permission so published products can be purchased.
+          </p>
+          <label className="mt-4 block">
+            <span className="text-sm font-semibold text-ink">PayPal merchant ID</span>
+            <input
+              className="mt-2 w-full rounded-[1.25rem] border border-ink/10 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
+              onChange={(event) => {
+                const value = event.target.value;
+                updateProfile("paypalMerchantId", value);
+                updateProfile("paypalPayoutsEnabled", false);
+              }}
+              placeholder="Example: ABCD1234MERCHANT"
+              value={profile.paypalMerchantId ?? ""}
+            />
+          </label>
+          <label className="mt-4 flex items-start gap-3 rounded-[1rem] border border-white/80 bg-white px-4 py-4 text-sm leading-6 text-ink-soft">
+            <input
+              checked={Boolean(profile.paypalConsentGranted)}
+              className="mt-1 h-4 w-4 rounded border-ink/20"
+              onChange={(event) => {
+                updateProfile("paypalConsentGranted", event.target.checked);
+                updateProfile("paypalPayoutsEnabled", false);
+              }}
+              type="checkbox"
+            />
+            <span>
+              I confirm this PayPal merchant account belongs to me or my store and can receive seller payouts for LessonForgeHub sales.
+            </span>
+          </label>
         </div>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">

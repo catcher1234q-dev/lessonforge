@@ -16,9 +16,9 @@ import {
 } from "@/lib/supabase/admin-sync";
 import {
   calculatePlatformFee,
+  calculateSellerPayout,
 } from "@/lib/marketplace/config";
-import { getSellerPayoutStatusDetails } from "@/lib/stripe/connect";
-import { getStripeServerClient, isStripeServerConfigured } from "@/lib/stripe/server";
+import { createPayPalOrder, isPayPalCheckoutConfigured } from "@/lib/paypal/server";
 import { getSupabaseServerUser } from "@/lib/supabase/server-auth";
 import type { OrderRecord, ProductRecord } from "@/types";
 
@@ -45,13 +45,6 @@ function getSafeAppOrigin(originHeader: string | null) {
   } catch {
     return "http://localhost:3000";
   }
-}
-
-function isStripeConnectedAccountPermissionError(error: Error) {
-  return (
-    error.message.includes("Permission denied") &&
-    error.message.includes("does not have permission to access account")
-  );
 }
 
 export async function POST(request: Request) {
@@ -200,140 +193,90 @@ export async function POST(request: Request) {
 
     const sellerPlanKey = sellerPlanResolution.planKey;
 
-    if (!checkoutResource.sellerStripeAccountEnvKey && !checkoutResource.sellerStripeAccountId) {
+    if (!checkoutResource.sellerPayPalMerchantEnvKey && !checkoutResource.sellerPayPalMerchantId) {
       return NextResponse.json(
-        { error: "This seller has not connected Stripe payouts yet." },
+        { error: "This seller has not connected PayPal payouts yet." },
         { status: 409 },
       );
     }
 
-    const connectedAccountId =
-      checkoutResource.sellerStripeAccountId ||
-      process.env[checkoutResource.sellerStripeAccountEnvKey as keyof NodeJS.ProcessEnv];
+    const connectedMerchantId =
+      checkoutResource.sellerPayPalMerchantId ||
+      process.env[checkoutResource.sellerPayPalMerchantEnvKey as keyof NodeJS.ProcessEnv];
 
-    if (!connectedAccountId) {
+    if (!connectedMerchantId) {
       return NextResponse.json(
-        { error: "Stripe payout setup is still missing for this seller." },
+        { error: "PayPal payout setup is still missing for this seller." },
         { status: 409 },
       );
     }
 
-    const sellerStatus = await getSellerPayoutStatusDetails(
-      checkoutResource.sellerStripeAccountId,
-      checkoutResource.sellerStripeAccountEnvKey,
-    ).catch((error) => {
-      if (error instanceof Error && isStripeConnectedAccountPermissionError(error)) {
-        return null;
-      }
+    const matchedSellerProfile = sellerProfiles.find(
+      (profile) =>
+        profile.email.trim().toLowerCase() ===
+        (checkoutResource.sellerId ?? "").trim().toLowerCase(),
+    );
+    const sellerPayPalReady = Boolean(
+      matchedSellerProfile?.paypalMerchantId &&
+        matchedSellerProfile.paypalPayoutsEnabled &&
+        matchedSellerProfile.paypalConsentGranted,
+    );
 
-      throw error;
-    });
-
-    if (!sellerStatus) {
+    if (!sellerPayPalReady) {
       return NextResponse.json(
         {
           error:
-            "This seller needs to reconnect payout setup before live checkout can start.",
+            "This seller needs to finish PayPal payout setup before live checkout can start.",
         },
-        { status: 409 },
-      );
-    }
-
-    if (sellerStatus.status !== "live") {
-      return NextResponse.json(
-        { error: "This seller cannot accept live Stripe checkout yet." },
         { status: 409 },
       );
     }
 
     const productPriceCents = checkoutResource.priceCents as number;
     const applicationFeeAmount = calculatePlatformFee(productPriceCents, sellerPlanKey);
+    const sellerPayoutAmount = calculateSellerPayout(productPriceCents, sellerPlanKey);
 
-    if (!isStripeServerConfigured()) {
+    if (!isPayPalCheckoutConfigured()) {
       return NextResponse.json(
-        { error: "Stripe checkout is not configured yet." },
+        { error: "PayPal checkout is not configured yet." },
         { status: 503 },
       );
     }
 
-    const stripe = getStripeServerClient();
-
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      success_url: `${origin}/checkout/success?productId=${encodeURIComponent(checkoutResource.id)}&productTitle=${encodeURIComponent(checkoutResource.title)}&sessionId={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/checkout/cancel?${new URLSearchParams({
+    const returnParams = new URLSearchParams({
+      provider: "paypal",
+      productId: checkoutResource.id,
+      productTitle: checkoutResource.title,
+      sellerPlanKey,
+      platformFeeAmount: String(applicationFeeAmount),
+      sellerPayoutAmount: String(sellerPayoutAmount),
+    });
+    const order = await createPayPalOrder({
+      amountCents: productPriceCents,
+      productId: checkoutResource.id,
+      productTitle: checkoutResource.title,
+      sellerId: checkoutResource.sellerId,
+      returnUrl: `${origin}/checkout/success?${returnParams.toString()}`,
+      cancelUrl: `${origin}/checkout/cancel?${new URLSearchParams({
         productId: checkoutResource.id,
         productTitle: checkoutResource.title,
         ...(safeReturnTo ? { returnTo: safeReturnTo } : {}),
       }).toString()}`,
-      billing_address_collection: "auto",
-      allow_promotion_codes: true,
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: "usd",
-            unit_amount: productPriceCents,
-            product_data: {
-              name: checkoutResource.title,
-              description: checkoutResource.summary,
-            },
-          },
-        },
-      ],
-      payment_intent_data: {
-        application_fee_amount: applicationFeeAmount,
-        transfer_data: {
-          destination: connectedAccountId,
-        },
-        metadata: {
-          resourceId: checkoutResource.id,
-          productId: checkoutResource.id,
-          sellerId: checkoutResource.sellerId ?? "",
-          sellerName: checkoutResource.sellerName ?? "",
-          sellerPlanKey,
-          buyerEmail: viewer.email,
-          buyerUserId: supabaseUser?.id ?? viewer.email,
-          platformFeeAmount: String(applicationFeeAmount),
-        },
-      },
-      metadata: {
-        resourceId: checkoutResource.id,
-        productId: checkoutResource.id,
-        buyerEmail: viewer.email,
-        buyerUserId: supabaseUser?.id ?? viewer.email,
-        sellerId: checkoutResource.sellerId ?? "",
-        sellerStripeAccountId: connectedAccountId,
-        checkoutMode: "stripe",
-        sellerPlanKey,
-      },
     });
 
     logBuyerPaymentEvent({
       event: "checkout_created",
       userId: supabaseUser?.id ?? viewer.email,
       productId: checkoutResource.id,
-      stripeSessionId: session.id,
-      stripePaymentIntentId:
-        typeof session.payment_intent === "string" ? session.payment_intent : null,
+      metadata: {
+        provider: "paypal",
+        paypal_order_id: order.id,
+        seller_paypal_merchant_id: connectedMerchantId,
+      },
     });
 
-    return NextResponse.json({ url: session.url, mode: "stripe" });
+    return NextResponse.json({ url: order.approvalUrl, mode: "paypal" });
   } catch (error) {
-    if (
-      resource &&
-      error instanceof Error &&
-      error.message.includes("stripe_balance.stripe_transfers")
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "Stripe connected payouts are not fully enabled for this seller yet.",
-        },
-        { status: 409 },
-      );
-    }
-
     return NextResponse.json(
       {
         error:

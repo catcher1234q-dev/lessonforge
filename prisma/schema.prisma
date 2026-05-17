@@ -207,6 +207,10 @@ model SellerProfile {
   stripeOnboardingStatus     String?
   stripeChargesEnabled       Boolean   @default(false)
   stripePayoutsEnabled       Boolean   @default(false)
+  paypalMerchantId           String?   @unique
+  paypalOnboardingStatus     String?
+  paypalPayoutsEnabled       Boolean?  @default(false)
+  paypalConsentGranted       Boolean?  @default(false)
   supportEmail               String?
   averageRating              Float?
   totalSalesCount            Int       @default(0)
@@ -420,6 +424,10 @@ model Order {
   platformShareCents     Int
   stripeCheckoutSessionId String?     @unique
   stripePaymentIntentId  String?      @unique
+  paypalOrderId           String?      @unique
+  paypalCaptureId         String?      @unique
+  paymentProvider         String?
+  payoutStatus            String?
   paidAt                 DateTime?
   buyer                  User         @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Cascade)
   items                  OrderItem[]

@@ -23,7 +23,6 @@ import {
   getSellerCreateStep1AiUiState,
   STEP_1_AI_BUTTON_LABEL,
 } from "@/lib/lessonforge/seller-create-ai-ui";
-import { buildSellerPlanCheckoutHref } from "@/lib/stripe/seller-plan-billing";
 import { canAffordAiAction, getAiCreditCost } from "@/lib/services/ai/credits";
 import type {
   AdminAiSettings,
@@ -227,14 +226,20 @@ function inferFormatFromFiles(files: File[]) {
 }
 
 function buildConnectedSeller(profile: SellerProfileDraft): ConnectedSeller | null {
-  if (!profile.stripeAccountId) {
+  if (!profile.paypalMerchantId) {
     return null;
   }
 
   return {
-    accountId: profile.stripeAccountId,
+    accountId: profile.paypalMerchantId,
     email: profile.email,
     displayName: profile.displayName || profile.storeName || "Seller",
+    provider: "paypal",
+    status:
+      profile.paypalPayoutsEnabled && profile.paypalConsentGranted
+        ? "connected"
+        : "setup_incomplete",
+    payoutsEnabled: profile.paypalPayoutsEnabled,
   };
 }
 
@@ -532,7 +537,7 @@ export function ProductCreator() {
   const canRunDescriptionRewrite =
     availableCredits === null ? true : canAffordAiAction(availableCredits, "descriptionRewrite");
   const aiKillSwitchEnabled = aiSettings?.aiKillSwitchEnabled ?? false;
-  const connectedAccountId = seller?.accountId || profile?.stripeAccountId || null;
+  const connectedAccountId = seller?.accountId || profile?.paypalMerchantId || null;
   const hasAnyAiCreditsRemaining = availableCredits === null ? true : availableCredits > 0;
   const canSaveWithoutAi = status !== "Published";
   const saveBlockedByAi =
@@ -1449,9 +1454,14 @@ export function ProductCreator() {
       sellerName: seller?.displayName || profile?.displayName || undefined,
       sellerHandle: profile?.storeHandle ? `@${profile.storeHandle}` : undefined,
       sellerId: profile?.email || seller?.email || `seller-${Date.now()}`,
-      sellerStripeAccountId: connectedAccountId ?? undefined,
+      sellerPayPalMerchantId: connectedAccountId ?? undefined,
       priceCents,
-      isPurchasable: Boolean(connectedAccountId) && effectiveStatus !== "Draft",
+      isPurchasable:
+        Boolean(
+          connectedAccountId &&
+            profile?.paypalPayoutsEnabled &&
+            profile.paypalConsentGranted,
+        ) && effectiveStatus !== "Draft",
       productStatus: effectiveStatus,
       createdPath,
       licenseType,
@@ -1530,7 +1540,7 @@ export function ProductCreator() {
         editSearchParams.set("aiStatus", "skipped");
       }
       if (!connectedAccountId) {
-        editSearchParams.set("billingStatus", "connect-required");
+        editSearchParams.set("billingStatus", "paypal-required");
       }
       router.push(`/sell/products/${savedProductRecord.id}/edit?${editSearchParams.toString()}`);
     } catch (error) {
@@ -2305,12 +2315,9 @@ export function ProductCreator() {
 
                     {!premiumAccess?.fullListingOptimization.unlocked ? (
                       <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                        <Link
-                          className="inline-flex items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
-                          href={buildSellerPlanCheckoutHref({
-                            planKey: "basic",
-                            returnTo: "/sell/dashboard?focus=plan",
-                          })}
+                        <button
+                          className="inline-flex cursor-not-allowed items-center justify-center rounded-full bg-slate-300 px-5 py-3 text-sm font-semibold text-slate-700"
+                          disabled
                           onClick={() =>
                             void trackMonetizationEvent({
                               eventType: "upgrade_click",
@@ -2322,9 +2329,10 @@ export function ProductCreator() {
                               },
                             })
                           }
+                          type="button"
                         >
-                          Upgrade to Basic
-                        </Link>
+                          Paid plan checkout paused
+                        </button>
                         <button
                           className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
                           onClick={() =>
@@ -2426,7 +2434,7 @@ export function ProductCreator() {
                   ? "Next, watch the seller dashboard for review status."
                   : savedProduct.isPurchasable
                     ? "Next, watch the seller dashboard for buyer activity and earnings."
-                    : "Next, finish Stripe setup before this listing can sell."}
+                    : "Next, finish PayPal payout setup before this listing can sell."}
             </p>
             <div className="mt-4 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -2493,7 +2501,7 @@ export function ProductCreator() {
             <div className="rounded-[1rem] bg-slate-50 px-4 py-3 text-sm leading-6 text-ink-soft">
               {seller
                 ? `Payouts connected for ${seller.displayName || profile?.displayName || seller.email || "this seller"}.`
-                : "No connected Stripe account yet. Products can still be drafted or sent to review."}
+                : "No connected PayPal payout account yet. Products can still be drafted or sent to review."}
             </div>
             <div className="rounded-[1rem] bg-slate-50 px-4 py-3 text-sm leading-6 text-ink-soft">
               Low-effort or repeated listings may be reviewed and may perform worse in discovery.

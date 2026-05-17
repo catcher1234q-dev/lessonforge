@@ -14,6 +14,11 @@ type AppEnv = {
   STRIPE_SECRET_KEY: string;
   STRIPE_WEBHOOK_SECRET: string;
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: string;
+  PAYPAL_ENV: string;
+  PAYPAL_API_BASE_URL: string;
+  PAYPAL_CLIENT_ID: string;
+  PAYPAL_CLIENT_SECRET: string;
+  NEXT_PUBLIC_PAYPAL_CLIENT_ID: string;
   NEXT_PUBLIC_SITE_URL: string;
   SUPABASE_SITE_URL: string;
   SUPABASE_REDIRECT_URLS: string;
@@ -104,6 +109,11 @@ export const env: AppEnv = {
     "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
     "pk_test_replace_me",
   ),
+  PAYPAL_ENV: readString("PAYPAL_ENV", "sandbox"),
+  PAYPAL_API_BASE_URL: readString("PAYPAL_API_BASE_URL"),
+  PAYPAL_CLIENT_ID: readString("PAYPAL_CLIENT_ID"),
+  PAYPAL_CLIENT_SECRET: readString("PAYPAL_CLIENT_SECRET"),
+  NEXT_PUBLIC_PAYPAL_CLIENT_ID: readString("NEXT_PUBLIC_PAYPAL_CLIENT_ID"),
   NEXT_PUBLIC_SITE_URL: readString("NEXT_PUBLIC_SITE_URL", "http://localhost:3000"),
   SUPABASE_SITE_URL: readString("SUPABASE_SITE_URL", "http://localhost:3000"),
   SUPABASE_REDIRECT_URLS: readString(

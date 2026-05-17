@@ -3,10 +3,10 @@ import { NextResponse } from "next/server";
 import { hasAppSessionForEmail } from "@/lib/auth/app-session";
 import { getCurrentViewer } from "@/lib/auth/viewer";
 import { normalizePlanKey } from "@/lib/config/plans";
+import { listSellerProfiles, saveSellerProfile } from "@/lib/lessonforge/data-access";
 import {
   getSupabaseSubscriptionRecord,
   getSupabaseSellerProfile,
-  listSupabaseSellerProfiles,
   upsertSupabaseProfile,
   upsertSupabaseSellerProfile,
 } from "@/lib/supabase/admin-sync";
@@ -20,7 +20,7 @@ export async function GET() {
     return NextResponse.json({ error: "Signed-in seller access required." }, { status: 401 });
   }
 
-  const profiles = await listSupabaseSellerProfiles();
+  const profiles = await listSellerProfiles();
   if (viewer.role === "admin" || viewer.role === "owner") {
     return NextResponse.json({ profiles });
   }
@@ -71,9 +71,19 @@ export async function POST(request: Request) {
       );
     }
 
-    const existingProfile = await getSupabaseSellerProfile(body.profile.email).catch(
-      () => null,
-    );
+    const [existingProfile, existingPrismaProfile] = await Promise.all([
+      getSupabaseSellerProfile(body.profile.email).catch(() => null),
+      listSellerProfiles()
+        .then(
+          (profiles) =>
+            profiles.find(
+              (profile) =>
+                profile.email.trim().toLowerCase() ===
+                body.profile?.email.trim().toLowerCase(),
+            ) ?? null,
+        )
+        .catch(() => null),
+    ]);
     const normalizedPlanKey = normalizePlanKey(body.profile.sellerPlanKey);
     const sanitizedProfile: SellerProfileDraft =
       viewer.role === "admin" || viewer.role === "owner"
@@ -89,7 +99,41 @@ export async function POST(request: Request) {
             stripeOnboardingStatus: existingProfile?.stripeOnboardingStatus ?? undefined,
             stripeChargesEnabled: existingProfile?.stripeChargesEnabled ?? false,
             stripePayoutsEnabled: existingProfile?.stripePayoutsEnabled ?? false,
+            paypalMerchantId:
+              body.profile.paypalMerchantId?.trim() ||
+              existingPrismaProfile?.paypalMerchantId ||
+              undefined,
+            paypalOnboardingStatus:
+              body.profile.paypalOnboardingStatus ??
+              existingPrismaProfile?.paypalOnboardingStatus ??
+              undefined,
+            paypalPayoutsEnabled: Boolean(
+              body.profile.paypalPayoutsEnabled ??
+                existingPrismaProfile?.paypalPayoutsEnabled ??
+                false,
+            ),
+            paypalConsentGranted: Boolean(
+              body.profile.paypalConsentGranted ??
+                existingPrismaProfile?.paypalConsentGranted ??
+                false,
+            ),
           };
+
+    const normalizedPayPalMerchantId = sanitizedProfile.paypalMerchantId?.trim() || undefined;
+    const paypalConsentGranted = Boolean(
+      normalizedPayPalMerchantId && sanitizedProfile.paypalConsentGranted,
+    );
+    const profileForPersistence: SellerProfileDraft = {
+      ...sanitizedProfile,
+      paypalMerchantId: normalizedPayPalMerchantId,
+      paypalConsentGranted,
+      paypalPayoutsEnabled: paypalConsentGranted,
+      paypalOnboardingStatus: normalizedPayPalMerchantId
+        ? paypalConsentGranted
+          ? "connected"
+          : "setup_incomplete"
+        : undefined,
+    };
 
     const supabaseUser = await getSupabaseServerUser();
     if (
@@ -109,33 +153,35 @@ export async function POST(request: Request) {
       role: "seller",
     }).catch(() => null);
 
-    const saved = await upsertSupabaseSellerProfile({
+    await upsertSupabaseSellerProfile({
       userId: supabaseUser.id,
       email: supabaseUser.email,
-      displayName: sanitizedProfile.displayName,
-      storeName: sanitizedProfile.storeName,
-      storeHandle: sanitizedProfile.storeHandle,
-      primarySubject: sanitizedProfile.primarySubject,
-      tagline: sanitizedProfile.tagline,
-      sellerPlanKey: sanitizedProfile.sellerPlanKey,
-      onboardingCompleted: sanitizedProfile.onboardingCompleted,
+      displayName: profileForPersistence.displayName,
+      storeName: profileForPersistence.storeName,
+      storeHandle: profileForPersistence.storeHandle,
+      primarySubject: profileForPersistence.primarySubject,
+      tagline: profileForPersistence.tagline,
+      sellerPlanKey: profileForPersistence.sellerPlanKey,
+      onboardingCompleted: profileForPersistence.onboardingCompleted,
       stripeAccountId:
-        sanitizedProfile.stripeAccountId ?? existingProfile?.stripeAccountId ?? null,
+        profileForPersistence.stripeAccountId ?? existingProfile?.stripeAccountId ?? null,
       stripeOnboardingStatus:
-        sanitizedProfile.stripeOnboardingStatus ??
+        profileForPersistence.stripeOnboardingStatus ??
         existingProfile?.stripeOnboardingStatus ??
         null,
       stripeChargesEnabled:
-        sanitizedProfile.stripeChargesEnabled ??
+        profileForPersistence.stripeChargesEnabled ??
         existingProfile?.stripeChargesEnabled ??
         false,
       stripePayoutsEnabled:
-        sanitizedProfile.stripePayoutsEnabled ??
+        profileForPersistence.stripePayoutsEnabled ??
         existingProfile?.stripePayoutsEnabled ??
         false,
-    });
+    }).catch(() => null);
 
-    return NextResponse.json({ profile: saved.profile });
+    const savedProfile = await saveSellerProfile(profileForPersistence);
+
+    return NextResponse.json({ profile: savedProfile });
   } catch (error) {
     return NextResponse.json(
       {

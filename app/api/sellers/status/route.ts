@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 
 import { hasAppSessionForEmail } from "@/lib/auth/app-session";
 import { getCurrentViewer } from "@/lib/auth/viewer";
-import { getSellerPayoutStatusDetails } from "@/lib/stripe/connect";
-import { getSupabaseSellerProfile } from "@/lib/supabase/admin-sync";
+import { listSellerProfiles } from "@/lib/lessonforge/data-access";
 
 type SellerStatusRequest = {
   accounts?: Array<{
@@ -27,14 +26,18 @@ export async function POST(request: Request) {
 
     const body = (await request.json()) as SellerStatusRequest;
     const requestedAccounts = body.accounts ?? [];
+    const profiles = await listSellerProfiles();
     const viewerProfile =
-      viewer.role === "seller" ? await getSupabaseSellerProfile(viewer.email).catch(() => null) : null;
+      profiles.find(
+        (profile) => profile.email.trim().toLowerCase() === viewer.email.trim().toLowerCase(),
+      ) ?? null;
+
     const accounts =
       viewer.role === "seller"
         ? requestedAccounts.filter(
             (account) =>
-              (account.accountId && account.accountId === viewerProfile?.stripeAccountId) ||
-              (!account.accountId && viewerProfile?.stripeAccountId),
+              (account.accountId && account.accountId === viewerProfile?.paypalMerchantId) ||
+              (!account.accountId && viewerProfile?.paypalMerchantId),
           )
         : requestedAccounts;
 
@@ -45,16 +48,30 @@ export async function POST(request: Request) {
       );
     }
 
-    const statuses = await Promise.all(
-      accounts.map(async (account) => {
-        const details = await getSellerPayoutStatusDetails(
-          account.accountId ?? viewerProfile?.stripeAccountId,
-          viewer.role === "seller" ? undefined : account.sellerAccountEnvKey,
-        );
+    const statuses = accounts.map((account) => {
+      const profile =
+        profiles.find((entry) => entry.paypalMerchantId === account.accountId) ??
+        viewerProfile;
+      const ready = Boolean(
+        profile?.paypalMerchantId &&
+          profile.paypalPayoutsEnabled &&
+          profile.paypalConsentGranted,
+      );
 
-        return [account.key ?? details.accountId ?? "unknown", details] as const;
-      }),
-    );
+      return [
+        account.key ?? profile?.paypalMerchantId ?? "paypal",
+        {
+          accountId: profile?.paypalMerchantId ?? account.accountId ?? null,
+          status: ready ? "live" : "incomplete",
+          chargesEnabled: ready,
+          payoutsEnabled: ready,
+          transferStatus: ready ? "active" : null,
+          payoutStatus: ready ? "active" : null,
+          disabledReason: ready ? null : "paypal_setup_incomplete",
+          provider: "paypal",
+        },
+      ] as const;
+    });
 
     return NextResponse.json({
       statuses: Object.fromEntries(statuses),

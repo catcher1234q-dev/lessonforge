@@ -25,8 +25,11 @@ import {
   type SellerRemediationFocus,
 } from "@/lib/lessonforge/remediation-focus";
 import { ProductAssetPanel } from "@/components/seller/product-asset-panel";
-import { buildSellerPlanCheckoutHref } from "@/lib/stripe/seller-plan-billing";
 import type { AdminAiSettings, ProductGalleryImage, ProductRecord, SellerProfileDraft } from "@/types";
+
+function buildSellerPlanCheckoutHref(_input?: unknown) {
+  return "/sell/dashboard?focus=plan&planBilling=paypal-plan-paused";
+}
 
 function buildOptimizationPreview(input: {
   title: string;
@@ -307,9 +310,9 @@ export function ProductEditor({ product }: { product: ProductRecord }) {
                 AI standards scan was skipped for this save.
               </p>
             ) : null}
-            {billingStatus === "connect-required" ? (
+            {billingStatus === "connect-required" || billingStatus === "paypal-required" ? (
               <p className="mt-2 text-emerald-900/80">
-                Connect Stripe before published products can sell.
+                Connect PayPal payouts before published products can sell.
               </p>
             ) : null}
           </div>

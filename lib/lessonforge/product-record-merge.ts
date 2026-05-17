@@ -73,6 +73,12 @@ export function mergeProductRecord(
         ? syncedProduct.previewAssetUrls
         : persistedProduct.previewAssetUrls,
     originalAssetUrl: syncedProduct.originalAssetUrl ?? persistedProduct.originalAssetUrl,
+    sellerPayPalMerchantEnvKey:
+      persistedProduct.sellerPayPalMerchantEnvKey ?? syncedProduct.sellerPayPalMerchantEnvKey,
+    sellerPayPalMerchantId:
+      persistedProduct.sellerPayPalMerchantId ?? syncedProduct.sellerPayPalMerchantId,
+    isPurchasable:
+      persistedProduct.isPurchasable ?? syncedProduct.isPurchasable,
     imageGallery:
       syncedProduct.imageGallery?.length
         ? syncedProduct.imageGallery

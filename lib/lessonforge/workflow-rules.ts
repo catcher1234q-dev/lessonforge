@@ -36,7 +36,7 @@ export function applyAdminProductModeration(
     ...product,
     productStatus: nextStatus,
     isPurchasable:
-      Boolean(product.sellerStripeAccountId) && nextStatus === "Published",
+      Boolean(product.sellerPayPalMerchantId) && nextStatus === "Published",
     moderationFeedback: moderationFeedback?.trim() || undefined,
     updatedAt: "Status updated just now",
   };
@@ -64,7 +64,7 @@ export function buildSellerProductRevision(
     rightsConfirmed: input.rightsConfirmed,
     productStatus: input.nextStatus,
     isPurchasable:
-      Boolean(product.sellerStripeAccountId) && input.nextStatus === "Published",
+      Boolean(product.sellerPayPalMerchantId) && input.nextStatus === "Published",
     updatedAt:
       input.nextStatus === "Pending review"
         ? "Resubmitted for review just now"

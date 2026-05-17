@@ -23,10 +23,6 @@ import {
   getLockedFeatureMessage,
 } from "@/lib/lessonforge/plan-enforcement";
 import {
-  buildSellerPlanCheckoutHref,
-  buildSellerPlanManageHref,
-} from "@/lib/stripe/seller-plan-billing";
-import {
   getProductAssetHealthStatus,
   getProductPublishBlockers,
 } from "@/lib/lessonforge/product-validation";
@@ -43,6 +39,14 @@ import type {
 
 function formatPlanLabel(planKey: PlanKey) {
   return planConfig[normalizePlanKey(planKey)].label;
+}
+
+function buildSellerPlanCheckoutHref(_input?: unknown) {
+  return "/sell/dashboard?focus=plan&planBilling=paypal-plan-paused";
+}
+
+function buildSellerPlanManageHref(_input?: unknown) {
+  return "/sell/dashboard?focus=plan&planBilling=paypal-plan-paused";
 }
 
 const actionLabels = {
@@ -81,18 +85,18 @@ function formatCurrency(cents: number) {
 }
 
 function buildConnectedSeller(profile: SellerProfileDraft): ConnectedSeller | null {
-  if (!profile.stripeAccountId) {
+  if (!profile.paypalMerchantId) {
     return null;
   }
 
   return {
-    accountId: profile.stripeAccountId,
-    chargesEnabled: profile.stripeChargesEnabled,
+    accountId: profile.paypalMerchantId,
     email: profile.email,
     displayName: profile.displayName || profile.storeName || "Seller",
-    payoutsEnabled: profile.stripePayoutsEnabled,
+    provider: "paypal",
+    payoutsEnabled: profile.paypalPayoutsEnabled,
     status:
-      profile.stripeChargesEnabled && profile.stripePayoutsEnabled
+      profile.paypalPayoutsEnabled && profile.paypalConsentGranted
         ? "connected"
         : "setup_incomplete",
   };
@@ -155,7 +159,7 @@ function getPlanActionCopy(currentPlanKey: PlanKey, nextPlanKey: PlanKey) {
       href: buildSellerPlanManageHref({
         returnTo: "/sell/dashboard?focus=plan",
       }),
-      message: "Use Stripe billing management to cancel your paid plan safely.",
+      message: "Paid plan management is paused while LessonForgeHub finishes the PayPal plan path.",
     };
   }
 
@@ -165,7 +169,7 @@ function getPlanActionCopy(currentPlanKey: PlanKey, nextPlanKey: PlanKey) {
       href: buildSellerPlanManageHref({
         returnTo: "/sell/dashboard?focus=plan",
       }),
-      message: `Use Stripe billing management to switch from ${formatPlanLabel(currentPlanKey)} to ${formatPlanLabel(nextPlanKey)} safely.`,
+      message: `Paid plan switching from ${formatPlanLabel(currentPlanKey)} to ${formatPlanLabel(nextPlanKey)} is paused while LessonForgeHub finishes the PayPal plan path.`,
     };
   }
 
@@ -699,20 +703,6 @@ export function SellerDashboardContent() {
       );
       let nextProfile = normalizedProfile ?? fallbackProfile;
 
-      if (nextProfile.stripeAccountId) {
-        const connectResponse = await fetch("/api/stripe/connect");
-        const connectPayload = (await connectResponse.json()) as {
-          profile?: SellerProfileDraft;
-        };
-
-        if (connectResponse.ok && connectPayload.profile) {
-          nextProfile = {
-            ...connectPayload.profile,
-            sellerPlanKey: normalizePlanKey(connectPayload.profile.sellerPlanKey),
-          };
-        }
-      }
-
       setProfile(nextProfile);
       setSeller(buildConnectedSeller(nextProfile));
       setIsProfileLoading(false);
@@ -1105,7 +1095,7 @@ export function SellerDashboardContent() {
       detail: seller
         ? seller.status === "connected"
           ? `${seller.displayName || profile?.displayName || seller.email || "Your seller account"} can move buyer-ready listings into checkout.`
-          : `${seller.displayName || profile?.displayName || seller.email || "Your seller account"} still needs Stripe onboarding completed before payouts can go live.`
+          : `${seller.displayName || profile?.displayName || seller.email || "Your seller account"} still needs PayPal payout setup completed before payouts can go live.`
         : "Finish seller onboarding before published products can sell.",
       actionLabel: seller?.status === "connected" ? "Open onboarding" : "Finish setup",
       href: "/sell/onboarding",
@@ -1134,7 +1124,7 @@ export function SellerDashboardContent() {
           <div className="rounded-[1.5rem] border border-white/80 bg-white/82 px-4 py-4 text-sm leading-6 text-ink-soft shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
             <p className="font-semibold text-ink">1. Confirm payouts</p>
             <p className="mt-1">
-              Connect Stripe before relying on real buyer checkout and seller earnings.
+              Connect PayPal before relying on real buyer checkout and seller earnings.
             </p>
           </div>
           <div className="rounded-[1.5rem] border border-white/80 bg-white/82 px-4 py-4 text-sm leading-6 text-ink-soft shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
@@ -1271,7 +1261,7 @@ export function SellerDashboardContent() {
           <div className="mt-5 rounded-[1.25rem] border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
             <p className="font-semibold">Plan billing is not wired yet.</p>
             <p className="mt-1">
-              Stripe is not fully set up for the {formatPlanLabel(targetPlan)} seller subscription yet. The upgrade button is ready, but the matching Stripe price ID still needs to be added before sellers can check out.
+              Paid seller plan checkout is paused while LessonForgeHub finishes the PayPal plan path. Buyer checkout still uses PayPal for published products with payout-ready sellers.
             </p>
           </div>
         ) : null}
@@ -1279,7 +1269,7 @@ export function SellerDashboardContent() {
           <div className="mt-5 rounded-[1.25rem] border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
             <p className="font-semibold">Billing management is not wired yet.</p>
             <p className="mt-1">
-              Stripe billing management is not fully set up yet, so plan changes and cancellations still need final Stripe portal setup before sellers can manage them directly.
+              Paid seller plan management is paused while LessonForgeHub finishes the PayPal plan path.
             </p>
           </div>
         ) : null}
@@ -1287,7 +1277,7 @@ export function SellerDashboardContent() {
           <div className="mt-5 rounded-[1.25rem] border border-sky-200 bg-sky-50 px-4 py-4 text-sm leading-6 text-sky-950">
             <p className="font-semibold">No paid plan is active yet.</p>
             <p className="mt-1">
-              This seller does not have an active paid Stripe subscription yet. Start with Basic or Pro when you want stronger payouts and more AI support.
+              This seller does not have an active paid plan yet. Start with Basic or Pro once PayPal plan billing is ready.
             </p>
           </div>
         ) : null}
@@ -1305,7 +1295,7 @@ export function SellerDashboardContent() {
             <p className="mt-1">
               {normalizePlanKey(profile?.sellerPlanKey) === targetPlan
                 ? `${formatPlanLabel(targetPlan)} is now active in the seller workspace. Your payout split and AI allowance should now match the upgraded plan.`
-                : `Stripe finished the checkout flow for ${formatPlanLabel(targetPlan)}. If the dashboard still shows the older plan for a moment, refresh after the webhook finishes syncing the billing update back into LessonForge.`}
+                : `Plan checkout finished for ${formatPlanLabel(targetPlan)}. If the dashboard still shows the older plan for a moment, refresh after billing sync finishes.`}
             </p>
           </div>
         ) : null}
