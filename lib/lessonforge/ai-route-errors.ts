@@ -66,7 +66,7 @@ export function classifyAiRouteError(error: unknown): AiRouteErrorClassification
   ) {
     return {
       status: 503,
-      userMessage: "AI could not finish this right now. Try again.",
+      userMessage: "AI fill could not complete right now. You can still finish the listing manually.",
       reason: "ai_provider_failure",
     };
   }
@@ -93,7 +93,7 @@ export function classifyAiRouteError(error: unknown): AiRouteErrorClassification
 
   return {
     status: 500,
-    userMessage: "AI could not finish this right now. Try again.",
+    userMessage: "AI fill could not complete right now. You can still finish the listing manually.",
     reason: "unknown_failure",
   };
 }

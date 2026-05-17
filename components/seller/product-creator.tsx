@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 
 import { trackFunnelEvent } from "@/lib/analytics/events";
 import { ProductImageGalleryManager } from "@/components/seller/product-image-gallery-manager";
+import { PremiumSurface } from "@/components/shared/premium-surface";
 import { normalizePlanKey, planConfig } from "@/lib/config/plans";
 import { ProductAssetPanel } from "@/components/seller/product-asset-panel";
 import {
@@ -71,7 +72,8 @@ type SellerAiUploadResult =
   | { status: "ready"; upload: SellerAiUploadPayload }
   | { status: "error"; message: string };
 
-const AI_GENERIC_FAILURE_MESSAGE = "AI could not finish this right now. Try again.";
+const AI_GENERIC_FAILURE_MESSAGE =
+  "AI fill could not complete right now. You can still finish the listing manually.";
 const AI_TEMPORARY_UNAVAILABLE_MESSAGE = "AI is temporarily unavailable right now.";
 const AI_ONBOARDING_REQUIRED_MESSAGE = "Finish seller onboarding before using Fill with AI.";
 const AI_UPLOAD_REQUIRED_MESSAGE = "Upload a resource before using Fill with AI.";
@@ -1539,7 +1541,8 @@ export function ProductCreator() {
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)]">
-      <section className="rounded-[28px] border border-black/5 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-6">
+      <PremiumSurface className="overflow-hidden p-5 sm:p-6" variant="glass">
+        <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[#d4af37]/70 to-transparent" />
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-brand">
           Create listing
         </p>
@@ -1572,8 +1575,8 @@ export function ProductCreator() {
               key={step.title}
               className={`rounded-[1.2rem] border px-4 py-4 text-sm leading-6 ${
                 step.ready
-                  ? "border-emerald-100 bg-emerald-50/70 text-emerald-950"
-                  : "border-black/5 bg-surface-subtle text-ink-soft"
+                  ? "border-emerald-100 bg-emerald-50/78 text-emerald-950 shadow-sm"
+                  : "border-white/80 bg-white/82 text-ink-soft shadow-[0_12px_24px_rgba(15,23,42,0.04)]"
               }`}
             >
               <p className="font-semibold text-ink">{step.title}</p>
@@ -1607,7 +1610,7 @@ export function ProductCreator() {
         ) : null}
 
         <div className="mt-6 space-y-4">
-          <section className="rounded-[22px] border border-black/5 bg-surface-subtle p-4 sm:p-5">
+          <section className="rounded-[22px] border border-white/80 bg-white/84 p-4 shadow-[0_14px_32px_rgba(15,23,42,0.05)] sm:p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand">
@@ -1656,7 +1659,7 @@ export function ProductCreator() {
                       </p>
                     </div>
                     <button
-                      className="inline-flex items-center justify-center rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
+                      className="premium-button-shadow inline-flex items-center justify-center rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800"
                       onClick={() => fileInputRef.current?.click()}
                       type="button"
                     >
@@ -2372,7 +2375,7 @@ export function ProductCreator() {
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <button
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+            className="premium-button-shadow inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800"
             data-testid="seller-creator-save"
             disabled={isSaving || saveBlocked || !isCreatorReady || (status === "Published" && missingPublishItems.length > 0)}
             onClick={() => {
@@ -2446,10 +2449,10 @@ export function ProductCreator() {
             {message}
           </p>
         ) : null}
-      </section>
+      </PremiumSurface>
 
       <aside className="space-y-4">
-        <section className="rounded-[24px] bg-slate-950 p-5 text-white shadow-[0_20px_60px_rgba(15,23,42,0.15)]">
+        <PremiumSurface className="p-5 text-white" variant="dark">
           <h2 className="text-lg font-semibold">Quick guide</h2>
           <div className="mt-3 space-y-2 text-sm leading-6 text-white/75">
             <p>Upload your file first.</p>
@@ -2462,7 +2465,7 @@ export function ProductCreator() {
               : "AI credits appear after the first scan"}{" "}
             · {formatPlanLabel(currentPlanKey)}
           </p>
-        </section>
+        </PremiumSurface>
 
         <ProductAssetPanel
           assetVersionNumber={1}

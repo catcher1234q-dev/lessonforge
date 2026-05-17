@@ -4,6 +4,7 @@ import Link from "next/link";
 import { HighlightChip } from "@/components/buyer/highlight-chip";
 import { CheckoutButton } from "@/components/marketplace/checkout-button";
 import { FavoriteFormButton } from "@/components/marketplace/favorite-form-button";
+import { PremiumSurface } from "@/components/shared/premium-surface";
 import { secondaryActionLinkClassName } from "@/components/shared/secondary-action-link";
 import { buildMarketplaceListingHref } from "@/lib/lessonforge/marketplace-navigation";
 import { formatCurrency } from "@/lib/marketplace/config";
@@ -218,13 +219,14 @@ export function ProductCard({
   }
 
   return (
-    <article
-      className={`group flex h-full flex-col rounded-[28px] bg-white p-4 transition duration-300 [contain-intrinsic-size:540px] [content-visibility:auto] hover:-translate-y-1 ${
+    <PremiumSurface
+      className={`group flex h-full flex-col p-4 transition duration-300 [contain-intrinsic-size:540px] [content-visibility:auto] hover:-translate-y-1 ${
         featured
           ? "shadow-[0_24px_70px_rgba(37,99,235,0.14)] hover:shadow-[0_30px_90px_rgba(37,99,235,0.18)]"
           : "shadow-[0_18px_50px_rgba(15,23,42,0.08)] hover:shadow-[0_28px_70px_rgba(15,23,42,0.12)]"
       }`}
       data-testid={testId}
+      variant={featured ? "glass" : "light"}
     >
       <div className="mb-3 flex items-start justify-end">
         <FavoriteFormButton
@@ -251,7 +253,7 @@ export function ProductCard({
           {coverImage ? (
             <img
               alt={`${listing.title} cover preview`}
-              className="relative z-10 aspect-[4/5] w-full bg-slate-100 object-cover object-top"
+              className="relative z-10 aspect-[4/3] w-full bg-slate-100 object-cover object-top transition duration-500 group-hover:scale-[1.02]"
               decoding="async"
               loading={featured ? "eager" : "lazy"}
               sizes="(min-width: 1536px) 33vw, (min-width: 768px) 50vw, 100vw"
@@ -345,8 +347,8 @@ export function ProductCard({
 
         <div className="mt-4 space-y-4">
           <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-ink-soft">
-            <span className="rounded-full bg-slate-100 px-3 py-1">{listing.subject}</span>
-            <span className="rounded-full bg-slate-100 px-3 py-1">{listing.gradeBand}</span>
+            <span className="rounded-full border border-slate-200/80 bg-white/80 px-3 py-1 shadow-sm">{listing.subject}</span>
+            <span className="rounded-full border border-slate-200/80 bg-white/80 px-3 py-1 shadow-sm">{listing.gradeBand}</span>
             {featured ? (
               <span className="rounded-full bg-brand-soft px-3 py-1 text-brand">
                 {featuredLabel}
@@ -360,6 +362,9 @@ export function ProductCard({
 
           <div className="flex flex-col gap-4 border-t border-slate-100 pt-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">
+                Price
+              </p>
               <p className={`${featured ? "text-[2.2rem]" : "text-2xl"} font-semibold text-ink`}>
                 {formatCurrency(listing.priceCents)}
               </p>
@@ -386,6 +391,6 @@ export function ProductCard({
           </div>
         </div>
       </div>
-    </article>
+    </PremiumSurface>
   );
 }

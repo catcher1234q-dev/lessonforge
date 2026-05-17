@@ -630,6 +630,7 @@ async function buildSupabaseProductRecords(productRows: SupabaseProductReadRow[]
     return {
       id: row.id,
       title,
+      tags: [],
       subject: "General",
       gradeBand: "Not set",
       standardsTag: "Not set",

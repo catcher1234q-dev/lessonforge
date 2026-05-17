@@ -277,6 +277,7 @@ model Product {
   sellerProfileId       String?
   slug                  String            @unique
   title                 String
+  tags                  String[]          @default([])
   shortDescription      String
   fullDescription       String
   whatIsIncluded        String?

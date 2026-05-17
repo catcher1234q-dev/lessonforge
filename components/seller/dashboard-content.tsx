@@ -10,6 +10,7 @@ import {
   secondaryActionSurfaceClassName,
 } from "@/components/shared/secondary-action-link";
 import { DisclosureSummary } from "@/components/shared/disclosure-summary";
+import { PremiumSurface } from "@/components/shared/premium-surface";
 import {
   aiActionCosts,
   normalizePlanKey,
@@ -1113,7 +1114,8 @@ export function SellerDashboardContent() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <div className="rounded-[2rem] border border-ink/5 bg-white p-6 shadow-soft-xl sm:p-8">
+      <PremiumSurface className="overflow-hidden p-6 sm:p-8" variant="glass">
+        <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#d4af37]/70 to-transparent" />
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand">
           Seller Dashboard
         </p>
@@ -1129,26 +1131,26 @@ export function SellerDashboardContent() {
           See what is ready to sell, what still needs setup, and the exact next action that moves your store closer to a first or next sale.
         </p>
         <div className="mt-6 grid gap-3 lg:grid-cols-3">
-          <div className="rounded-[1.5rem] bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft">
+          <div className="rounded-[1.5rem] border border-white/80 bg-white/82 px-4 py-4 text-sm leading-6 text-ink-soft shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
             <p className="font-semibold text-ink">1. Confirm payouts</p>
             <p className="mt-1">
               Connect Stripe before relying on real buyer checkout and seller earnings.
             </p>
           </div>
-          <div className="rounded-[1.5rem] bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft">
+          <div className="rounded-[1.5rem] border border-white/80 bg-white/82 px-4 py-4 text-sm leading-6 text-ink-soft shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
             <p className="font-semibold text-ink">2. Publish one strong listing</p>
             <p className="mt-1">
               A clear preview, cover, rights confirmation, and buyer-ready copy matter most.
             </p>
           </div>
-          <div className="rounded-[1.5rem] bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft">
+          <div className="rounded-[1.5rem] border border-white/80 bg-white/82 px-4 py-4 text-sm leading-6 text-ink-soft shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
             <p className="font-semibold text-ink">3. Watch earnings and blockers</p>
             <p className="mt-1">
               Use the cards below to spot sales, payout status, listing issues, and growth prompts.
             </p>
           </div>
         </div>
-        <div className="mt-5 rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-4 text-sm leading-6 text-ink-soft">
+        <div className="mt-5 rounded-[1.5rem] border border-white/80 bg-white/82 px-5 py-4 text-sm leading-6 text-ink-soft shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
           <p className="font-semibold text-ink">Seller policy acknowledgment</p>
           <p className="mt-2">
             By selling on LessonForgeHub, you agree to the{" "}
@@ -1186,7 +1188,7 @@ export function SellerDashboardContent() {
               </div>
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Link
-                  className="inline-flex items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+                  className="premium-button-shadow inline-flex items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800"
                   href={buildSellerPlanCheckoutHref({
                     planKey: "basic",
                     returnTo: "/sell/dashboard?focus=plan",
@@ -1398,29 +1400,31 @@ export function SellerDashboardContent() {
             Give feedback
           </Link>
         </div>
-      </div>
+      </PremiumSurface>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {sellerSummaryCards.map((card) => (
-          <Link
+          <PremiumSurface
             key={card.key}
-            className="rounded-[1.5rem] border border-ink/5 bg-white p-5 shadow-soft-xl transition hover:-translate-y-0.5 hover:border-brand/20 hover:shadow-soft-2xl"
-            href={card.href}
+            className="p-5 transition hover:-translate-y-0.5 hover:border-brand/20 hover:shadow-soft-2xl"
+            variant="light"
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-soft text-brand">
-              {card.key === "earnings" ? (
-                <Sparkles className="h-5 w-5" />
-              ) : (
-                <UploadCloud className="h-5 w-5" />
-              )}
-            </div>
-            <h2 className="mt-5 text-sm font-semibold uppercase tracking-[0.14em] text-ink-muted">
-              {card.label}
-            </h2>
-            <p className="mt-3 text-3xl font-semibold text-ink">{card.value}</p>
-            <p className="mt-2 text-sm leading-7 text-ink-soft">{card.detail}</p>
-            <p className="mt-4 text-sm font-semibold text-brand">{card.actionLabel}</p>
-          </Link>
+            <Link className="block" href={card.href}>
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-soft text-brand">
+                {card.key === "earnings" ? (
+                  <Sparkles className="h-5 w-5" />
+                ) : (
+                  <UploadCloud className="h-5 w-5" />
+                )}
+              </div>
+              <h2 className="mt-5 text-sm font-semibold uppercase tracking-[0.14em] text-ink-muted">
+                {card.label}
+              </h2>
+              <p className="mt-3 text-3xl font-semibold text-ink">{card.value}</p>
+              <p className="mt-2 text-sm leading-7 text-ink-soft">{card.detail}</p>
+              <p className="mt-4 text-sm font-semibold text-brand">{card.actionLabel}</p>
+            </Link>
+          </PremiumSurface>
         ))}
       </div>
 
@@ -2286,7 +2290,7 @@ export function SellerDashboardContent() {
             })
           ) : (
           <div
-              className="rounded-[1.5rem] border border-ink/5 bg-surface-subtle p-5 text-sm text-ink-soft"
+              className="rounded-[1.5rem] border border-white/80 bg-white/82 p-5 text-sm text-ink-soft shadow-[0_12px_28px_rgba(15,23,42,0.05)]"
               data-testid="seller-dashboard-empty-state"
             >
               <p className="font-semibold text-ink">{sellerFilterEmptyState.title}</p>
@@ -2297,7 +2301,7 @@ export function SellerDashboardContent() {
                 </p>
               ) : null}
               <Link
-                className="mt-4 inline-flex items-center justify-center rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
+                className="premium-button-shadow mt-4 inline-flex items-center justify-center rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800"
                 data-testid="seller-dashboard-empty-state-action"
                 href={sellerFilterEmptyState.actionHref}
               >

@@ -50,11 +50,11 @@ export function ProductImageGallery({
     <>
       <div className="grid gap-5 lg:grid-cols-[1.35fr_0.65fr]">
         <button
-          className="overflow-hidden rounded-[30px] border border-slate-200 bg-slate-100 shadow-[0_18px_50px_rgba(15,23,42,0.10)]"
+          className="overflow-hidden rounded-[30px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(244,248,255,0.95))] shadow-[0_22px_58px_rgba(15,23,42,0.10)] backdrop-blur"
           onClick={() => setIsLightboxOpen(true)}
           type="button"
         >
-          <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 text-left">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-200/80 bg-white/90 px-4 py-3 text-left backdrop-blur">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
                 {selectedLabel}
@@ -71,7 +71,7 @@ export function ProductImageGallery({
           </div>
           <img
             alt={`${title} preview ${selectedIndex + 1}`}
-            className="h-full max-h-[860px] w-full bg-slate-100 object-contain"
+            className="h-full max-h-[860px] w-full bg-slate-100 object-contain p-2 sm:p-3"
             decoding="async"
             loading="eager"
             sizes="(min-width: 1024px) 60vw, 100vw"
@@ -83,8 +83,8 @@ export function ProductImageGallery({
           {galleryImages.map((image, index) => (
             <button
               key={`${image.url}-${index}`}
-              className={`group overflow-hidden rounded-[24px] border bg-white text-left shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.10)] ${
-                index === selectedIndex ? "border-brand" : "border-slate-200"
+              className={`group overflow-hidden rounded-[24px] border bg-white/92 text-left shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition hover:-translate-y-1 hover:shadow-[0_18px_40px_rgba(15,23,42,0.10)] ${
+                index === selectedIndex ? "border-brand ring-2 ring-brand/15" : "border-slate-200"
               }`}
               onClick={() => setSelectedIndex(index)}
               type="button"
@@ -92,7 +92,7 @@ export function ProductImageGallery({
               <div className="overflow-hidden bg-slate-100">
                 <img
                   alt={`${title} gallery image ${index + 1}`}
-                  className="h-52 w-full bg-slate-100 object-contain p-2 transition duration-300 group-hover:scale-[1.02]"
+                  className="h-52 w-full bg-slate-100 object-contain p-3 transition duration-300 group-hover:scale-[1.02]"
                   decoding="async"
                   loading="lazy"
                   sizes="(min-width: 1024px) 28vw, (min-width: 640px) 33vw, 100vw"

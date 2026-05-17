@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { hasAppSessionForEmail } from "@/lib/auth/app-session";
-import { getOwnerAccessContext } from "@/lib/auth/owner-access";
+import { getAuthenticatedAccountEmail, getOwnerAccessContext } from "@/lib/auth/owner-access";
 import { getCurrentViewer } from "@/lib/auth/viewer";
 import { classifyAiRouteError } from "@/lib/lessonforge/ai-route-errors";
+import { listSellerProfiles } from "@/lib/lessonforge/data-access";
 import {
   handleListingAssistRequest,
   type ListingAssistRequestBody,
@@ -22,13 +23,15 @@ import {
 
 export async function POST(request: Request) {
   try {
-    const [viewer, ownerAccess] = await Promise.all([
+    const [viewer, authenticatedEmail, ownerAccess, sellerProfiles] = await Promise.all([
       getCurrentViewer(),
+      getAuthenticatedAccountEmail(),
       getOwnerAccessContext(),
+      listSellerProfiles(),
     ]);
     const body = (await request.json()) as ListingAssistRequestBody;
 
-    if (!(await hasAppSessionForEmail(viewer.email))) {
+    if (!authenticatedEmail || !(await hasAppSessionForEmail(authenticatedEmail))) {
       console.info("[lessonforge.ai] seller access rejected", {
         reason: "missing_app_session",
         sellerId: body.sellerId || null,
@@ -36,10 +39,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Signed-in seller access required." }, { status: 401 });
     }
 
-    if (viewer.role !== "seller" && !ownerAccess.isOwner) {
+    const normalizedAuthenticatedEmail = authenticatedEmail.trim().toLowerCase();
+    const matchingSellerProfile = sellerProfiles.find(
+      (profile) => profile.email.trim().toLowerCase() === normalizedAuthenticatedEmail,
+    );
+    const hasSellerWorkspaceAccess =
+      viewer.role === "seller" ||
+      viewer.role === "admin" ||
+      viewer.role === "owner" ||
+      ownerAccess.isOwner ||
+      Boolean(matchingSellerProfile);
+
+    if (!hasSellerWorkspaceAccess) {
       console.info("[lessonforge.ai] seller access rejected", {
         reason: "viewer_role_forbidden",
         viewerRole: viewer.role,
+        authenticatedEmail,
         sellerId: body.sellerId || null,
       });
       return NextResponse.json({ error: "Seller access required." }, { status: 403 });
@@ -58,13 +73,12 @@ export async function POST(request: Request) {
 
     if (
       !ownerAccess.isOwner &&
-      viewer.role === "seller" &&
-      body.sellerId !== viewer.email &&
-      body.sellerEmail !== viewer.email
+      body.sellerId?.trim().toLowerCase() !== normalizedAuthenticatedEmail &&
+      body.sellerEmail?.trim().toLowerCase() !== normalizedAuthenticatedEmail
     ) {
       console.info("[lessonforge.ai] seller access rejected", {
         reason: "seller_ownership_mismatch",
-        viewerEmail: viewer.email,
+        authenticatedEmail,
         sellerId: body.sellerId,
         sellerEmail: body.sellerEmail,
       });

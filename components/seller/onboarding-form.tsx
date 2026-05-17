@@ -5,6 +5,7 @@ import { ArrowRight, BadgeDollarSign, CheckCircle2, FilePlus2, ShieldCheck, Stor
 import Link from "next/link";
 
 import { trackFunnelEvent } from "@/lib/analytics/events";
+import { PremiumSurface } from "@/components/shared/premium-surface";
 import { normalizePlanKey, planConfig, type PlanKey } from "@/lib/config/plans";
 import { buildSellerPlanCheckoutHref } from "@/lib/stripe/seller-plan-billing";
 import type { ConnectedSeller, SellerProfileDraft } from "@/types";
@@ -369,7 +370,8 @@ export function SellerOnboardingForm() {
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
-      <section className="rounded-[32px] border border-black/5 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:p-8">
+      <PremiumSurface className="overflow-hidden p-6 sm:p-8" variant="glass">
+        <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#d4af37]/70 to-transparent" />
         <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand">
           Seller onboarding
         </p>
@@ -380,40 +382,40 @@ export function SellerOnboardingForm() {
           LessonForgeHub is a teacher-focused marketplace for original classroom resources. Start with a simple store profile, connect payouts, and upload one resource you would feel good sharing with another teacher tomorrow.
         </p>
 
-        <div className="mt-6 rounded-[1.25rem] border border-slate-200 bg-slate-50 px-5 py-5">
+        <div className="mt-6 rounded-[1.25rem] border border-white/80 bg-white/82 px-5 py-5 shadow-[0_14px_36px_rgba(15,23,42,0.06)]">
           <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-700">
             Start selling in 3 steps
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-[1rem] bg-white px-4 py-4 text-sm leading-6 text-ink-soft">
+            <div className="rounded-[1rem] border border-slate-100 bg-white px-4 py-4 text-sm leading-6 text-ink-soft shadow-sm">
               <p className="font-semibold text-ink">1. Create your store profile</p>
               <p className="mt-1">Add the basic details buyers need to recognize your store.</p>
             </div>
-            <div className="rounded-[1rem] bg-white px-4 py-4 text-sm leading-6 text-ink-soft">
+            <div className="rounded-[1rem] border border-slate-100 bg-white px-4 py-4 text-sm leading-6 text-ink-soft shadow-sm">
               <p className="font-semibold text-ink">2. Connect payouts</p>
               <p className="mt-1">Finish payout setup so your resources can sell for real.</p>
             </div>
-            <div className="rounded-[1rem] bg-white px-4 py-4 text-sm leading-6 text-ink-soft">
+            <div className="rounded-[1rem] border border-slate-100 bg-white px-4 py-4 text-sm leading-6 text-ink-soft shadow-sm">
               <p className="font-semibold text-ink">3. Upload your first resource</p>
               <p className="mt-1">Start with one strong classroom file instead of a full catalog.</p>
             </div>
           </div>
         </div>
 
-        <div className="mt-4 rounded-[1.25rem] border border-emerald-100 bg-emerald-50 px-5 py-5">
+        <div className="mt-4 rounded-[1.25rem] border border-emerald-100 bg-emerald-50/85 px-5 py-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
           <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-800">
             Why sell here
           </p>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-[1rem] bg-white px-4 py-4 text-sm leading-6 text-ink-soft">
+            <div className="rounded-[1rem] border border-white/80 bg-white px-4 py-4 text-sm leading-6 text-ink-soft shadow-sm">
               <p className="font-semibold text-ink">Keep more of your earnings</p>
               <p className="mt-1">Pick the seller plan that fits where you are starting.</p>
             </div>
-            <div className="rounded-[1rem] bg-white px-4 py-4 text-sm leading-6 text-ink-soft">
+            <div className="rounded-[1rem] border border-white/80 bg-white px-4 py-4 text-sm leading-6 text-ink-soft shadow-sm">
               <p className="font-semibold text-ink">Simple uploads</p>
               <p className="mt-1">Focus on one real resource first instead of a complicated setup.</p>
             </div>
-            <div className="rounded-[1rem] bg-white px-4 py-4 text-sm leading-6 text-ink-soft">
+            <div className="rounded-[1rem] border border-white/80 bg-white px-4 py-4 text-sm leading-6 text-ink-soft shadow-sm">
               <p className="font-semibold text-ink">Teacher-focused marketplace</p>
               <p className="mt-1">Everything is built around classroom resources and practical teacher needs.</p>
             </div>
@@ -450,7 +452,7 @@ export function SellerOnboardingForm() {
             return (
               <div
                 key={step.label}
-                className={`flex h-full flex-col rounded-[1.25rem] border bg-white p-4 ${
+                className={`flex h-full flex-col rounded-[1.25rem] border bg-white/95 p-4 shadow-[0_12px_28px_rgba(15,23,42,0.04)] ${
                   step.ready
                     ? "border-emerald-200"
                     : "border-slate-200"
@@ -481,12 +483,12 @@ export function SellerOnboardingForm() {
           })}
         </div>
 
-        <div className="mt-5 rounded-[1.25rem] border border-slate-200 bg-white p-5">
+        <div className="mt-5 rounded-[1.25rem] border border-white/80 bg-white/92 p-5 shadow-[0_16px_36px_rgba(15,23,42,0.06)]">
           <p className="text-xl font-semibold text-ink">{listingCta.title}</p>
           <p className="mt-1 text-sm leading-6 text-ink-soft">{listingCta.detail}</p>
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link
-              className="inline-flex items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+              className="premium-button-shadow inline-flex items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800"
               href={listingCta.href}
             >
               {listingCta.label}
@@ -540,7 +542,7 @@ export function SellerOnboardingForm() {
           </label>
         </div>
 
-        <div className="mt-8 rounded-[1.35rem] border border-black/5 bg-surface-subtle p-4">
+        <div className="mt-8 rounded-[1.35rem] border border-white/80 bg-white/80 p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
           <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-700">
             Add next
           </p>
@@ -585,8 +587,8 @@ export function SellerOnboardingForm() {
                   key={plan.key}
                   className={`rounded-[1.5rem] border px-4 py-4 text-left transition ${
                     selectedPlanKey === plan.key
-                      ? "border-brand bg-brand-soft/50"
-                      : "border-ink/10 bg-surface-subtle hover:border-brand/30"
+                      ? "border-brand bg-brand-soft/45 shadow-[0_14px_30px_rgba(37,99,235,0.08)]"
+                      : "border-ink/10 bg-white/84 hover:border-brand/30"
                   }`}
                   onClick={() => setSelectedPlanKey(plan.key)}
                   type="button"
@@ -612,11 +614,11 @@ export function SellerOnboardingForm() {
                     </p>
                   ) : null}
                   <div className="mt-4 grid gap-2 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-                    <div className="rounded-[1rem] bg-white px-3 py-3 text-sm text-ink-soft">
+                    <div className="rounded-[1rem] border border-slate-100 bg-white px-3 py-3 text-sm text-ink-soft shadow-sm">
                       Keep more
                       <p className="mt-1 font-semibold text-ink">Keep {plan.sellerSharePercent}%</p>
                     </div>
-                    <div className="rounded-[1rem] bg-white px-3 py-3 text-sm text-ink-soft">
+                    <div className="rounded-[1rem] border border-slate-100 bg-white px-3 py-3 text-sm text-ink-soft shadow-sm">
                       Publish
                       <p className="mt-1 font-semibold text-ink">
                         Unlimited uploads
@@ -696,7 +698,7 @@ export function SellerOnboardingForm() {
         {message ? (
           <p className="mt-5 text-sm leading-6 text-ink-soft">{message}</p>
         ) : null}
-      </section>
+      </PremiumSurface>
 
       <aside className="space-y-6">
         <section className="rounded-[24px] bg-slate-950 p-5 text-white shadow-[0_24px_80px_rgba(15,23,42,0.15)]">

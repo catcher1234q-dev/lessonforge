@@ -1,23 +1,24 @@
 import { ArrowRight, LifeBuoy, ShieldCheck, ShoppingBag, Store } from "lucide-react";
 import Link from "next/link";
 
+import { PremiumSurface } from "@/components/shared/premium-surface";
 import { secondaryActionLinkClassName } from "@/components/shared/secondary-action-link";
 import { SectionIntro } from "@/components/shared/section-intro";
 
 export function TrustStrip() {
   return (
     <section className="px-5 py-8 sm:px-6 lg:px-8 lg:py-10">
-      <div className="mx-auto max-w-7xl rounded-[2.2rem] border border-ink/5 bg-white p-6 shadow-soft-xl sm:p-8 lg:p-10">
+      <PremiumSurface className="mx-auto max-w-7xl p-6 sm:p-8 lg:p-10" variant="glass">
         <SectionIntro
-          body="Preview first, understand the rules, and know exactly how LessonForgeHub handles teacher-created digital resources, product reports, support, and digital downloads."
-          eyebrow="Before you pay"
-          title="Know how the marketplace stays controlled."
-          titleClassName="text-3xl sm:text-4xl"
+          body="Open a resource, inspect the preview, and see the policy path before you spend money. The trust layer stays visible instead of hidden in fine print."
+          eyebrow="Before you buy"
+          title="A cleaner marketplace still needs clear guardrails."
+          titleClassName="text-3xl sm:text-4xl lg:text-[2.7rem]"
           bodyClassName="text-base leading-7"
         />
 
         <div className="mt-7 grid gap-4 lg:grid-cols-3">
-          <article className="rounded-[1.5rem] border border-ink/5 bg-surface-subtle p-5">
+          <article className="rounded-[1.6rem] border border-slate-200/80 bg-white/90 p-5">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-soft text-brand">
               <ShieldCheck className="h-5 w-5" />
             </div>
@@ -34,7 +35,7 @@ export function TrustStrip() {
             </Link>
           </article>
 
-          <article className="rounded-[1.5rem] border border-ink/5 bg-surface-subtle p-5">
+          <article className="rounded-[1.6rem] border border-slate-200/80 bg-white/90 p-5">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-soft text-brand">
               <Store className="h-5 w-5" />
             </div>
@@ -51,7 +52,7 @@ export function TrustStrip() {
             </Link>
           </article>
 
-          <article className="rounded-[1.5rem] border border-ink/5 bg-surface-subtle p-5">
+          <article className="rounded-[1.6rem] border border-slate-200/80 bg-white/90 p-5">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-soft text-brand">
               <LifeBuoy className="h-5 w-5" />
             </div>
@@ -69,13 +70,13 @@ export function TrustStrip() {
           </article>
         </div>
 
-        <div className="mt-5 rounded-[1.5rem] border border-brand/10 bg-brand-soft/45 p-4 text-sm leading-6 text-ink-soft">
+        <div className="mt-5 rounded-[1.5rem] border border-[#d4af37]/20 bg-[linear-gradient(135deg,rgba(212,175,55,0.10),rgba(255,255,255,0.94))] p-4 text-sm leading-6 text-ink-soft">
           <div className="flex items-start gap-3">
             <ShoppingBag className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
             <span>Know what you are buying, know how a listing can be reported or removed, and know when digital refunds may still be reviewed.</span>
           </div>
         </div>
-      </div>
+      </PremiumSurface>
     </section>
   );
 }

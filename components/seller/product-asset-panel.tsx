@@ -12,6 +12,7 @@ import {
   getProductGalleryCoverImage,
   getProductGalleryPreviewImages,
 } from "@/lib/lessonforge/product-gallery";
+import { PremiumSurface } from "@/components/shared/premium-surface";
 import type { ProductGalleryImage } from "@/types";
 
 type ProductAssetPanelProps = {
@@ -156,8 +157,9 @@ export function ProductAssetPanel({
   const hasRealUploadedPreview = localPreviewAssets.length > 0;
 
   return (
-    <section
-      className={`rounded-[24px] border border-black/5 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ${className ?? ""}`}
+    <PremiumSurface
+      className={`p-5 ${className ?? ""}`}
+      variant="light"
     >
       <p className="text-sm font-semibold uppercase tracking-[0.22em] text-brand">
         Preview check
@@ -168,7 +170,7 @@ export function ProductAssetPanel({
       </p>
 
       <div className="mt-4 grid gap-3 md:grid-cols-3">
-        <article className="rounded-[1.4rem] bg-slate-50 p-4">
+        <article className="rounded-[1.4rem] border border-white/80 bg-white/84 p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-soft">
             Preview set
           </p>
@@ -188,7 +190,7 @@ export function ProductAssetPanel({
           </p>
         </article>
 
-        <article className="rounded-[1.4rem] bg-slate-50 p-4">
+        <article className="rounded-[1.4rem] border border-white/80 bg-white/84 p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-soft">
             Thumbnail
           </p>
@@ -200,7 +202,7 @@ export function ProductAssetPanel({
           </p>
         </article>
 
-        <article className="rounded-[1.4rem] bg-slate-50 p-4">
+        <article className="rounded-[1.4rem] border border-white/80 bg-white/84 p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-soft">
             Delivery
           </p>
@@ -211,7 +213,7 @@ export function ProductAssetPanel({
         </article>
       </div>
 
-      <div className="mt-4 rounded-[1.35rem] border border-slate-200 bg-slate-50 p-4">
+      <div className="mt-4 rounded-[1.35rem] border border-white/80 bg-white/86 p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-ink">Preview pages</p>
@@ -305,6 +307,6 @@ export function ProductAssetPanel({
         <span className="font-semibold text-white">Current buyer summary:</span>{" "}
         {summary || "Add a stronger description so buyers understand what is included and why it is worth opening."}
       </div>
-    </section>
+    </PremiumSurface>
   );
 }

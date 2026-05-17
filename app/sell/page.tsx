@@ -5,6 +5,7 @@ import Link from "next/link";
 import { PricingPreview } from "@/components/marketing/pricing-preview";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { PremiumSurface } from "@/components/shared/premium-surface";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = buildPageMetadata({
@@ -36,7 +37,8 @@ export default function SellPage() {
 
       <section className="px-5 pb-24 pt-10 sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-7xl flex-col gap-11 lg:gap-16">
-          <section className="rounded-[36px] border border-black/5 bg-white/90 px-6 py-10 text-center shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:px-10 sm:py-12 lg:px-14 lg:py-14">
+          <PremiumSurface className="overflow-hidden px-6 py-10 text-center sm:px-10 sm:py-12 lg:px-14 lg:py-14" variant="glass">
+            <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-[#d4af37]/70 to-transparent" />
             <div className="mx-auto max-w-3xl">
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand">
                 Start selling
@@ -53,7 +55,7 @@ export default function SellPage() {
 
               <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row sm:items-center">
                 <Link
-                  className="inline-flex min-w-[180px] items-center justify-center gap-2 rounded-full bg-brand px-6 py-3.5 text-base font-semibold text-white transition hover:bg-brand-700"
+                  className="premium-button-shadow inline-flex min-w-[180px] items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3.5 text-base font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800"
                   data-analytics-event="seller_onboarding_start_clicked"
                   data-analytics-props={JSON.stringify({ surface: "sell_hero" })}
                   href="/sell/onboarding"
@@ -62,7 +64,7 @@ export default function SellPage() {
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
-                  className="inline-flex min-w-[180px] items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3.5 text-base font-semibold text-ink transition hover:border-slate-300"
+                  className="inline-flex min-w-[180px] items-center justify-center rounded-full border border-white/80 bg-white/92 px-6 py-3.5 text-base font-semibold text-ink shadow-[0_12px_28px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:border-slate-300"
                   data-analytics-event="pricing_anchor_clicked"
                   data-analytics-props={JSON.stringify({ surface: "sell_hero" })}
                   href="#sell-pricing"
@@ -71,13 +73,14 @@ export default function SellPage() {
                 </Link>
               </div>
             </div>
-          </section>
+          </PremiumSurface>
 
           <section className="grid gap-4 md:grid-cols-3">
             {steps.map((step, index) => (
-              <article
+              <PremiumSurface
                 key={step.title}
-                className="rounded-[30px] border border-black/5 bg-white p-6 text-center shadow-[0_18px_50px_rgba(15,23,42,0.06)]"
+                className="p-6 text-center transition hover:-translate-y-0.5"
+                variant="light"
               >
                 <span className="inline-flex rounded-full bg-brand-soft px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand">
                   0{index + 1}
@@ -88,13 +91,13 @@ export default function SellPage() {
                 <p className="mt-2 text-sm leading-7 text-ink-soft">
                   {step.description}
                 </p>
-              </article>
+              </PremiumSurface>
             ))}
           </section>
 
           <PricingPreview variant="sell" />
 
-          <section className="rounded-[30px] border border-black/5 bg-white p-8 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+          <PremiumSurface className="p-8" variant="light">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-brand">
                 What to expect
@@ -121,9 +124,9 @@ export default function SellPage() {
                   </Link>
               </div>
             </div>
-          </section>
+          </PremiumSurface>
 
-          <section className="rounded-[30px] border border-black/5 bg-slate-950 p-6 text-white shadow-[0_18px_50px_rgba(15,23,42,0.12)] sm:p-8">
+          <PremiumSurface className="p-6 text-white sm:p-8" variant="dark">
             <div className="grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-center">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/60">
@@ -157,7 +160,7 @@ export default function SellPage() {
                 </Link>
               </div>
             </div>
-          </section>
+          </PremiumSurface>
         </div>
       </section>
 

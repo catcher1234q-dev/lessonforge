@@ -52,6 +52,18 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
+function normalizeProductTags(tags?: string[] | null) {
+  if (!Array.isArray(tags)) {
+    return [];
+  }
+
+  return tags
+    .map((tag) => (typeof tag === "string" ? tag.trim() : ""))
+    .filter(Boolean)
+    .filter((tag, index, array) => array.indexOf(tag) === index)
+    .slice(0, 12);
+}
+
 async function resolveUniqueProductSlug(input: { id: string; title: string }) {
   const slugBase = slugify(input.title) || "resource";
   const uploadSuffix = slugify(input.id).replace(/^upload-/, "") || slugify(input.id) || "draft";
@@ -405,6 +417,7 @@ function toProductRecord(
   return {
     id: product.id,
     title: product.title,
+    tags: normalizeProductTags(product.tags),
     subject: product.subject,
     gradeBand: product.gradeBand,
     standardsTag: product.standardsSummary ?? "Standards pending",
@@ -843,7 +856,8 @@ export async function prismaSaveProduct(product: ProductRecord) {
           sellerProfileId: sellerProfile.id,
           slug,
           title: product.title,
-          shortDescription: product.summary,
+          tags: normalizeProductTags(product.tags),
+          shortDescription: product.shortDescription ?? product.summary,
           fullDescription: product.fullDescription ?? product.summary,
           whatIsIncluded: (product.includedItems ?? []).join("\n"),
           moderationNotes: product.moderationFeedback ?? null,
@@ -870,7 +884,8 @@ export async function prismaSaveProduct(product: ProductRecord) {
           sellerProfileId: sellerProfile.id,
           slug,
           title: product.title,
-          shortDescription: product.summary,
+          tags: normalizeProductTags(product.tags),
+          shortDescription: product.shortDescription ?? product.summary,
           fullDescription: product.fullDescription ?? product.summary,
           whatIsIncluded: (product.includedItems ?? []).join("\n"),
           moderationNotes: product.moderationFeedback ?? null,

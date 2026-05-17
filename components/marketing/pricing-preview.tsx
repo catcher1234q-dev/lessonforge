@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Check } from "lucide-react";
 
+import { PremiumSurface } from "@/components/shared/premium-surface";
 import { planConfig, type PlanKey } from "@/lib/config/plans";
 
 const pricingOrder: PlanKey[] = ["starter", "basic", "pro"];
@@ -14,30 +15,33 @@ function formatPrice(monthlyPriceUsd: number) {
 function getCardTone(planKey: PlanKey) {
   if (planKey === "basic") {
     return {
-      badge: "bg-brand text-white",
-      button: "bg-brand text-white hover:bg-brand-700",
-      card: "border-brand/20 bg-brand-soft shadow-[0_24px_80px_rgba(37,99,235,0.16)]",
+      badge: "bg-slate-950 text-white",
+      button: "bg-slate-950 text-white hover:bg-slate-800",
+      card: "shadow-[0_28px_86px_rgba(37,99,235,0.18)]",
       note: "text-brand",
-      panel: "bg-white/85",
+      panel: "border-white/80 bg-white/88",
+      variant: "glass" as const,
     };
   }
 
   if (planKey === "pro") {
     return {
-      badge: "bg-slate-950 text-white",
-      button: "bg-brand text-white hover:bg-brand-700",
-      card: "border-slate-950/10 bg-white shadow-[0_24px_72px_rgba(15,23,42,0.09)]",
+      badge: "bg-[#d4af37] text-slate-950",
+      button: "bg-slate-950 text-white hover:bg-slate-800",
+      card: "shadow-[0_24px_72px_rgba(15,23,42,0.09)]",
       note: "text-ink-soft",
-      panel: "bg-slate-50",
+      panel: "border-white/80 bg-white/84",
+      variant: "light" as const,
     };
   }
 
   return {
     badge: "bg-slate-100 text-ink-soft",
-    button: "bg-brand text-white hover:bg-brand-700",
-    card: "border-ink/5 bg-white shadow-soft-xl",
+    button: "bg-slate-950 text-white hover:bg-slate-800",
+    card: "shadow-soft-xl",
     note: "text-ink-soft",
-    panel: "bg-surface-subtle",
+    panel: "border-white/80 bg-white/84",
+    variant: "light" as const,
   };
 }
 
@@ -129,11 +133,12 @@ export function PricingPreview({
                 : plan.ctaLabel;
 
             return (
-              <article
+              <PremiumSurface
                 key={plan.key}
-                className={`flex h-full flex-col rounded-[1.4rem] border p-5 transition ${tone.card} ${
+                className={`flex h-full flex-col p-5 transition ${tone.card} ${
                   variant === "sell" && planKey === "pro" ? "lg:-translate-y-1" : ""
                 }`}
+                variant={tone.variant}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -164,7 +169,7 @@ export function PricingPreview({
                   {plan.shortDescription}
                 </p>
 
-                <div className={`mt-4 rounded-[1.15rem] px-4 py-4 ${tone.panel}`}>
+                <div className={`mt-4 rounded-[1.15rem] border px-4 py-4 ${tone.panel} shadow-[0_12px_28px_rgba(15,23,42,0.05)]`}>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">
                     Plan highlights
                   </p>
@@ -172,7 +177,7 @@ export function PricingPreview({
                     {getPlanHighlights(planKey).map((highlight) => (
                       <div
                         key={highlight.label}
-                        className="flex items-center justify-between gap-4 rounded-[0.9rem] bg-white/70 px-3 py-2.5 text-sm leading-6"
+                        className="flex items-center justify-between gap-4 rounded-[0.9rem] border border-white/80 bg-white/78 px-3 py-2.5 text-sm leading-6 shadow-sm"
                       >
                         <span className="shrink-0 font-medium text-ink-soft">
                           {highlight.label}
@@ -185,7 +190,7 @@ export function PricingPreview({
                   </div>
                 </div>
 
-                <div className={`mt-4 rounded-[1.05rem] px-4 py-3 text-sm leading-6 text-ink-soft ${tone.panel}`}>
+                <div className={`mt-4 rounded-[1.05rem] border px-4 py-3 text-sm leading-6 text-ink-soft ${tone.panel} shadow-[0_12px_28px_rgba(15,23,42,0.05)]`}>
                   <p className="font-semibold text-ink">Best for</p>
                   <p className="mt-1">{plan.bestFor}</p>
                 </div>
@@ -193,7 +198,7 @@ export function PricingPreview({
                 <div className="mt-5 grid gap-3 text-sm text-ink-soft">
                   {plan.featureHighlights.map((feature) => (
                     <div key={feature} className="flex items-start gap-3">
-                      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/80 text-brand">
+                      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/80 bg-white/90 text-brand shadow-sm">
                         <Check className="h-4 w-4" />
                       </span>
                       <span>{feature}</span>
@@ -203,7 +208,7 @@ export function PricingPreview({
 
                 <div className="mt-6 pt-2">
                   <Link
-                    className={`inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition ${tone.button}`}
+                    className={`premium-button-shadow inline-flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition hover:-translate-y-0.5 ${tone.button}`}
                     data-analytics-event="pricing_plan_clicked"
                     data-analytics-props={JSON.stringify({ plan: planKey, surface: variant })}
                     href="/sell/onboarding"
@@ -218,19 +223,19 @@ export function PricingPreview({
                       ? "A good fit when you want more AI support and a higher payout."
                       : "For sellers who want the strongest payout and the most monthly AI help."}
                 </p>
-              </article>
+              </PremiumSurface>
             );
           })}
         </div>
 
-        <div className="mt-6 grid gap-3 rounded-[1.25rem] border border-black/5 bg-surface-subtle px-4 py-4 text-sm leading-6 text-ink-soft lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="mt-6 grid gap-3 rounded-[1.4rem] border border-white/80 bg-white/84 px-4 py-4 text-sm leading-6 text-ink-soft shadow-[0_16px_36px_rgba(15,23,42,0.06)] lg:grid-cols-[1.1fr_0.9fr]">
           <div>
             <p className="font-semibold text-ink">When to upgrade</p>
             <p className="mt-1">
               Stay on Starter while you test. Move to Basic or Pro when you want to publish more and keep more from each sale.
             </p>
           </div>
-          <div className="rounded-[1rem] bg-white px-4 py-3">
+          <div className="rounded-[1rem] border border-white/80 bg-white/95 px-4 py-3 shadow-sm">
             <p className="font-semibold text-ink">Good to know</p>
             <p className="mt-1">
               LessonForgeHub sells digital educational resources. Buyers receive library access after a confirmed purchase, and support and policy pages stay easy to find before and after checkout.

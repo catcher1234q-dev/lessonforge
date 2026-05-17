@@ -7,6 +7,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { FilterBar } from "@/components/marketplace/filter-bar";
 import { ProductCard } from "@/components/marketplace/product-card";
 import { SearchEmptyState } from "@/components/marketplace/search-empty-state";
+import { PremiumSurface } from "@/components/shared/premium-surface";
 import { filterMarketplaceListings } from "@/lib/lessonforge/server-catalog";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -119,23 +120,24 @@ export default async function MarketplacePage({
 
       <section className="px-4 pb-16 pt-6 sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-7xl flex-col gap-6">
-          <section className="rounded-[28px] border border-black/5 bg-white px-5 py-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:px-7 sm:py-6">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <PremiumSurface className="overflow-hidden px-5 py-5 sm:px-7 sm:py-6" variant="glass">
+            <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[#d4af37]/70 to-transparent" />
+            <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
               <div className="max-w-2xl">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand">
                   Marketplace
                 </p>
                 <h1 className="mt-2 font-[family-name:var(--font-display)] text-3xl leading-tight text-ink sm:text-5xl">
-                  Browse teacher-created classroom resources.
+                  Find classroom resources that look as good as they teach.
                 </h1>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-ink-soft sm:text-base">
-                  Review larger previews, compare resources quickly, and open the product page for details before you buy.
+                  Browse real previews, compare premium teaching downloads quickly, and open any listing for the full classroom details before you buy.
                 </p>
               </div>
 
-              <div className="rounded-[24px] border border-[#d4af37]/18 bg-[#fff9ea] p-4 sm:min-w-[260px]">
+              <div className="rounded-[26px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,250,238,0.98),rgba(255,255,255,0.9))] p-4 shadow-[0_20px_44px_rgba(15,23,42,0.08)] backdrop-blur sm:min-w-[280px]">
                 <Link
-                  className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                  className="premium-button-shadow inline-flex min-h-11 w-full items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800"
                   href="/sell/products/new"
                 >
                   Start Selling
@@ -145,9 +147,9 @@ export default async function MarketplacePage({
                 </p>
               </div>
             </div>
-          </section>
+          </PremiumSurface>
 
-          <section className="rounded-[24px] border border-black/5 bg-white px-4 py-4 shadow-[0_14px_44px_rgba(15,23,42,0.06)] sm:px-5">
+          <PremiumSurface className="px-4 py-4 sm:px-5" variant="soft">
             <form
               action="/marketplace"
               className="flex flex-col gap-3 lg:flex-row lg:items-center"
@@ -155,7 +157,7 @@ export default async function MarketplacePage({
               data-analytics-props={JSON.stringify({ queryLength: query.length, subject, sort })}
             >
               {subject !== "All" ? <input name="subject" type="hidden" value={subject} /> : null}
-              <label className="flex flex-1 items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-4 py-3">
+              <label className="glass-outline flex flex-1 items-center gap-3 rounded-full bg-white/90 px-4 py-3 backdrop-blur">
                 <Search className="h-4 w-4 text-ink-soft" />
                 <input
                   className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-soft"
@@ -166,14 +168,14 @@ export default async function MarketplacePage({
                 />
               </label>
               <button
-                className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+                className="premium-button-shadow inline-flex min-h-11 items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800"
                 type="submit"
               >
                 Search
               </button>
               <select
                 aria-label="Sort marketplace listings"
-                className="min-h-11 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
+                className="min-h-11 rounded-full border border-white/70 bg-white/90 px-4 py-3 text-sm text-ink outline-none transition focus:border-brand"
                 defaultValue={sort}
                 name="sort"
               >
@@ -186,7 +188,7 @@ export default async function MarketplacePage({
             <div className="mt-4">
               <FilterBar query={query} selectedSort={sort} selectedSubject={subject} />
             </div>
-          </section>
+          </PremiumSurface>
 
           <section className="flex flex-wrap items-center justify-between gap-3 text-sm text-ink-soft">
             <p>
@@ -198,9 +200,10 @@ export default async function MarketplacePage({
           {groupedListings.length ? (
             <section className="space-y-8">
               {groupedListings.map((group, groupIndex) => (
-                <section
+                <PremiumSurface
+                  className="px-5 py-5 sm:px-6"
                   key={group.title}
-                  className="rounded-[28px] border border-black/5 bg-white px-5 py-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:px-6"
+                  variant={groupIndex === 0 ? "glass" : "light"}
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div>
@@ -221,7 +224,7 @@ export default async function MarketplacePage({
                       </Link>
                     ) : null}
                   </div>
-                  <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                     {group.items.map((listing) => (
                       <ProductCard
                         featured={group.title === "Featured resources"}
@@ -231,13 +234,13 @@ export default async function MarketplacePage({
                       />
                     ))}
                   </div>
-                </section>
+                </PremiumSurface>
               ))}
             </section>
           ) : null}
 
           {listings.length ? (
-            <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {listings.map((listing) => (
                 <ProductCard
                   key={listing.id}
@@ -250,7 +253,7 @@ export default async function MarketplacePage({
             <SearchEmptyState query={query} sort={sort} subject={subject} />
           )}
 
-          <section className="rounded-[24px] border border-black/5 bg-white px-5 py-5 shadow-[0_14px_44px_rgba(15,23,42,0.05)]">
+          <PremiumSurface className="px-5 py-5" variant="light">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand">
@@ -261,14 +264,14 @@ export default async function MarketplacePage({
                 </p>
               </div>
               <Link
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/80 bg-white/95 px-5 py-3 text-sm font-semibold text-ink shadow-[0_12px_28px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:border-slate-300"
                 href="/sell/products/new"
               >
                 Create your first listing
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
-          </section>
+          </PremiumSurface>
         </div>
       </section>
 

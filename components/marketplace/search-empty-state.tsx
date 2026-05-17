@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { PremiumSurface } from "@/components/shared/premium-surface";
+
 export function SearchEmptyState({
   query,
   subject,
@@ -9,7 +11,7 @@ export function SearchEmptyState({
   sort?: string;
 }) {
   return (
-    <div className="rounded-[28px] border border-dashed border-slate-300 bg-white px-6 py-10 text-center shadow-[0_18px_50px_rgba(15,23,42,0.05)]">
+    <PremiumSurface className="border-dashed border-slate-300 px-6 py-10 text-center" variant="soft">
       <span className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-800">
         Marketplace search
       </span>
@@ -30,12 +32,12 @@ export function SearchEmptyState({
           Browse all listings
         </Link>
         <Link
-          className="inline-flex rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition hover:border-slate-300"
+          className="inline-flex rounded-full border border-white/80 bg-white/95 px-5 py-3 text-sm font-semibold text-ink shadow-[0_12px_28px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:border-slate-300"
           href="/sell/products/new"
         >
           Start selling instead
         </Link>
       </div>
-    </div>
+    </PremiumSurface>
   );
 }

@@ -8,6 +8,7 @@ import { ProductImageGallery } from "@/components/marketplace/product-image-gall
 import { ProductCard } from "@/components/marketplace/product-card";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { PremiumSurface } from "@/components/shared/premium-surface";
 import {
   buildMarketplaceListingHref,
   getMarketplaceReturnLabel,
@@ -111,24 +112,25 @@ export default async function ProductDetailPage({
             {returnLabel}
           </Link>
 
-          <section className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 shadow-[0_14px_40px_rgba(16,185,129,0.10)]">
+          <PremiumSurface className="px-5 py-4" variant="soft">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-800">
               Digital marketplace listing
             </p>
             <p className="mt-2 text-sm leading-6 text-emerald-950">
               Buyers receive digital downloads through LessonForgeHub. Listings stay subject to review and may be removed if they violate marketplace policy.
             </p>
-          </section>
+          </PremiumSurface>
 
           <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
             <section className="space-y-6">
-              <section className="rounded-[30px] border border-black/5 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-8">
+              <PremiumSurface className="overflow-hidden p-6 sm:p-8" variant="glass">
+                <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#d4af37]/70 to-transparent" />
                 <div className="flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-brand">
                   <span>{listing.subject}</span>
                   <span className="rounded-full bg-brand-soft px-3 py-1 tracking-[0.08em] text-brand">
                     {listing.gradeBand}
                   </span>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-ink-soft">
+                  <span className="rounded-full border border-white/80 bg-white/80 px-3 py-1 text-ink-soft shadow-sm">
                     Digital download
                   </span>
                 </div>
@@ -171,7 +173,7 @@ export default async function ProductDetailPage({
                   ))}
                 </div>
 
-                <div className="mt-6 rounded-[24px] border border-[#d4af37]/18 bg-[#fff9ea] px-5 py-4">
+                <div className="mt-6 rounded-[26px] border border-[#d4af37]/22 bg-[linear-gradient(180deg,rgba(255,249,234,0.98),rgba(255,255,255,0.92))] px-5 py-4 shadow-[0_16px_38px_rgba(15,23,42,0.06)]">
                   <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#9b7a10]">
                     Best for
                   </p>
@@ -186,9 +188,9 @@ export default async function ProductDetailPage({
                     ))}
                   </div>
                 </div>
-              </section>
+              </PremiumSurface>
 
-              <section className="rounded-[30px] border border-black/5 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:p-7">
+              <PremiumSurface className="p-6 sm:p-7" variant="light">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                   <div>
                     <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand">
@@ -298,11 +300,12 @@ export default async function ProductDetailPage({
                     </div>
                   </div>
                 </div>
-              </section>
+              </PremiumSurface>
 
-              <section
-                className="rounded-[30px] border border-black/5 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:p-7"
+              <PremiumSurface
+                className="overflow-hidden p-6 sm:p-7"
                 id="selected-preview"
+                variant="glass"
               >
                 <div className="max-w-3xl">
                   <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand">
@@ -325,16 +328,16 @@ export default async function ProductDetailPage({
                     title={listing.title}
                   />
                 </div>
-              </section>
+              </PremiumSurface>
             </section>
 
             <aside className="space-y-6 lg:sticky lg:top-28 lg:self-start">
-              <section className="overflow-hidden rounded-[30px] border border-black/5 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-                <div className="overflow-hidden border-b border-black/5 bg-slate-100">
+              <PremiumSurface className="overflow-hidden" variant="glass">
+                <div className="overflow-hidden border-b border-black/5 bg-[linear-gradient(180deg,rgba(239,246,255,0.95),rgba(255,255,255,0.98))]">
                   {previewHeroImage ? (
                     <img
                       alt={`${listing.title} preview`}
-                      className="aspect-[3/4] w-full bg-slate-100 object-contain"
+                      className="aspect-[4/3] w-full bg-slate-100 object-contain"
                       decoding="async"
                       loading="lazy"
                       sizes="(min-width: 1024px) 34vw, 100vw"
@@ -360,14 +363,38 @@ export default async function ProductDetailPage({
                     <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-800">
                       {formatCurrency(listing.priceCents)}
                     </span>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-ink-soft">
+                    <span className="rounded-full border border-white/80 bg-white/85 px-3 py-1 text-ink-soft shadow-sm">
                       {previewAssetCount} preview page{previewAssetCount === 1 ? "" : "s"}
                     </span>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-[22px] border border-white/80 bg-white/82 px-4 py-4 shadow-[0_12px_28px_rgba(15,23,42,0.06)] backdrop-blur">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">Price</p>
+                      <p className="mt-2 text-3xl font-semibold text-ink">{formatCurrency(listing.priceCents)}</p>
+                    </div>
+                    <div className="rounded-[22px] border border-white/80 bg-white/82 px-4 py-4 shadow-[0_12px_28px_rgba(15,23,42,0.06)] backdrop-blur">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">Source</p>
+                      <p className="mt-2 text-base font-semibold text-ink">{listing.sellerName}</p>
+                      <p className="mt-1 text-sm text-ink-soft">{listing.sellerTrustLabel}</p>
+                    </div>
                   </div>
 
                   <p className="text-sm leading-6 text-ink-soft">
                     Buy through LessonForgeHub, return to your library after purchase, and use the report path if a listing looks broken, misleading, or outside policy.
                   </p>
+
+                  <div className="rounded-[24px] border border-[#d4af37]/18 bg-[linear-gradient(180deg,rgba(255,249,234,0.98),rgba(255,255,255,0.92))] px-4 py-4 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand">
+                      Trust checks
+                    </p>
+                    <div className="mt-3 grid gap-2 text-sm leading-6 text-ink-soft">
+                      <p className="rounded-2xl border border-white/80 bg-white/82 px-3 py-2 shadow-sm">Clear preview</p>
+                      <p className="rounded-2xl border border-white/80 bg-white/82 px-3 py-2 shadow-sm">Instant download</p>
+                      <p className="rounded-2xl border border-white/80 bg-white/82 px-3 py-2 shadow-sm">Secure checkout</p>
+                      <p className="rounded-2xl border border-white/80 bg-white/82 px-3 py-2 shadow-sm">Supports teacher creators</p>
+                    </div>
+                  </div>
 
                   <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand">
@@ -393,7 +420,7 @@ export default async function ProductDetailPage({
                   </div>
 
                   <CheckoutButton
-                    className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-brand px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+                    className="premium-button-shadow inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800"
                     label="Buy now"
                     productId={listing.id}
                     returnTo={currentListingHref}
@@ -436,9 +463,9 @@ export default async function ProductDetailPage({
                     .
                   </p>
                 </div>
-              </section>
+              </PremiumSurface>
 
-              <section className="rounded-[28px] border border-black/5 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+              <PremiumSurface className="p-6" variant="light">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand">
                   Policy notes
                 </p>
@@ -453,9 +480,9 @@ export default async function ProductDetailPage({
                     Digital refunds are limited after access except for broken files, unusable files, undelivered purchases, or verified listing problems.
                   </div>
                 </div>
-              </section>
+              </PremiumSurface>
 
-              <section className="rounded-[28px] border border-black/5 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+              <PremiumSurface className="p-6" variant="light">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand">
                   Source
                 </p>
@@ -473,12 +500,12 @@ export default async function ProductDetailPage({
                 >
                   {storefrontAction.label}
                 </Link>
-              </section>
+              </PremiumSurface>
             </aside>
           </div>
 
           {relatedListings.length ? (
-            <section className="rounded-[30px] border border-black/5 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:p-8">
+            <PremiumSurface className="p-6 sm:p-8" variant="light">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand">
@@ -499,7 +526,7 @@ export default async function ProductDetailPage({
                 </Link>
               </div>
 
-              <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {relatedListings.map((related) => (
                   <ProductCard
                     key={related.id}
@@ -508,7 +535,7 @@ export default async function ProductDetailPage({
                   />
                 ))}
               </div>
-            </section>
+            </PremiumSurface>
           ) : null}
         </div>
       </section>
