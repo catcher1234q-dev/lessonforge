@@ -419,15 +419,23 @@ export default async function ProductDetailPage({
                     </div>
                   </div>
 
-                  <CheckoutButton
-                    className="premium-button-shadow inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800"
-                    label="Buy now"
-                    productId={listing.id}
-                    returnTo={currentListingHref}
-                    testId="product-page-buy-now"
-                  />
+                  {listing.isPurchasable ? (
+                    <CheckoutButton
+                      className="premium-button-shadow inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-slate-800"
+                      label="Buy now"
+                      productId={listing.id}
+                      returnTo={currentListingHref}
+                      testId="product-page-buy-now"
+                    />
+                  ) : (
+                    <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm font-semibold text-amber-900">
+                      Preview only until seller PayPal payouts are ready.
+                    </p>
+                  )}
                   <p className="text-center text-xs leading-5 text-ink-soft">
-                    Instant download after purchase · Digital product, no shipping
+                    {listing.isPurchasable
+                      ? "Instant download after purchase · Digital product, no shipping"
+                      : "Digital product preview · Checkout unavailable for this listing right now"}
                   </p>
 
                   <div className="flex flex-col gap-3">

@@ -370,13 +370,19 @@ export function ProductCard({
               </p>
             </div>
             <div className="flex w-full flex-col gap-2 sm:min-w-[140px] sm:w-auto sm:items-end">
-              <CheckoutButton
-                className={`inline-flex w-full items-center justify-center gap-2 rounded-full ${featured ? "px-5 py-2.5" : "px-4 py-2.5"} bg-brand text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto`}
-                label="Buy now"
-                productId={listing.id}
-                returnTo={checkoutReturnTo ?? listingHref}
-                testId={buyTestId}
-              />
+              {listing.isPurchasable ? (
+                <CheckoutButton
+                  className={`inline-flex w-full items-center justify-center gap-2 rounded-full ${featured ? "px-5 py-2.5" : "px-4 py-2.5"} bg-brand text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto`}
+                  label="Buy now"
+                  productId={listing.id}
+                  returnTo={checkoutReturnTo ?? listingHref}
+                  testId={buyTestId}
+                />
+              ) : (
+                <span className="inline-flex w-full items-center justify-center rounded-full bg-slate-100 px-4 py-2.5 text-sm font-semibold text-ink-soft sm:w-auto">
+                  Preview only
+                </span>
+              )}
               <Link
                 className={secondaryActionLinkClassName("w-full justify-center px-3.5 py-2 sm:w-auto")}
                 data-analytics-event="product_details_clicked"

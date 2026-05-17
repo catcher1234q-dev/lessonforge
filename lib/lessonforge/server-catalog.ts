@@ -115,8 +115,13 @@ function mergeLaunchCatalogListing(
     sellerId: hasMeaningfulCopy(persistedListing.sellerId)
       ? persistedListing.sellerId
       : launchListing.sellerId,
+    sellerPayPalMerchantEnvKey:
+      persistedListing.sellerPayPalMerchantEnvKey ?? launchListing.sellerPayPalMerchantEnvKey,
+    sellerPayPalMerchantId:
+      persistedListing.sellerPayPalMerchantId ?? launchListing.sellerPayPalMerchantId,
     priceCents:
       persistedListing.priceCents > 0 ? persistedListing.priceCents : launchListing.priceCents,
+    isPurchasable: persistedListing.isPurchasable || launchListing.isPurchasable,
     fileTypes:
       persistedListing.fileTypes.length > 0 ? persistedListing.fileTypes : launchListing.fileTypes,
     includedItems:

@@ -33,11 +33,14 @@ export type MarketplaceListing = {
   sellerName: string;
   sellerHandle: string;
   sellerId: string;
+  sellerPayPalMerchantEnvKey?: string;
+  sellerPayPalMerchantId?: string;
   sellerListingCount: number;
   sellerAverageRating: number;
   sellerTotalReviewCount: number;
   sellerTrustLabel: string;
   priceCents: number;
+  isPurchasable: boolean;
   demoOnly: boolean;
   freshnessScore: number;
   licenseType: "Single classroom" | "Multiple classroom";
@@ -194,6 +197,12 @@ export function toMarketplaceListing(
   const fileTypes = resource.fileTypes?.length ? resource.fileTypes : inferFileTypes(resource.format);
   const previewSlides = buildPreviewSlides(resource.title, resource.subject, resource.format);
   const slug = resource.slug ?? slugify(resource.title);
+  const sellerPayPalMerchantEnvKey = resource.sellerPayPalMerchantEnvKey;
+  const sellerPayPalMerchantId = resource.sellerPayPalMerchantId;
+  const hasPayPalPayoutDestination = Boolean(
+    sellerPayPalMerchantId ||
+      (sellerPayPalMerchantEnvKey && process.env[sellerPayPalMerchantEnvKey]),
+  );
 
   return {
     id: resource.id,
@@ -215,6 +224,8 @@ export function toMarketplaceListing(
     sellerName: resource.sellerName ?? PLATFORM_MARKETPLACE_NAME,
     sellerHandle: resource.sellerHandle ?? PLATFORM_MARKETPLACE_SUBLABEL,
     sellerId: resource.sellerId ?? resource.id,
+    sellerPayPalMerchantEnvKey,
+    sellerPayPalMerchantId,
     sellerListingCount: 1,
     sellerAverageRating: buildReviewSummary(index).averageRating,
     sellerTotalReviewCount: buildReviewSummary(index).reviewCount,
@@ -222,6 +233,7 @@ export function toMarketplaceListing(
       ? "Marketplace starter resource"
       : "Original teacher-created listing",
     priceCents,
+    isPurchasable: Boolean(resource.isPurchasable && hasPayPalPayoutDestination),
     demoOnly: resource.demoOnly,
     freshnessScore:
       overrides?.freshnessScore ??
