@@ -767,11 +767,26 @@ export async function suggestListingWithGemini(
     return fallback;
   }
 
-  const result = await callProviderJson<Record<string, unknown>>(
-    "gemini",
-    buildListingAssistPrompt(input),
-    input.upload,
-  );
+  let result: Record<string, unknown>;
+
+  try {
+    result = await callProviderJson<Record<string, unknown>>(
+      "gemini",
+      buildListingAssistPrompt(input),
+      input.upload,
+    );
+  } catch (error) {
+    console.warn("[lessonforge.ai] Gemini listing assist fallback used", {
+      message: error instanceof Error ? error.message : "Unknown Gemini error",
+    });
+
+    return {
+      ...fallback,
+      status: "partial",
+      message:
+        "Gemini could not complete the full scan, so LessonForge filled safe draft copy from the uploaded resource details.",
+    };
+  }
 
   return normalizeListingAssistResult("gemini", result, fallback);
 }

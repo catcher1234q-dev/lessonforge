@@ -1126,14 +1126,15 @@ export function ProductCreator() {
     }
 
     setShowAiReviewNotice(summary.length > 0);
+    const filledAnyFields = summary.length > 0;
     setAiFeedback({
       state:
-        assistResult.suggestion.status === "partial" || summary.length === 0
-          ? "error"
-          : "success",
+        filledAnyFields
+          ? "success"
+          : "error",
       action: "finish",
       message:
-        summary.length > 0
+        filledAnyFields
           ? `${assistResult.suggestion.status === "success" && summary.includes("Description filled") ? "Filled by AI" : "AI filled part of your listing."} ${summary.join(" • ")}`
           : "AI filled part of your listing.",
     });

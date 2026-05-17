@@ -622,10 +622,28 @@ async function buildSupabaseProductRecords(productRows: SupabaseProductReadRow[]
     throw new Error(`Unable to load Supabase product sellers: ${error.message}`);
   }
 
+  const { data: sellerProfiles, error: sellerProfilesError } = await supabase
+    .from("seller_profiles")
+    .select(
+      "user_id, display_name, store_name, store_handle, stripe_account_id, stripe_onboarding_status, stripe_charges_enabled, stripe_payouts_enabled",
+    )
+    .in("user_id", sellerIds);
+
+  if (sellerProfilesError) {
+    throw new Error(`Unable to load Supabase product seller payout status: ${sellerProfilesError.message}`);
+  }
+
   return productRows.map<ProductRecord>((row) => {
     const seller = (sellers ?? []).find((entry) => entry.id === row.seller_id);
+    const sellerProfile = (sellerProfiles ?? []).find((entry) => entry.user_id === row.seller_id);
     const sellerEmail = seller?.email?.trim().toLowerCase() ?? "";
     const title = row.title || "Untitled listing";
+    const productStatus = mapSupabaseStatusToProductStatus(row.status);
+    const hasLivePayoutSetup = Boolean(
+      sellerProfile?.stripe_account_id &&
+        sellerProfile.stripe_charges_enabled &&
+        sellerProfile.stripe_payouts_enabled,
+    );
 
     return {
       id: row.id,
@@ -642,10 +660,15 @@ async function buildSupabaseProductRecords(productRows: SupabaseProductReadRow[]
       demoOnly: false,
       originalAssetUrl: row.file_url ?? undefined,
       sellerId: sellerEmail || row.seller_id,
-      sellerName: buildSellerLabelFromEmail(sellerEmail),
+      sellerName:
+        sellerProfile?.store_name ||
+        sellerProfile?.display_name ||
+        buildSellerLabelFromEmail(sellerEmail),
+      sellerHandle: sellerProfile?.store_handle ? `@${sellerProfile.store_handle}` : undefined,
+      sellerStripeAccountId: sellerProfile?.stripe_account_id ?? undefined,
       priceCents: row.price,
-      isPurchasable: mapSupabaseStatusToProductStatus(row.status) === "Published",
-      productStatus: mapSupabaseStatusToProductStatus(row.status),
+      isPurchasable: productStatus === "Published" && hasLivePayoutSetup,
+      productStatus,
     };
   });
 }
